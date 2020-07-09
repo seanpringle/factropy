@@ -15,6 +15,8 @@
 #define ensure(cond,...) if (!(cond)) { exit(EXIT_FAILURE); }
 #define ensuref(cond,...) if (!(cond)) { notef(__VA_ARGS__); exit(EXIT_FAILURE); }
 
+#include "sim.h"
+#include "chunk.h"
 #include "spec.h"
 #include "entity.h"
 
@@ -61,6 +63,11 @@ Model LoadPart(const char *path, Shader shader, Color color) {
 }
 
 int main(int argc, char const *argv[]) {
+	Sim::Seed(879600773);
+	Chunks::get(0,0);
+	Chunks::get(0,-1);
+	Chunks::get(-1,0);
+	Chunks::get(-1,-1);
 
 	Spec *spec = new Spec("container");
 	spec->w = 2;

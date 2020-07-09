@@ -1,14 +1,14 @@
 
-CC=g++
 OBJECTS=$(shell ls -1 *.cc | sed 's/cc$$/o/g')
 
 dev: CFLAGS=-O1 -std=c++17 -g -Wall -Werror
 dev: LFLAGS=-lm -L$(HOME)/lib -Wl,-rpath,$(HOME)/lib -lraylib
 dev: $(OBJECTS)
-	$(CC) $(CFLAGS) -o main *.o $(LFLAGS)
+	g++ $(CFLAGS) -o main *.o $(LFLAGS)
 
 %.o: %.cc
-	$(CC) $(CFLAGS) -c $< -o $@
+	g++ $(CFLAGS) -c $< -o $@
+
 
 clean:
 	rm -f main *.o
