@@ -51,6 +51,12 @@ public:
 		}
 	}
 
+	~SparseArray<T>() {
+		for (uint i = 0; i < pages.size(); i++) {
+			delete pages[i];
+		}
+	}
+
 	int next(bool zero) {
 		int width = (int)pages.size();
 
@@ -138,7 +144,7 @@ public:
 		Page *page = pages[p];
 
 		if (page == NULL || !page->isset(c)) {
-			fatalf("SparseArray cell does not exist %d", i);
+			fatalf("SparseArray cell does not exist (get) %d", i);
 		}
 
 		return page->cells[c];
@@ -151,7 +157,7 @@ public:
 		Page *page = pages[p];
 
 		if (page == NULL || !page->isset(c)) {
-			fatalf("SparseArray cell does not exist %d", i);
+			fatalf("SparseArray cell does not exist (drop) %d", i);
 		}
 
 		T v = page->cells[c];

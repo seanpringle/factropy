@@ -10,19 +10,58 @@
 
 struct Entity {
 	int id;
+	uint32_t flags;
 	Spec* spec;
 	Point pos;
 
+	bool isGhost();
+	Entity& setGhost(bool state);
+
 	Box box();
+	enum Direction dir();
+	Entity& face(enum Direction);
 	Entity& move(Point p);
+	Entity& floor(float level);
+	Entity& rotate();
+	void destroy();
+
+	static const uint32_t GHOST = 1<<0;
+
+	static inline SparseArray<Entity> all = (MaxEntity);
+	static inline SparseArray<enum Direction> dirs = (MaxEntity);
+	static int next();
+
+	static Entity& create(int id, Spec* spec);
+	static Entity& load(int id);
 };
 
-namespace Entities {
-	int next();
-	extern SparseArray<Entity> all;
+struct GuiEntity {
+	int id;
+	Spec* spec;
+	Point pos;
+	enum Direction dir;
+	bool ghost;
 
-	Entity& create(int id, Spec* spec);
-	void destroy(Entity& en);
-}
+	GuiEntity(int id);
+	~GuiEntity();
+
+	Box box();
+};
+
+struct GuiFakeEntity {
+	Spec* spec;
+	Point pos;
+	enum Direction dir;
+	bool ghost;
+
+	GuiFakeEntity(Spec* spec);
+	~GuiFakeEntity();
+
+	Box box();
+	GuiFakeEntity* face(enum Direction);
+	GuiFakeEntity* move(Point p);
+	GuiFakeEntity* floor(float level);
+	GuiFakeEntity* rotate();
+};
 
 #endif

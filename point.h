@@ -10,8 +10,11 @@ struct Point {
 	float x, y, z;
 
 	Vector3 vec();
+	static Point fromVec(Vector3 vec);
+
 	Box box();
 	float distance(Point p);
+
 };
 
 #endif

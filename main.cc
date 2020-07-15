@@ -8,6 +8,7 @@
 #include "rlights.h"
 
 #include <cstdio>
+#include <cstdlib>
 
 #define notef(...) { fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); }
 #define fatalf(...) { notef(__VA_ARGS__); exit(EXIT_FAILURE); }
@@ -15,40 +16,15 @@
 #define ensure(cond,...) if (!(cond)) { exit(EXIT_FAILURE); }
 #define ensuref(cond,...) if (!(cond)) { notef(__VA_ARGS__); exit(EXIT_FAILURE); }
 
+#include "gui.h"
+#include "panel.h"
+#include "mod.h"
 #include "sim.h"
 #include "chunk.h"
 #include "spec.h"
 #include "entity.h"
 
-typedef struct {
-	int x, y, dx, dy, wheel;
-	bool left, leftChanged;
-	bool middle, middleChanged;
-	bool right, rightChanged;
-} MouseState;
-
-MouseState GetMouseState(MouseState last) {
-	Vector2 pos = GetMousePosition();
-	bool left = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-	bool middle = IsMouseButtonDown(MOUSE_MIDDLE_BUTTON);
-	bool right = IsMouseButtonDown(MOUSE_RIGHT_BUTTON);
-	return (MouseState) {
-		.x = (int)pos.x,
-		.y = (int)pos.y,
-		.dx = (int)pos.x - last.x,
-		.dy = (int)pos.y - last.y,
-		.wheel = GetMouseWheelMove(),
-		.left = left,
-		.leftChanged = left != last.left,
-		.middle = middle,
-		.middleChanged = middle != last.middle,
-		.right = right,
-		.rightChanged = right != last.right,
-	};
-}
-
-static float speedH = 0.005;
-static float speedV = 0.005;
+#include <vector>
 
 Model LoadPart(const char *path, Shader shader, Color color) {
 	notef("LoadPart %s", path);
@@ -63,35 +39,75 @@ Model LoadPart(const char *path, Shader shader, Color color) {
 }
 
 int main(int argc, char const *argv[]) {
-	Sim::Seed(879600773);
-	Chunks::get(0,0);
-	Chunks::get(0,-1);
-	Chunks::get(-1,0);
-	Chunks::get(-1,-1);
+	//nvidia-settings --query=fsaa --verbose
+	//putenv((char*)"__GL_FSAA_MODE=9");
 
-	Spec *spec = new Spec("container");
-	spec->w = 2;
-	spec->h = 2;
-	spec->d = 5;
+	Sim::seed(879600773);
+
+	Spec *spec = new Spec("provider-container");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 2;
+	spec->animations[South].d = 5;
+	spec->animations[East].w = 5;
+	spec->animations[East].h = 2;
+	spec->animations[East].d = 2;
 	spec->obj = "models/container.obj";
+	spec->color = GetColor(0x990000ff);
+	spec->align = true;
+	spec->rotate = false;
+	spec->rotateGhost = true;
 
-	Entities::create(Entities::next(), Specs::byName("container"));
-	Entities::create(Entities::next(), Specs::byName("container")).move((Point){3,0,0});
-	Entities::create(Entities::next(), Specs::byName("container")).move((Point){-3,0,0});
+	spec->animations[North] = spec->animations[South];
+	spec->animations[West] = spec->animations[East];
+
+	spec = new Spec("requester-container");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 2;
+	spec->animations[South].d = 5;
+	spec->animations[East].w = 5;
+	spec->animations[East].h = 2;
+	spec->animations[East].d = 2;
+	spec->obj = "models/container.obj";
+	spec->color = GetColor(0x0044ccff);
+	spec->align = true;
+	spec->rotate = false;
+	spec->rotateGhost = true;
+
+	spec->animations[North] = spec->animations[South];
+	spec->animations[West] = spec->animations[East];
+
+	spec = new Spec("buffer-container");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 2;
+	spec->animations[South].d = 5;
+	spec->animations[East].w = 5;
+	spec->animations[East].h = 2;
+	spec->animations[East].d = 2;
+	spec->obj = "models/container.obj";
+	spec->color = GetColor(0x009900ff);
+	spec->align = true;
+	spec->rotate = false;
+	spec->rotateGhost = true;
+
+	spec->animations[North] = spec->animations[South];
+	spec->animations[West] = spec->animations[East];
+
+	Entity::create(Entity::next(), Spec::byName("provider-container")).floor(0);
+	Entity::create(Entity::next(), Spec::byName("requester-container")).move((Point){3,0,0}).floor(0);
+	Entity::create(Entity::next(), Spec::byName("buffer-container")).move((Point){-3,0,0}).floor(0);
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_VSYNC_HINT|FLAG_MSAA_4X_HINT);
-	InitWindow(1920,1080,"test8");
+	InitWindow(1920,1080,"test9");
 	SetTargetFPS(60);
+	SetExitKey(0);
 
-	Camera3D camera = {
+	Gui::camera = {
 		.position = (Vector3){5,5,5},
 		.target = (Vector3){0,0,0},
 		.up = (Vector3){0,1,0},
 		.fovy = 45,
 		.type = CAMERA_PERSPECTIVE,
 	};
-
-	MouseState mouse = { 0 };
 
 	Shader shader = LoadShader(
 		FormatText("shaders/glsl%i/base_lighting.vs", GLSL_VERSION),
@@ -102,57 +118,187 @@ int main(int argc, char const *argv[]) {
 	shader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
 
 	int ambientLoc = GetShaderLocation(shader, "ambient");
-	float ambientCol[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	float ambientCol[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
 	SetShaderValue(shader, ambientLoc, &ambientCol, UNIFORM_VEC4);
 
 	Light light = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, shader);
 
-	for (auto [name, spec]: Specs::all) {
+	for (auto [name, spec]: Spec::all) {
 		notef("Spec model: %s %s", name.c_str(), spec->obj.c_str());
-		spec->model = LoadPart(spec->obj.c_str(), shader, (Color){127,0,0,255});
+		spec->model = LoadPart(spec->obj.c_str(), shader, spec->color);
 	}
 
+	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
+	cube.materials[0].shader = shader;
+
+	Model waterCube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
+	waterCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x010190FF);
+
+	for (int cy = -5; cy < 5; cy++) {
+		for (int cx = -5; cx < 5; cx++) {
+			Chunk::get(cx,cy);
+		}
+	}
+
+	for (int cy = -5; cy < 5; cy++) {
+		for (int cx = -5; cx < 5; cx++) {
+			Chunk::get(cx,cy)->genHeightMap();
+			Chunk::get(cx,cy)->heightmap.materials[MAP_DIFFUSE].shader = shader;
+		}
+	}
+
+	Panels::init();
+	Gui::buildPopup = new BuildPopup(600, 600);
+
+	Mod* mod = new Mod("base");
+	mod->load();
+
 	while (!WindowShouldClose()) {
-		mouse = GetMouseState(mouse);
+		mod->update();
 
-		if (mouse.right) {
-			float rH = speedH * mouse.dx;
-			float rV = speedV * mouse.dy;
-			Vector3 direction = Vector3Subtract(camera.position, camera.target);
-			Vector3 right = Vector3CrossProduct(direction, camera.up);
-			Matrix rotateH = MatrixRotate(camera.up, -rH);
-			Matrix rotateV = MatrixRotate(right, rV);
-			camera.position = Vector3Transform(camera.position, rotateH);
-			camera.position = Vector3Transform(camera.position, rotateV);
-		}
-
-		if (mouse.wheel) {
-			Vector3 delta = Vector3Scale(camera.position, mouse.wheel < 0 ? 0.25: -0.25);
-			camera.position = Vector3Add(camera.position, delta);
-		}
-
-		SetCameraMode(camera, CAMERA_CUSTOM);
+		Gui::updateMouseState();
+		Gui::updateCamera();
 
 		UpdateLightValues(shader, light);
 
-		float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+		float cameraPos[3] = { Gui::camera.position.x, Gui::camera.position.y, Gui::camera.position.z };
 		SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
 
-		BeginDrawing();
-			ClearBackground(BLACK);
-			BeginMode3D(camera);
-				DrawGrid(10,1);
-				for (auto en: Entities::all) {
-					DrawModel(en.spec->model, en.pos.vec(), 1, WHITE);
+		if (Gui::popup && Gui::popup->contains(Gui::mouse.x, Gui::mouse.y)) {
+			Gui::popup->input();
+		}
+		else {
+
+			if (IsKeyReleased(KEY_Q)) {
+				Gui::build(Gui::hovering ? Gui::hovering->spec: NULL);
+			}
+
+			if (IsKeyReleased(KEY_R)) {
+				if (Gui::placing) {
+					Gui::placing->rotate();
 				}
+				else
+				if (Gui::hovering) {
+					Sim::locked([&]() {
+						Entity::load(Gui::hovering->id)
+							.rotate();
+					});
+				}
+			}
+
+			if (IsKeyReleased(KEY_E)) {
+				Gui::popup = Gui::buildPopup;
+			}
+
+			if (Gui::mouse.left && Gui::mouse.leftChanged && Gui::placing) {
+				Sim::locked([&]() {
+					Entity::create(Entity::next(), Gui::placing->spec)
+						.setGhost(true)
+						.face(Gui::placing->dir)
+						.move(Gui::placing->pos)
+						.setGhost(false);
+				});
+			}
+
+			if (IsKeyReleased(KEY_ESCAPE)) {
+				if (Gui::popup) {
+					Gui::popup = NULL;
+				}
+				else
+				if (Gui::placing) {
+					delete Gui::placing;
+					Gui::placing = NULL;
+				}
+			}
+		}
+
+		if (Gui::popup) {
+			Gui::popup->center();
+			Gui::popup->update();
+		}
+
+		BeginDrawing();
+			ClearBackground(BLANK);
+
+			BeginMode3D(Gui::camera);
+				DrawGrid(20,1);
+
+				float size = (float)Chunk::size;
+				float e = -(size/2.0f)-0.5f;
+				for (auto pair: Chunk::all) {
+					Chunk *chunk = pair.second;
+					float x = chunk->x;
+					float y = chunk->y;
+					DrawModel(chunk->heightmap, Vector3Zero(), 1.0f, WHITE);
+					DrawModel(
+						waterCube,
+						(Vector3){
+							size*x + (size/2.0f),
+							e,
+							size*y + (size/2.0f)
+						},
+						1.0f*size,
+						WHITE
+					);
+				}
+
+				Gui::findEntities();
+
+				for (auto ge: Gui::entities) {
+					DrawModelEx(
+						ge->spec->model,
+						ge->pos.vec(),
+						(Vector3){0,1,0},
+						Directions::degrees(ge->dir),
+						(Vector3){1,1,1},
+						WHITE
+					);
+				}
+
+				if (Gui::hovering) {
+					Spec::Animation* animation = &spec->animations[Gui::hovering->dir];
+					Vector3 bounds = (Vector3){animation->w, animation->h, animation->d};
+					DrawCubeWiresV(Gui::hovering->pos.vec(), Vector3AddValue(bounds, 0.01), WHITE);
+				}
+
+				if (Gui::placing) {
+					BeginBlendMode(BLEND_ADDITIVE);
+						DrawModelEx(
+							Gui::placing->spec->model,
+							Gui::placing->pos.vec(),
+							(Vector3){0,1,0},
+							Directions::degrees(Gui::placing->dir),
+							(Vector3){1,1,1},
+							WHITE
+						);
+					EndBlendMode();
+				}
+
 			EndMode3D();
+
+			if (Gui::popup) {
+				Gui::popup->draw();
+			}
+
+			DrawFPS(10,10);
 		EndDrawing();
 	}
 
-	for (auto [name, spec]: Specs::all) {
+	for (auto [name, spec]: Spec::all) {
 		notef("Spec unload model: %s %s", name.c_str(), spec->obj.c_str());
 		UnloadModel(spec->model);
 	}
+
+	for (auto pair: Chunk::all) {
+		Chunk *chunk = pair.second;
+		chunk->dropHeightMap();
+	}
+
+	UnloadModel(cube);
+	UnloadModel(waterCube);
+
+	delete mod;
+	delete Gui::buildPopup;
 
 	UnloadShader(shader);
 	CloseWindow();
