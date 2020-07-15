@@ -17,6 +17,20 @@ namespace Gui {
 	Panel *popup = NULL;
 	BuildPopup *buildPopup = NULL;
 
+	void resetEntities() {
+		hovering = NULL;
+		hovered.clear();
+
+		while (entities.size() > 0) {
+			delete entities.back();
+			entities.pop_back();
+		}
+	}
+
+	void reset() {
+		resetEntities();
+	}
+
 	void updateMouseState() {
 
 		MouseState last = mouse;
@@ -72,13 +86,7 @@ namespace Gui {
 	}
 
 	void findEntities() {
-		hovering = NULL;
-		hovered.clear();
-
-		while (entities.size() > 0) {
-			delete entities.back();
-			entities.pop_back();
-		}
+		resetEntities();
 
 		Sim::locked([&]() {
 			for (auto en: Entity::all) {

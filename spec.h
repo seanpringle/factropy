@@ -10,6 +10,13 @@
 
 struct Spec {
 
+	inline static std::map<std::string,Spec*> all;
+	static Spec* byName(std::string name);
+
+	static void saveAll(const char *path);
+	static void loadAll(const char *path);
+	static void reset();
+
 	struct Animation {
 		float w;
 		float h;
@@ -29,9 +36,6 @@ struct Spec {
 	Spec(std::string name);
 	Point aligned(Point p, enum Direction dir);
 	bool hasDirection();
-
-	inline static std::map<std::string,Spec*> all;
-	static Spec* byName(std::string name);
 };
 
 #endif

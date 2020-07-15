@@ -1,9 +1,12 @@
 #include "common.h"
 #include "entity.h"
 #include "sparse.h"
+#include "json.hpp"
 
 #include <map>
 #include <stdio.h>
+#include <filesystem>
+#include <fstream>
 
 int Entity::next() {
 	int i = all.next(false);
@@ -26,9 +29,48 @@ Entity& Entity::create(int id, Spec *spec) {
 	return en;
 }
 
-Entity& Entity::load(int id) {
+Entity& Entity::get(int id) {
 	ensuref(all.has(id), "invalid id %d", id);
 	return all.ref(id);
+}
+
+namespace fs = std::filesystem;
+using json = nlohmann::json;
+
+void Entity::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/entities.json");
+
+	for (auto &en: all) {
+		json state;
+		state["id"] = en.id;
+		state["spec"] = en.spec->name;
+		state["flags"] = en.flags;
+		state["pos"] = { en.pos.x, en.pos.y, en.pos.z };
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Entity::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/entities.json");
+	
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Entity& en = create(state["id"], Spec::byName(state["spec"]));
+		en.pos = (Point){state["pos"][0], state["pos"][1], state["pos"][2]};
+		en.flags = state["flags"];
+	}
+
+	in.close();
+}
+
+void Entity::reset() {
+	for (auto& en: all) {
+		en.destroy();
+	}
 }
 
 void Entity::destroy() {
@@ -82,8 +124,10 @@ Entity& Entity::rotate() {
 	return *this;
 }
 
+// GuiEntity
+
 GuiEntity::GuiEntity(int id) {
-	Entity& en = Entity::load(id);
+	Entity& en = Entity::get(id);
 	this->id = id;
 	spec = en.spec;
 	pos = en.pos;
@@ -98,6 +142,8 @@ Box GuiEntity::box() {
 	auto animation = &spec->animations[dir];
 	return (Box){pos.x, pos.y, pos.z, animation->w, animation->h, animation->d};
 }
+
+// GuiFakeEntity
 
 GuiFakeEntity::GuiFakeEntity(Spec* spec) {
 	this->spec = spec;

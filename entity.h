@@ -9,6 +9,20 @@
 #define MaxEntity 1000000
 
 struct Entity {
+
+	static const uint32_t GHOST = 1<<0;
+
+	static inline SparseArray<Entity> all = (MaxEntity);
+	static inline SparseArray<enum Direction> dirs = (MaxEntity);
+	static int next();
+
+	static Entity& create(int id, Spec* spec);
+	static Entity& get(int id);
+
+	static void saveAll(const char* name);
+	static void loadAll(const char* name);
+	static void reset();
+
 	int id;
 	uint32_t flags;
 	Spec* spec;
@@ -25,14 +39,6 @@ struct Entity {
 	Entity& rotate();
 	void destroy();
 
-	static const uint32_t GHOST = 1<<0;
-
-	static inline SparseArray<Entity> all = (MaxEntity);
-	static inline SparseArray<enum Direction> dirs = (MaxEntity);
-	static int next();
-
-	static Entity& create(int id, Spec* spec);
-	static Entity& load(int id);
 };
 
 struct GuiEntity {

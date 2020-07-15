@@ -28,6 +28,8 @@ namespace Gui {
 	extern Panel *popup;
 	extern BuildPopup *buildPopup;
 
+	void reset();
+
 	void updateMouseState();
 	void updateCamera();
 

@@ -11,18 +11,7 @@ struct Chunk {
 	struct Tile {
 		int elevation;
 	};
-
-	int x, y;
-	Tile tiles[size][size];
-	Model heightmap;
-
-	Chunk(int cx, int cy);
-
-	Image heightImage();
-	Image colorImage();
-	void genHeightMap();
-	void dropHeightMap();
-
+		
 	struct XY {
 		int x, y;
 		bool operator=(const XY &o) const;
@@ -34,6 +23,21 @@ struct Chunk {
 	static Chunk* tryGet(int x, int y);
 	static Chunk* get(int x, int y);
 	static Chunk::Tile* tileTryGet(int x, int y);
+
+	static void saveAll(const char* name);
+	static void loadAll(const char* name);
+	static void reset();
+
+	int x, y;
+	Tile tiles[size][size];
+	Model heightmap;
+
+	Chunk(int cx, int cy);
+
+	Image heightImage();
+	Image colorImage();
+	void genHeightMap();
+	void dropHeightMap();
 };
 
 #endif

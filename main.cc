@@ -92,9 +92,11 @@ int main(int argc, char const *argv[]) {
 	spec->animations[North] = spec->animations[South];
 	spec->animations[West] = spec->animations[East];
 
-	Entity::create(Entity::next(), Spec::byName("provider-container")).floor(0);
-	Entity::create(Entity::next(), Spec::byName("requester-container")).move((Point){3,0,0}).floor(0);
-	Entity::create(Entity::next(), Spec::byName("buffer-container")).move((Point){-3,0,0}).floor(0);
+	Sim::load("autosave");
+
+	//Entity::create(Entity::next(), Spec::byName("provider-container")).floor(0);
+	//Entity::create(Entity::next(), Spec::byName("requester-container")).move((Point){3,0,0}).floor(0);
+	//Entity::create(Entity::next(), Spec::byName("buffer-container")).move((Point){-3,0,0}).floor(0);
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_VSYNC_HINT|FLAG_MSAA_4X_HINT);
 	InitWindow(1920,1080,"test9");
@@ -134,17 +136,16 @@ int main(int argc, char const *argv[]) {
 	Model waterCube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	waterCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x010190FF);
 
-	for (int cy = -5; cy < 5; cy++) {
-		for (int cx = -5; cx < 5; cx++) {
-			Chunk::get(cx,cy);
-		}
-	}
+	//for (int cy = -5; cy < 5; cy++) {
+	//	for (int cx = -5; cx < 5; cx++) {
+	//		Chunk::get(cx,cy);
+	//	}
+	//}
 
-	for (int cy = -5; cy < 5; cy++) {
-		for (int cx = -5; cx < 5; cx++) {
-			Chunk::get(cx,cy)->genHeightMap();
-			Chunk::get(cx,cy)->heightmap.materials[MAP_DIFFUSE].shader = shader;
-		}
+	for (auto pair: Chunk::all) {
+		Chunk *chunk = pair.second;
+		chunk->genHeightMap();
+		chunk->heightmap.materials[MAP_DIFFUSE].shader = shader;
 	}
 
 	Panels::init();
@@ -180,7 +181,7 @@ int main(int argc, char const *argv[]) {
 				else
 				if (Gui::hovering) {
 					Sim::locked([&]() {
-						Entity::load(Gui::hovering->id)
+						Entity::get(Gui::hovering->id)
 							.rotate();
 					});
 				}
@@ -209,6 +210,10 @@ int main(int argc, char const *argv[]) {
 					delete Gui::placing;
 					Gui::placing = NULL;
 				}
+			}
+
+			if (IsKeyReleased(KEY_F5)) {
+				Sim::save("autosave");
 			}
 		}
 
@@ -289,18 +294,23 @@ int main(int argc, char const *argv[]) {
 		UnloadModel(spec->model);
 	}
 
+	UnloadModel(cube);
+	UnloadModel(waterCube);
+	UnloadShader(shader);
+
 	for (auto pair: Chunk::all) {
 		Chunk *chunk = pair.second;
 		chunk->dropHeightMap();
 	}
 
-	UnloadModel(cube);
-	UnloadModel(waterCube);
-
 	delete mod;
 	delete Gui::buildPopup;
 
-	UnloadShader(shader);
+	Gui::reset();
+	Entity::reset();
+	Chunk::reset();
+	Spec::reset();
+
 	CloseWindow();
 	return 0;
 }

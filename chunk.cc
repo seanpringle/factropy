@@ -1,6 +1,9 @@
 #include "common.h"
 #include "chunk.h"
 #include "sim.h"
+#include "json.hpp"
+#include <filesystem>
+#include <fstream>
 
 bool Chunk::XY::operator=(const XY &o) const {
 	return x == o.x && y == o.y;
@@ -18,10 +21,7 @@ Chunk* Chunk::tryGet(int x, int y) {
 Chunk* Chunk::get(int x, int y) {
 	Chunk *chunk = tryGet(x, y);
 	if (chunk == NULL) {
-		XY xy = {x,y};
 		chunk = new Chunk(x, y);
-		all[xy] = chunk;
-		notef("Chunk generate %d %d", x, y);
 
 		for (int ty = 0; ty < Chunk::size; ty++) {
 			for (int tx = 0; tx < Chunk::size; tx++) {
@@ -65,9 +65,57 @@ Chunk::Tile* Chunk::tileTryGet(int x, int y) {
 	return (chunk != NULL) ? &chunk->tiles[oy][ox]: NULL;
 }
 
+namespace fs = std::filesystem;
+using json = nlohmann::json;
+
+void Chunk::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/chunks.json");
+
+	for (auto pair: all) {
+		Chunk *chunk = pair.second;
+		json state;
+		state["x"] = chunk->x;
+		state["y"] = chunk->y;
+		for (int ty = 0; ty < size; ty++) {
+			for (int tx = 0; tx < size; tx++) {
+				state["elevations"][ty][tx] = chunk->tiles[ty][tx].elevation;
+			}
+		}
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Chunk::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/chunks.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Chunk *chunk = new Chunk(state["x"], state["y"]);
+		for (int ty = 0; ty < size; ty++) {
+			for (int tx = 0; tx < size; tx++) {
+				chunk->tiles[ty][tx].elevation = state["elevations"][ty][tx];
+			}
+		}
+	}
+
+	in.close();
+}
+
+void Chunk::reset() {
+	for (auto& pair: all) {
+		delete pair.second;
+	}
+}
+
 Chunk::Chunk(int cx, int cy) {
 	x = cx;
 	y = cy;
+	XY xy = {x,y};
+	all[xy] = this;
 }
 
 Image Chunk::heightImage() {

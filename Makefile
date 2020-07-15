@@ -6,11 +6,15 @@ dev: LFLAGS=-lm -flto $(shell pkg-config --libs cairo freetype2) -L$(HOME)/lib -
 dev: nuklear/nuklear.o $(OBJECTS)
 	g++ $(CFLAGS) -o main *.o nuklear/nuklear.o $(LFLAGS)
 
-%.o: %.cc
+main.o: main.cc
+	g++ $(CFLAGS) -c $< -o $@
+
+%.o: %.cc %.h
 	g++ $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f main *.o nuklear/nuklear.o
+	rm -f main *.o
+	#rm -f nuklear/nuklear.o
 
 compat:
 	$(MAKE) clean

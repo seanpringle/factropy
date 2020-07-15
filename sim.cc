@@ -1,6 +1,7 @@
 #include "common.h"
 #include "spec.h"
 #include "entity.h"
+#include "chunk.h"
 #include "sim.h"
 #include <filesystem>
 
@@ -32,12 +33,21 @@ namespace Sim {
 		return result / ampSum;
 	}
 
+	namespace fs = std::filesystem;
+
 	void save(const char *name) {
-		auto path = std::filesystem::path(name);
-		std::filesystem::remove_all(path);
+		auto path = fs::path(name);
+		fs::remove_all(path);
+		fs::create_directory(path);
+		Spec::saveAll(name);
+		Chunk::saveAll(name);
+		Entity::saveAll(name);
 	}
 
-	void load(const char *path) {
-
+	void load(const char *name) {
+		auto path = fs::path(name);
+		Spec::loadAll(name);
+		Chunk::loadAll(name);
+		Entity::loadAll(name);
 	}
 }
