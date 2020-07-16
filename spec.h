@@ -2,15 +2,18 @@
 #define _H_spec
 
 #include <string>
+#include <vector>
 #include <map>
 #include "raylib.h"
 #include "raymath.h"
+#include "rlgl.h"
 #include "point.h"
 #include "direction.h"
+#include "part.h"
 
 struct Spec {
 
-	inline static std::map<std::string,Spec*> all;
+	static inline std::map<std::string,Spec*> all;
 	static Spec* byName(std::string name);
 
 	static void saveAll(const char *path);
@@ -24,12 +27,11 @@ struct Spec {
 	};
 
 	std::string name;
-	std::string obj;
-	Model model;
-	Color color;
+	std::vector<Part*> parts;
 	bool align;
 	bool rotate;
 	bool rotateGhost;
+	Image image;
 
 	Animation animations[4];
 

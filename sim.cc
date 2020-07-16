@@ -8,6 +8,7 @@
 namespace Sim {
 	OpenSimplex* opensimplex;
 	std::mutex mutex;
+	uint64_t tick;
 
 	void locked(lockCallback cb) {
 		mutex.lock();
@@ -49,5 +50,9 @@ namespace Sim {
 		Spec::loadAll(name);
 		Chunk::loadAll(name);
 		Entity::loadAll(name);
+	}
+
+	void update() {
+		tick++;
 	}
 }

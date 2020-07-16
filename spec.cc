@@ -1,4 +1,5 @@
 #include "common.h"
+#include "sim.h"
 #include "spec.h"
 #include "json.hpp"
 #include <filesystem>
@@ -67,4 +68,3 @@ Point Spec::aligned(Point p, enum Direction dir) {
 bool Spec::hasDirection() {
 	return rotate || rotateGhost;
 }
-

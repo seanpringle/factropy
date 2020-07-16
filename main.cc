@@ -7,15 +7,7 @@
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
-#include <cstdio>
-#include <cstdlib>
-
-#define notef(...) { fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); }
-#define fatalf(...) { notef(__VA_ARGS__); exit(EXIT_FAILURE); }
-
-#define ensure(cond,...) if (!(cond)) { exit(EXIT_FAILURE); }
-#define ensuref(cond,...) if (!(cond)) { notef(__VA_ARGS__); exit(EXIT_FAILURE); }
-
+#include "common.h"
 #include "gui.h"
 #include "panel.h"
 #include "mod.h"
@@ -24,79 +16,22 @@
 #include "spec.h"
 #include "entity.h"
 
-#include <vector>
-
-Model LoadPart(const char *path, Shader shader, Color color) {
-	notef("LoadPart %s", path);
-	Model model = LoadModel(path);
-	ensuref(model.materialCount == 1, "multi material model");
-	ensuref(model.materials[0].maps[MAP_DIFFUSE].texture.id == GetTextureDefault().id, "textured model");
-	UnloadMaterial(model.materials[0]);
-	model.materials[0] = LoadMaterialDefault();
-	model.materials[0].shader = shader;
-	model.materials[0].maps[MAP_DIFFUSE].color = color;
-	return model;
-}
-
 int main(int argc, char const *argv[]) {
 	//nvidia-settings --query=fsaa --verbose
 	//putenv((char*)"__GL_FSAA_MODE=9");
 
-	Sim::seed(879600773);
+	bool loadSave = true;
 
-	Spec *spec = new Spec("provider-container");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 2;
-	spec->animations[South].d = 5;
-	spec->animations[East].w = 5;
-	spec->animations[East].h = 2;
-	spec->animations[East].d = 2;
-	spec->obj = "models/container.obj";
-	spec->color = GetColor(0x990000ff);
-	spec->align = true;
-	spec->rotate = false;
-	spec->rotateGhost = true;
+	for (int i = 1; i < argc; i++) {
+		auto arg = std::string(argv[i]);
 
-	spec->animations[North] = spec->animations[South];
-	spec->animations[West] = spec->animations[East];
+		if (arg == "--new") {
+			loadSave = false;
+			continue;
+		}
 
-	spec = new Spec("requester-container");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 2;
-	spec->animations[South].d = 5;
-	spec->animations[East].w = 5;
-	spec->animations[East].h = 2;
-	spec->animations[East].d = 2;
-	spec->obj = "models/container.obj";
-	spec->color = GetColor(0x0044ccff);
-	spec->align = true;
-	spec->rotate = false;
-	spec->rotateGhost = true;
-
-	spec->animations[North] = spec->animations[South];
-	spec->animations[West] = spec->animations[East];
-
-	spec = new Spec("buffer-container");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 2;
-	spec->animations[South].d = 5;
-	spec->animations[East].w = 5;
-	spec->animations[East].h = 2;
-	spec->animations[East].d = 2;
-	spec->obj = "models/container.obj";
-	spec->color = GetColor(0x009900ff);
-	spec->align = true;
-	spec->rotate = false;
-	spec->rotateGhost = true;
-
-	spec->animations[North] = spec->animations[South];
-	spec->animations[West] = spec->animations[East];
-
-	Sim::load("autosave");
-
-	//Entity::create(Entity::next(), Spec::byName("provider-container")).floor(0);
-	//Entity::create(Entity::next(), Spec::byName("requester-container")).move((Point){3,0,0}).floor(0);
-	//Entity::create(Entity::next(), Spec::byName("buffer-container")).move((Point){-3,0,0}).floor(0);
+		fatalf("unexpected argument: %s", arg.c_str());
+	}
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_VSYNC_HINT|FLAG_MSAA_4X_HINT);
 	InitWindow(1920,1080,"test9");
@@ -123,12 +58,66 @@ int main(int argc, char const *argv[]) {
 	float ambientCol[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
 	SetShaderValue(shader, ambientLoc, &ambientCol, UNIFORM_VEC4);
 
+	Part::shader = shader;
+
 	Light light = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, shader);
 
-	for (auto [name, spec]: Spec::all) {
-		notef("Spec model: %s %s", name.c_str(), spec->obj.c_str());
-		spec->model = LoadPart(spec->obj.c_str(), shader, spec->color);
-	}
+	Sim::seed(879600773);
+
+	Spec *spec = new Spec("provider-container");
+	spec->image = LoadImage("icons/provider-container.png");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 2;
+	spec->animations[South].d = 5;
+	spec->animations[East].w = 5;
+	spec->animations[East].h = 2;
+	spec->animations[East].d = 2;
+	spec->parts = {
+		new Part("models/container.obj", GetColor(0x990000ff)),
+		(new PartSpinner("models/fan.obj", GetColor(0xccccccff)))->translate(0,1.1,0),
+	};
+	spec->align = true;
+	spec->rotate = false;
+	spec->rotateGhost = true;
+
+	spec->animations[North] = spec->animations[South];
+	spec->animations[West] = spec->animations[East];
+
+	spec = new Spec("requester-container");
+	spec->image = LoadImage("icons/requester-container.png");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 2;
+	spec->animations[South].d = 5;
+	spec->animations[East].w = 5;
+	spec->animations[East].h = 2;
+	spec->animations[East].d = 2;
+	spec->parts = {
+		new Part("models/container.obj", GetColor(0x0044ccff)),
+	};
+	spec->align = true;
+	spec->rotate = false;
+	spec->rotateGhost = true;
+
+	spec->animations[North] = spec->animations[South];
+	spec->animations[West] = spec->animations[East];
+
+	spec = new Spec("buffer-container");
+	spec->image = LoadImage("icons/buffer-container.png");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 2;
+	spec->animations[South].d = 5;
+	spec->animations[East].w = 5;
+	spec->animations[East].h = 2;
+	spec->animations[East].d = 2;
+	spec->parts = {
+		new Part("models/container.obj", GetColor(0x009900ff)),
+	};
+	spec->align = true;
+	spec->rotate = false;
+	spec->rotateGhost = true;
+
+	spec->animations[North] = spec->animations[South];
+	spec->animations[West] = spec->animations[East];
 
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;
@@ -136,11 +125,17 @@ int main(int argc, char const *argv[]) {
 	Model waterCube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	waterCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x010190FF);
 
-	//for (int cy = -5; cy < 5; cy++) {
-	//	for (int cx = -5; cx < 5; cx++) {
-	//		Chunk::get(cx,cy);
-	//	}
-	//}
+	if (loadSave) {
+		Sim::load("autosave");
+	}
+
+	if (!loadSave) {
+		for (int cy = -5; cy < 5; cy++) {
+			for (int cx = -5; cx < 5; cx++) {
+				Chunk::get(cx,cy);
+			}
+		}
+	}
 
 	for (auto pair: Chunk::all) {
 		Chunk *chunk = pair.second;
@@ -149,12 +144,18 @@ int main(int argc, char const *argv[]) {
 	}
 
 	Panels::init();
-	Gui::buildPopup = new BuildPopup(600, 600);
+	Gui::buildPopup = new BuildPopup(800, 800);
+	Gui::entityPopup = new EntityPopup(800, 800);
 
 	Mod* mod = new Mod("base");
 	mod->load();
 
 	while (!WindowShouldClose()) {
+		
+		Sim::locked([&]() {
+			Sim::update();
+		});
+
 		mod->update();
 
 		Gui::updateMouseState();
@@ -165,11 +166,7 @@ int main(int argc, char const *argv[]) {
 		float cameraPos[3] = { Gui::camera.position.x, Gui::camera.position.y, Gui::camera.position.z };
 		SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
 
-		if (Gui::popup && Gui::popup->contains(Gui::mouse.x, Gui::mouse.y)) {
-			Gui::popup->input();
-		}
-		else {
-
+		if (!Gui::popup || !Gui::popup->contains(Gui::mouse.x, Gui::mouse.y)) {
 			if (IsKeyReleased(KEY_Q)) {
 				Gui::build(Gui::hovering ? Gui::hovering->spec: NULL);
 			}
@@ -188,7 +185,7 @@ int main(int argc, char const *argv[]) {
 			}
 
 			if (IsKeyReleased(KEY_E)) {
-				Gui::popup = Gui::buildPopup;
+				Gui::popup = (Gui::popup && Gui::popup == Gui::buildPopup) ? NULL: Gui::buildPopup;
 			}
 
 			if (Gui::mouse.left && Gui::mouse.leftChanged && Gui::placing) {
@@ -198,6 +195,14 @@ int main(int argc, char const *argv[]) {
 						.face(Gui::placing->dir)
 						.move(Gui::placing->pos)
 						.setGhost(false);
+				});
+			}
+
+			if (Gui::mouse.left && Gui::mouse.leftChanged && !Gui::placing && Gui::hovering) {
+				Gui::popup = Gui::entityPopup;
+				Sim::locked([&]() {
+					GuiEntity *ge = new GuiEntity(Gui::hovering->id);
+					Gui::entityPopup->useEntity(ge);
 				});
 			}
 
@@ -218,7 +223,6 @@ int main(int argc, char const *argv[]) {
 		}
 
 		if (Gui::popup) {
-			Gui::popup->center();
 			Gui::popup->update();
 		}
 
@@ -250,14 +254,10 @@ int main(int argc, char const *argv[]) {
 				Gui::findEntities();
 
 				for (auto ge: Gui::entities) {
-					DrawModelEx(
-						ge->spec->model,
-						ge->pos.vec(),
-						(Vector3){0,1,0},
-						Directions::degrees(ge->dir),
-						(Vector3){1,1,1},
-						WHITE
-					);
+					Matrix t = ge->transform();
+					for (auto part: ge->spec->parts) {
+						part->draw(t);
+					}
 				}
 
 				if (Gui::hovering) {
@@ -268,14 +268,10 @@ int main(int argc, char const *argv[]) {
 
 				if (Gui::placing) {
 					BeginBlendMode(BLEND_ADDITIVE);
-						DrawModelEx(
-							Gui::placing->spec->model,
-							Gui::placing->pos.vec(),
-							(Vector3){0,1,0},
-							Directions::degrees(Gui::placing->dir),
-							(Vector3){1,1,1},
-							WHITE
-						);
+						Matrix t = Gui::placing->transform();
+						for (auto part: Gui::placing->spec->parts) {
+							part->draw(t);
+						}
 					EndBlendMode();
 				}
 
@@ -289,10 +285,10 @@ int main(int argc, char const *argv[]) {
 		EndDrawing();
 	}
 
-	for (auto [name, spec]: Spec::all) {
-		notef("Spec unload model: %s %s", name.c_str(), spec->obj.c_str());
-		UnloadModel(spec->model);
-	}
+//	for (auto [name, spec]: Spec::all) {
+//		notef("Spec unload model: %s %s", name.c_str(), spec->obj.c_str());
+//		UnloadModel(spec->model);
+//	}
 
 	UnloadModel(cube);
 	UnloadModel(waterCube);

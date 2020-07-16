@@ -7,6 +7,7 @@
 
 namespace Sim {
 	extern OpenSimplex* opensimplex;
+	extern uint64_t tick;
 
 	typedef std::function<void(void)> lockCallback;
 	void locked(lockCallback cb);
@@ -16,6 +17,8 @@ namespace Sim {
 
 	void save(const char *path);
 	void load(const char *path);
+
+	void update();
 }
 
 #endif

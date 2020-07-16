@@ -13,9 +13,14 @@ namespace Gui {
 	GuiFakeEntity* placing = NULL;
 	std::vector<GuiEntity*> entities;
 	std::vector<GuiEntity*> hovered;
+	bool worldFocused;
 
 	Panel *popup = NULL;
 	BuildPopup *buildPopup = NULL;
+	EntityPopup *entityPopup = NULL;
+	bool popupFocused;
+
+	Rectangle selectBox;
 
 	void resetEntities() {
 		hovering = NULL;
@@ -32,7 +37,6 @@ namespace Gui {
 	}
 
 	void updateMouseState() {
-
 		MouseState last = mouse;
 
 		Vector2 pos = GetMousePosition();
@@ -52,17 +56,47 @@ namespace Gui {
 			middleChanged : middle != last.middle,
 			right : right,
 			rightChanged : right != last.right,
+			rH : last.rH,
+			rV : last.rV,
 		};
+
+		popupFocused = popup ? popup->contains(mouse.x, mouse.y): false;
+		worldFocused = !popupFocused;
+
+		if (mouse.right) {
+			mouse.rH += speedH * (float)mouse.dx;
+			mouse.rV += speedV * (float)mouse.dy;
+		}
 	}
 
 	void updateCamera() {
-		if (mouse.right) {
-			float rH = speedH * mouse.dx;
-			float rV = speedV * mouse.dy;
+		if (mouse.rH > 0.0f || mouse.rH < 0.0f || mouse.rV > 0.0f || mouse.rV < 0.0f) {
+			float rDH = 0.0f;
+			float rDV = 0.0f;
+
+			float d = fabs(mouse.rH) > fabs(mouse.rV) ? fabs(mouse.rH): fabs(mouse.rV);
+			float s = d/4.0;
+
+			if (fabs(mouse.rH) < s) {
+				rDH = mouse.rH;
+				mouse.rH = 0.0f;
+			} else {
+				rDH = mouse.rH > 0 ? s: -s;
+				mouse.rH -= rDH;
+			}
+
+			if (fabs(mouse.rV) < s) {
+				rDV = mouse.rV;
+				mouse.rV = 0.0f;
+			} else {
+				rDV = mouse.rV > 0 ? s: -s;
+				mouse.rV -= rDV;
+			}
+
 			Vector3 direction = Vector3Subtract(camera.position, camera.target);
 			Vector3 right = Vector3CrossProduct(direction, camera.up);
-			Matrix rotateH = MatrixRotate(camera.up, -rH);
-			Matrix rotateV = MatrixRotate(right, rV);
+			Matrix rotateH = MatrixRotate(camera.up, -rDH);
+			Matrix rotateV = MatrixRotate(right, rDV);
 			camera.position = Vector3Transform(camera.position, rotateH);
 			camera.position = Vector3Transform(camera.position, rotateV);
 		}
@@ -73,7 +107,6 @@ namespace Gui {
 		}
 
 		mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, camera);
-
 		SetCameraMode(camera, CAMERA_CUSTOM);
 	}
 
@@ -97,26 +130,29 @@ namespace Gui {
 			}
 		});
 
-		for (auto ge: entities) {
-			if (CheckCollisionRayBox(mouse.ray, ge->box().bounds())) {
-				hovered.push_back(ge);
-			}
-		}
+		if (worldFocused) {
 
-		if (hovered.size() > 0) {
-			float distance = 0.0f;
-			for (auto ge: hovered) {
-				float d = Vector3Distance(ge->pos.vec(), camera.position);
-				if (hovering == NULL || d < distance) {
-					hovering = ge;
-					distance = d;
+			for (auto ge: entities) {
+				if (CheckCollisionRayBox(mouse.ray, ge->box().bounds())) {
+					hovered.push_back(ge);
 				}
 			}
-		}
 
-		if (placing) {
-			RayHitInfo hit = GetCollisionRayGround(mouse.ray, 0);
-			placing->move(Point::fromVec(hit.position))->floor(placing->pos.y);
+			if (hovered.size() > 0) {
+				float distance = 0.0f;
+				for (auto ge: hovered) {
+					float d = Vector3Distance(ge->pos.vec(), camera.position);
+					if (hovering == NULL || d < distance) {
+						hovering = ge;
+						distance = d;
+					}
+				}
+			}
+
+			if (placing) {
+				RayHitInfo hit = GetCollisionRayGround(mouse.ray, 0);
+				placing->move(Point::fromVec(hit.position))->floor(placing->pos.y);
+			}
 		}
 	}
 }

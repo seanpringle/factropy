@@ -1,6 +1,8 @@
 #ifndef _H_panel
 #define _H_panel
 
+#include "entity.h"
+
 struct Nuklear;
 
 class Panel {
@@ -9,11 +11,17 @@ public:
 	int y;
 	int w;
 	int h;
-	Image canvas;
-	Texture2D texture;
+	int mx;
+	int my;
+	int wy;
+	int refresh;
 
 	struct Nuklear *nuklear;
 
+	Image canvas;
+	Texture2D texture;
+
+	bool changed;
 	bool buttons[3];
 	bool keys[512];
 
@@ -21,7 +29,8 @@ public:
 	virtual ~Panel();
 	void center();
 	void draw();
-	virtual void update();
+	virtual void build();
+	void update();
 	bool contains(int x, int y);
 	void input();
 };
@@ -33,7 +42,15 @@ namespace Panels {
 class BuildPopup : public Panel {
 public:
 	BuildPopup(int w, int h);
-	void update() override;
+	void build() override;
+};
+
+class EntityPopup : public Panel {
+public:
+	GuiEntity *ge;
+	EntityPopup(int w, int h);
+	void useEntity(GuiEntity *ge);
+	void build() override;
 };
 
 #endif

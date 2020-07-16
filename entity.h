@@ -48,22 +48,18 @@ struct GuiEntity {
 	enum Direction dir;
 	bool ghost;
 
+	GuiEntity();
 	GuiEntity(int id);
 	~GuiEntity();
 
 	Box box();
+	Matrix transform();
 };
 
-struct GuiFakeEntity {
-	Spec* spec;
-	Point pos;
-	enum Direction dir;
-	bool ghost;
-
+struct GuiFakeEntity : GuiEntity {
 	GuiFakeEntity(Spec* spec);
 	~GuiFakeEntity();
 
-	Box box();
 	GuiFakeEntity* face(enum Direction);
 	GuiFakeEntity* move(Point p);
 	GuiFakeEntity* floor(float level);

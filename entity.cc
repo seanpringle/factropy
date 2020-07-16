@@ -47,6 +47,11 @@ void Entity::saveAll(const char* name) {
 		state["spec"] = en.spec->name;
 		state["flags"] = en.flags;
 		state["pos"] = { en.pos.x, en.pos.y, en.pos.z };
+
+		if (en.spec->hasDirection()) {
+			state["dir"] = dirs.get(en.id);
+		}
+
 		out << state << "\n";
 	}
 
@@ -62,6 +67,10 @@ void Entity::loadAll(const char* name) {
 		Entity& en = create(state["id"], Spec::byName(state["spec"]));
 		en.pos = (Point){state["pos"][0], state["pos"][1], state["pos"][2]};
 		en.flags = state["flags"];
+
+		if (en.spec->hasDirection()) {
+			dirs.set(en.id, state["dir"]);
+		}
 	}
 
 	in.close();
@@ -126,6 +135,13 @@ Entity& Entity::rotate() {
 
 // GuiEntity
 
+GuiEntity::GuiEntity() {
+	id = 0;
+	spec = NULL;
+	dir = South;
+	pos = {0};
+}
+
 GuiEntity::GuiEntity(int id) {
 	Entity& en = Entity::get(id);
 	this->id = id;
@@ -143,9 +159,16 @@ Box GuiEntity::box() {
 	return (Box){pos.x, pos.y, pos.z, animation->w, animation->h, animation->d};
 }
 
+Matrix GuiEntity::transform() {
+	Matrix r = MatrixRotateY(Directions::degrees(dir)*DEG2RAD);
+	Matrix t = MatrixTranslate(pos.x, pos.y, pos.z);
+	return MatrixMultiply(r, t);
+}
+
 // GuiFakeEntity
 
-GuiFakeEntity::GuiFakeEntity(Spec* spec) {
+GuiFakeEntity::GuiFakeEntity(Spec* spec) : GuiEntity() {
+	id = 0;
 	this->spec = spec;
 	dir = South;
 	ghost = true;
@@ -153,11 +176,6 @@ GuiFakeEntity::GuiFakeEntity(Spec* spec) {
 }
 
 GuiFakeEntity::~GuiFakeEntity() {
-}
-
-Box GuiFakeEntity::box() {
-	auto animation = &spec->animations[dir];
-	return (Box){pos.x, pos.y, pos.z, animation->w, animation->h, animation->d};
 }
 
 GuiFakeEntity* GuiFakeEntity::face(enum Direction d) {

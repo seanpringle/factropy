@@ -14,7 +14,7 @@ main.o: main.cc
 
 clean:
 	rm -f main *.o
-	#rm -f nuklear/nuklear.o
+	#nuklear/nuklear.o
 
 compat:
 	$(MAKE) clean

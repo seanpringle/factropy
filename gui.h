@@ -10,10 +10,12 @@
 namespace Gui {
 
 	struct MouseState {
-		int x, y, dx, dy, wheel;
+		int x, y, dx, dy;
+		int wheel;
 		bool left, leftChanged;
 		bool middle, middleChanged;
 		bool right, rightChanged;
+		float rH, rV;
 		Ray ray;
 	};
 
@@ -24,9 +26,14 @@ namespace Gui {
 	extern GuiFakeEntity* placing;
 	extern std::vector<GuiEntity*> entities;
 	extern std::vector<GuiEntity*> hovered;
+	extern bool worldFocused;
 
 	extern Panel *popup;
 	extern BuildPopup *buildPopup;
+	extern EntityPopup *entityPopup;
+	extern bool popupFocused;
+
+	extern Rectangle selectBox;
 
 	void reset();
 
