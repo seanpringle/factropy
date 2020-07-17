@@ -2,7 +2,6 @@
 #include "chunk.h"
 #include "sim.h"
 #include "json.hpp"
-#include <filesystem>
 #include <fstream>
 
 bool Chunk::XY::operator=(const XY &o) const {
@@ -11,6 +10,17 @@ bool Chunk::XY::operator=(const XY &o) const {
 
 bool Chunk::XY::operator<(const XY &o) const {
 	return x < o.x || (x == o.x && y < o.y);
+}
+
+Chunk::Coords::Coords(float xx, float yy) {
+	x = xx;
+	y = yy;
+	tx = (int)std::floor(x);
+	ty = (int)std::floor(y);
+	cx = (int)std::floor((float)tx/Chunk::size);
+	cy = (int)std::floor((float)ty/Chunk::size);
+	ox = tx - (cx*Chunk::size);
+	oy = ty - (cy*Chunk::size);
 }
 
 Chunk* Chunk::tryGet(int x, int y) {
@@ -57,15 +67,11 @@ Chunk* Chunk::get(int x, int y) {
 }
 
 Chunk::Tile* Chunk::tileTryGet(int x, int y) {
-	int cx = (int)floor((float)x/Chunk::size);
-	int cy = (int)floor((float)y/Chunk::size);
-	Chunk *chunk = tryGet(cx, cy);
-	int ox = x - (cx*Chunk::size);
-	int oy = y - (cy*Chunk::size);
-	return (chunk != NULL) ? &chunk->tiles[oy][ox]: NULL;
+	auto co = Chunk::Coords(x, y);
+	Chunk *chunk = tryGet(co.cx, co.cy);
+	return (chunk != NULL) ? &chunk->tiles[co.oy][co.ox]: NULL;
 }
 
-namespace fs = std::filesystem;
 using json = nlohmann::json;
 
 void Chunk::saveAll(const char* name) {
@@ -233,3 +239,52 @@ void Chunk::genHeightMap() {
 void Chunk::dropHeightMap() {
 	UnloadModel(heightmap);
 }
+
+Chunk::ChunkBox Chunk::walk(Box box) {
+	return ChunkBox(box);
+}
+
+Chunk::ChunkBox::ChunkBox(Box box) {
+	a = Chunk::Coords(box.x-box.w/2, box.z-box.d/2);
+	b = Chunk::Coords(box.x+box.w/2, box.z+box.d/2);
+	if (a.cy == b.cy || b.ty > b.cy*Chunk::size) {
+		b.cy++;
+	}
+	if (a.cx == b.cx || b.tx > b.cx*Chunk::size) {
+		b.cx++;
+	}
+}
+
+Chunk::ChunkBoxIter Chunk::ChunkBox::begin() {
+	return (Chunk::ChunkBoxIter){a.cx, a.cy, b.cx, b.cy, a.cx, a.cy};
+}
+
+Chunk::ChunkBoxIter Chunk::ChunkBox::end() {
+	return (Chunk::ChunkBoxIter){a.cx, a.cy, b.cx, b.cy, b.cx, b.cy};
+}
+
+Chunk::XY Chunk::ChunkBoxIter::operator*() const {
+	return (Chunk::XY){cx, cy};
+}
+
+bool Chunk::ChunkBoxIter::operator==(const Chunk::ChunkBoxIter& other) const {
+	return cx == other.cx && cy == other.cy;
+}
+
+bool Chunk::ChunkBoxIter::operator!=(const Chunk::ChunkBoxIter& other) const {
+	return cx != other.cx || cy != other.cy;
+}
+
+Chunk::ChunkBoxIter& Chunk::ChunkBoxIter::operator++() {
+	if (cx < cx1) {
+		cx++;
+	}
+	if (cx == cx1 && cy < cy1) {
+		cy++;
+		if (cy < cy1) {
+			cx = cx0;
+		}
+	}
+	return *this;
+}
+

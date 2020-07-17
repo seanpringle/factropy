@@ -73,8 +73,8 @@ int main(int argc, char const *argv[]) {
 	spec->animations[East].h = 2;
 	spec->animations[East].d = 2;
 	spec->parts = {
-		new Part("models/container.obj", GetColor(0x990000ff)),
-		(new PartSpinner("models/fan.obj", GetColor(0xccccccff)))->translate(0,1.1,0),
+		new Part("models/container.stl", GetColor(0x990000ff)),
+		(new PartSpinner("models/fan.stl", GetColor(0xccccccff)))->translate(0,1.1,0),
 	};
 	spec->align = true;
 	spec->rotate = false;
@@ -92,7 +92,7 @@ int main(int argc, char const *argv[]) {
 	spec->animations[East].h = 2;
 	spec->animations[East].d = 2;
 	spec->parts = {
-		new Part("models/container.obj", GetColor(0x0044ccff)),
+		new Part("models/container.stl", GetColor(0x0044ccff)),
 	};
 	spec->align = true;
 	spec->rotate = false;
@@ -110,7 +110,7 @@ int main(int argc, char const *argv[]) {
 	spec->animations[East].h = 2;
 	spec->animations[East].d = 2;
 	spec->parts = {
-		new Part("models/container.obj", GetColor(0x009900ff)),
+		new Part("models/container.stl", GetColor(0x009900ff)),
 	};
 	spec->align = true;
 	spec->rotate = false;
@@ -118,6 +118,39 @@ int main(int argc, char const *argv[]) {
 
 	spec->animations[North] = spec->animations[South];
 	spec->animations[West] = spec->animations[East];
+
+	spec = new Spec("assembler");
+	spec->image = LoadImage("icons/none.png");
+	spec->animations[South].w = 5;
+	spec->animations[South].h = 3;
+	spec->animations[South].d = 5;
+	spec->parts = {
+		new Part("models/assembler.stl", GetColor(0x009900ff)),
+	};
+	spec->align = true;
+	spec->rotate = true;
+	spec->rotateGhost = true;
+
+	spec->animations[North] = spec->animations[South];
+	spec->animations[East] = spec->animations[South];
+	spec->animations[West] = spec->animations[South];
+
+	for (int i = 1; i < 4; i++) {
+		auto name = "rock" + std::to_string(i);
+		auto part = "models/" + name + ".stl";
+
+		spec = new Spec(name);
+		spec->image = LoadImage("icons/none.png");
+		spec->animations[South].w = 2;
+		spec->animations[South].h = 1;
+		spec->animations[South].d = 2;
+		spec->parts = {
+			new PartFacer(part, GetColor(0x666666ff)),
+		};
+		spec->align = false;
+		spec->rotate = false;
+		spec->rotateGhost = false;
+	}
 
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;
@@ -137,12 +170,6 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
-	for (auto pair: Chunk::all) {
-		Chunk *chunk = pair.second;
-		chunk->genHeightMap();
-		chunk->heightmap.materials[MAP_DIFFUSE].shader = shader;
-	}
-
 	Panels::init();
 	Gui::buildPopup = new BuildPopup(800, 800);
 	Gui::entityPopup = new EntityPopup(800, 800);
@@ -152,10 +179,7 @@ int main(int argc, char const *argv[]) {
 
 	while (!WindowShouldClose()) {
 		
-		Sim::locked([&]() {
-			Sim::update();
-		});
-
+		Sim::locked(Sim::update);
 		mod->update();
 
 		Gui::updateMouseState();
@@ -230,12 +254,16 @@ int main(int argc, char const *argv[]) {
 			ClearBackground(BLANK);
 
 			BeginMode3D(Gui::camera);
-				DrawGrid(20,1);
+				DrawGrid(64,1);
 
 				float size = (float)Chunk::size;
 				float e = -(size/2.0f)-0.5f;
 				for (auto pair: Chunk::all) {
 					Chunk *chunk = pair.second;
+					if (!chunk->heightmap.meshes) {
+						chunk->genHeightMap();
+						chunk->heightmap.materials[MAP_DIFFUSE].shader = shader;
+					}
 					float x = chunk->x;
 					float y = chunk->y;
 					DrawModel(chunk->heightmap, Vector3Zero(), 1.0f, WHITE);
@@ -261,7 +289,7 @@ int main(int argc, char const *argv[]) {
 				}
 
 				if (Gui::hovering) {
-					Spec::Animation* animation = &spec->animations[Gui::hovering->dir];
+					Spec::Animation* animation = &Gui::hovering->spec->animations[Gui::hovering->dir];
 					Vector3 bounds = (Vector3){animation->w, animation->h, animation->d};
 					DrawCubeWiresV(Gui::hovering->pos.vec(), Vector3AddValue(bounds, 0.01), WHITE);
 				}
@@ -306,6 +334,8 @@ int main(int argc, char const *argv[]) {
 	Entity::reset();
 	Chunk::reset();
 	Spec::reset();
+
+	Part::test();
 
 	CloseWindow();
 	return 0;

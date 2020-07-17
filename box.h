@@ -14,6 +14,7 @@ struct Box {
 	Box translate(Point p);
 	Box grow(Point p);
 	Box shrink(Point p);
+	bool intersects(Box b);
 };
 
 #endif

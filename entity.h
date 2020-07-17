@@ -5,6 +5,7 @@
 #include "spec.h"
 #include "point.h"
 #include "box.h"
+#include <set>
 
 #define MaxEntity 1000000
 
@@ -23,6 +24,8 @@ struct Entity {
 	static void loadAll(const char* name);
 	static void reset();
 
+	static std::set<int> intersecting(Box box);
+
 	int id;
 	uint32_t flags;
 	Spec* spec;
@@ -39,6 +42,8 @@ struct Entity {
 	Entity& rotate();
 	void destroy();
 
+	Entity& index();
+	Entity& unindex();
 };
 
 struct GuiEntity {

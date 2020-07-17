@@ -21,6 +21,13 @@ struct Part {
 	Part* translate(float x, float y, float z);
 	virtual Matrix delta(Matrix trx);
 	void draw(Matrix trx);
+
+	static void test();
+};
+
+struct PartFacer : public Part {
+	PartFacer(std::string obj, Color color);
+	virtual Matrix delta(Matrix trx);
 };
 
 struct PartSpinner : public Part {

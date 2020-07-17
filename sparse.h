@@ -190,7 +190,7 @@ public:
 			a = array;
 		}
 
-		int index() {
+		int index() { // needed?
 			return p*1024+c;
 		}
 

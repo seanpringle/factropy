@@ -3,6 +3,7 @@
 #include "gui.h"
 #include "panel.h"
 #include "spec.h"
+#include "chunk.h"
 #include <cmath>
 
 extern "C" {
@@ -104,6 +105,10 @@ Panel::Panel(int w, int h) {
 	nk_init_default(&nuklear->ctx, NULL);
 	nk_style_set_font(&nuklear->ctx, nuklear->font);
 	changed = true;
+	refresh = 0;
+	mx = 0;
+	my = 0;
+	center();
 }
 
 Panel::~Panel() {
@@ -272,5 +277,19 @@ void EntityPopup::build() {
 	}
 
 	nk_begin(&nuklear->ctx, ge->spec->name.c_str(), nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
+
+	nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+	for (auto [x,y]: Chunk::walk(ge->box())) {
+		auto sx = std::to_string(x);
+		auto sy = std::to_string(y);
+		nk_label(&nuklear->ctx, (sx + "," + sy).c_str(), NK_TEXT_LEFT);
+
+		auto chunk = Chunk::get(x,y);
+		for (auto id: chunk->entities) {
+			auto sid = std::to_string(id);
+			nk_label(&nuklear->ctx, sid.c_str(), NK_TEXT_LEFT);
+		}
+	}
+
 	nk_end(&nuklear->ctx);
 }

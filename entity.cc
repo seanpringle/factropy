@@ -1,12 +1,13 @@
 #include "common.h"
 #include "entity.h"
+#include "chunk.h"
 #include "sparse.h"
 #include "json.hpp"
 
 #include <map>
 #include <stdio.h>
-#include <filesystem>
 #include <fstream>
+#include <algorithm>
 
 int Entity::next() {
 	int i = all.next(false);
@@ -24,6 +25,7 @@ Entity& Entity::create(int id, Spec *spec) {
 		dirs.set(id, South);
 	}
 
+	en.pos = {0};
 	en.move((Point){0,0,0});
 
 	return en;
@@ -34,7 +36,6 @@ Entity& Entity::get(int id) {
 	return all.ref(id);
 }
 
-namespace fs = std::filesystem;
 using json = nlohmann::json;
 
 void Entity::saveAll(const char* name) {
@@ -82,6 +83,21 @@ void Entity::reset() {
 	}
 }
 
+std::set<int> Entity::intersecting(Box box) {
+	std::set<int> hits;
+	for (auto [x,y]: Chunk::walk(box)) {
+		auto chunk = Chunk::tryGet(x, y);
+		if (!chunk) continue;
+		for (auto id: chunk->entities) {
+			Entity& en = get(id);
+			if (en.box().intersects(box)) {
+				hits.insert(id);
+			}
+		}
+	}
+	return hits;
+}
+
 void Entity::destroy() {
 	if (spec->hasDirection()) {
 		dirs.drop(id);
@@ -114,21 +130,44 @@ Entity& Entity::face(enum Direction d) {
 	return *this;
 }
 
+Entity& Entity::index() {
+	unindex();
+	for (auto [x,y]: Chunk::walk(box())) {
+		auto chunk = Chunk::get(x, y);
+		chunk->entities.insert(id);
+	}
+	return *this;
+}
+
+Entity& Entity::unindex() {
+	for (auto [x,y]: Chunk::walk(box())) {
+		auto chunk = Chunk::get(x, y);
+		chunk->entities.erase(id);
+	}
+	return *this;
+}
+
 Entity& Entity::move(Point p) {
+	unindex();
 	pos = spec->aligned(p, dir());
+	index();
 	return *this;
 }
 
 Entity& Entity::floor(float level) {
+	unindex();
 	auto animation = &spec->animations[dir()];
 	pos.y = level + animation->h/2.0f;
+	index();
 	return *this;
 }
 
 Entity& Entity::rotate() {
 	if (spec->rotate || (isGhost() && spec->rotateGhost)) {
+		unindex();
 		dirs.set(id, Directions::rotate(dirs.get(id)));
 		pos = spec->aligned(pos, dir());
+		index();
 	}
 	return *this;
 }

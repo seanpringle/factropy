@@ -121,12 +121,11 @@ namespace Gui {
 	void findEntities() {
 		resetEntities();
 
+		Box view = (Box){camera.target.x, camera.target.y, camera.target.z, 1000,1000,1000};
+
 		Sim::locked([&]() {
-			for (auto en: Entity::all) {
-				float d = Vector3Distance(en.pos.vec(), camera.target);
-				if (d < 500) {
-					entities.push_back(new GuiEntity(en.id));
-				}
+			for (auto id: Entity::intersecting(view)) {
+				entities.push_back(new GuiEntity(id));
 			}
 		});
 
