@@ -15,7 +15,7 @@ namespace Gui {
 		bool left, leftChanged;
 		bool middle, middleChanged;
 		bool right, rightChanged;
-		float rH, rV;
+		float rH, rV, zW;
 		Ray ray;
 	};
 
@@ -42,6 +42,8 @@ namespace Gui {
 
 	void build(Spec* spec);
 	void findEntities();	
+
+	void drawGrid(Vector3 p, int slices, float spacing);
 };
 
 #endif

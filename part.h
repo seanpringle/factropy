@@ -8,19 +8,23 @@
 
 struct Part {
 	static inline Shader shader;
+	static inline Material material;
 	static inline std::map<std::string,Model> models;
 
 	Mesh mesh;
-	Material material;
 	Matrix transform;
+	Color color;
 
 	Part(std::string obj, Color color);
 	~Part();
 
 	Part* rotate(Vector3 axis, float degrees);
 	Part* translate(float x, float y, float z);
+	virtual void update();
 	virtual Matrix delta(Matrix trx);
 	void draw(Matrix trx);
+	void drawInstanced(int count, Matrix* trx);
+	void drawGhost(Matrix trx);
 
 	static void test();
 };
@@ -32,6 +36,26 @@ struct PartFacer : public Part {
 
 struct PartSpinner : public Part {
 	PartSpinner(std::string obj, Color color);
+	virtual Matrix delta(Matrix trx);
+};
+
+struct PartRoller : public Part {
+	Matrix r;
+	Matrix t;
+	PartRoller(std::string obj, Color color);
+	virtual void update();
+	virtual Matrix delta(Matrix trx);
+};
+
+struct PartWheel : public Part {
+	Matrix r;
+	Matrix t;
+	float s;
+	float o;
+	PartWheel(std::string obj, Color color);
+	PartWheel* speed(float ss);
+	PartWheel* steer(float ss);
+	virtual void update();
 	virtual Matrix delta(Matrix trx);
 };
 

@@ -12,7 +12,7 @@ void Spec::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/specs.json");
 
-	for (auto &pair: all) {
+	for (auto& pair: all) {
 		Spec *spec = pair.second;
 		json state;
 		state["name"] = spec->name;
@@ -52,10 +52,10 @@ Point Spec::aligned(Point p, enum Direction dir) {
 			p.x += 0.5;
 		}
 
-		p.y = std::floor(p.y);
-		if ((int)ceil(animation->h)%2 != 0) {
-			p.y += 0.5;
-		}
+		//p.y = std::floor(p.y);
+		//if ((int)ceil(animation->h)%2 != 0) {
+		//	p.y += 0.5;
+		//}
 
 		p.z = std::floor(p.z);
 		if ((int)ceil(animation->d)%2 != 0) {
@@ -67,4 +67,8 @@ Point Spec::aligned(Point p, enum Direction dir) {
 
 bool Spec::hasDirection() {
 	return rotate || rotateGhost;
+}
+
+bool Spec::hasOrientation() {
+	return vehicle;
 }

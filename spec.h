@@ -31,6 +31,7 @@ struct Spec {
 	bool align;
 	bool rotate;
 	bool rotateGhost;
+	bool vehicle;
 	Image image;
 
 	Animation animations[4];
@@ -38,6 +39,7 @@ struct Spec {
 	Spec(std::string name);
 	Point aligned(Point p, enum Direction dir);
 	bool hasDirection();
+	bool hasOrientation();
 };
 
 #endif

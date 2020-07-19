@@ -5,6 +5,7 @@ namespace Gui {
 
 	const float speedH = 0.005f;
 	const float speedV = 0.005f;
+	const float speedW = 0.25f;
 
 	Camera3D camera;
 	MouseState mouse;
@@ -58,6 +59,7 @@ namespace Gui {
 			rightChanged : right != last.right,
 			rH : last.rH,
 			rV : last.rV,
+			zW : last.zW,
 		};
 
 		popupFocused = popup ? popup->contains(mouse.x, mouse.y): false;
@@ -67,6 +69,10 @@ namespace Gui {
 			mouse.rH += speedH * (float)mouse.dx;
 			mouse.rV += speedV * (float)mouse.dy;
 		}
+
+		if (mouse.wheel) {
+			mouse.zW += speedW * -(float)mouse.wheel;
+		}
 	}
 
 	void updateCamera() {
@@ -74,35 +80,49 @@ namespace Gui {
 			float rDH = 0.0f;
 			float rDV = 0.0f;
 
-			float d = fabs(mouse.rH) > fabs(mouse.rV) ? fabs(mouse.rH): fabs(mouse.rV);
-			float s = d/4.0;
-
-			if (fabs(mouse.rH) < s) {
+			if (fabs(mouse.rH) < 0.0001) {
 				rDH = mouse.rH;
 				mouse.rH = 0.0f;
 			} else {
+				float s = fabs(mouse.rH)/4.0;
 				rDH = mouse.rH > 0 ? s: -s;
 				mouse.rH -= rDH;
 			}
 
-			if (fabs(mouse.rV) < s) {
+			if (fabs(mouse.rV) < 0.0001) {
 				rDV = mouse.rV;
 				mouse.rV = 0.0f;
 			} else {
+				float s = fabs(mouse.rV)/4.0;
 				rDV = mouse.rV > 0 ? s: -s;
 				mouse.rV -= rDV;
 			}
 
 			Vector3 direction = Vector3Subtract(camera.position, camera.target);
-			Vector3 right = Vector3CrossProduct(direction, camera.up);
+			Vector3 right = Vector3Normalize(Vector3CrossProduct(direction, camera.up));
 			Matrix rotateH = MatrixRotate(camera.up, -rDH);
 			Matrix rotateV = MatrixRotate(right, rDV);
-			camera.position = Vector3Transform(camera.position, rotateH);
-			camera.position = Vector3Transform(camera.position, rotateV);
+			Matrix rotate = MatrixMultiply(rotateH, rotateV);
+			direction = Vector3Transform(direction, rotate);
+			camera.position = Vector3Add(camera.target, direction);
 		}
 
-		if (mouse.wheel) {
-			Vector3 delta = Vector3Scale(camera.position, mouse.wheel < 0 ? 0.25: -0.25);
+		if (mouse.zW > 0.0f || mouse.zW < 0.0f) {
+			float zDW = 0.0f;
+
+			float d = fabs(mouse.zW);
+			float s = d/4.0;
+
+			if (fabs(mouse.zW) < 0.01) {
+				zDW = mouse.zW;
+				mouse.zW = 0.0f;
+			} else {
+				zDW = mouse.zW > 0 ? s: -s;
+				mouse.zW -= zDW;
+			}
+
+			Vector3 direction = Vector3Subtract(camera.position, camera.target);
+			Vector3 delta = Vector3Scale(direction, zDW);
 			camera.position = Vector3Add(camera.position, delta);
 		}
 
@@ -121,10 +141,10 @@ namespace Gui {
 	void findEntities() {
 		resetEntities();
 
-		Box view = (Box){camera.target.x, camera.target.y, camera.target.z, 1000,1000,1000};
+		Box view = (Box){camera.target.x, camera.target.y, camera.target.z, 1000, 1000, 1000};
 
 		Sim::locked([&]() {
-			for (auto id: Entity::intersecting(view)) {
+			for (int id: Entity::intersecting(view)) {
 				entities.push_back(new GuiEntity(id));
 			}
 		});
@@ -153,5 +173,34 @@ namespace Gui {
 				placing->move(Point::fromVec(hit.position))->floor(placing->pos.y);
 			}
 		}
+	}
+
+	void drawGrid(Vector3 p, int slices, float spacing) {
+		int halfSlices = slices/2;
+
+		if (rlCheckBufferLimit(slices*4)) rlglDraw();
+
+		rlBegin(RL_LINES);
+			for (int i = -halfSlices; i <= halfSlices; i++) {
+				if (i == 0) {
+					rlColor3f(0.5f, 0.5f, 0.5f);
+					rlColor3f(0.5f, 0.5f, 0.5f);
+					rlColor3f(0.5f, 0.5f, 0.5f);
+					rlColor3f(0.5f, 0.5f, 0.5f);
+				}
+				else {
+					rlColor3f(0.75f, 0.75f, 0.75f);
+					rlColor3f(0.75f, 0.75f, 0.75f);
+					rlColor3f(0.75f, 0.75f, 0.75f);
+					rlColor3f(0.75f, 0.75f, 0.75f);
+				}
+
+				rlVertex3f(p.x+(float)i*spacing, p.y, p.z+(float)-halfSlices*spacing);
+				rlVertex3f(p.x+(float)i*spacing, p.y, p.z+(float)halfSlices*spacing);
+
+				rlVertex3f(p.x+(float)-halfSlices*spacing, p.y, p.z+(float)i*spacing);
+				rlVertex3f(p.x+(float)halfSlices*spacing, p.y, p.z+(float)i*spacing);
+			}
+		rlEnd();
 	}
 }

@@ -41,7 +41,7 @@ Chunk* Chunk::get(int x, int y) {
 				n *= 1.5;
 				n += 0.5;
 
-				int elevation = 2;
+				int elevation = 0;
 
 				if (n < 0.2) {
 					elevation = -2;

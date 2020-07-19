@@ -13,7 +13,7 @@ namespace Sim {
 	void locked(lockCallback cb);
 
 	void seed(int64_t seed);
-	double noise2D(int x, int y, int layers, double persistence, double frequency);
+	double noise2D(double x, double y, int layers, double persistence, double frequency);
 
 	void save(const char *path);
 	void load(const char *path);

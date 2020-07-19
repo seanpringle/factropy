@@ -31,6 +31,10 @@ Entity& Entity::create(int id, Spec *spec) {
 	return en;
 }
 
+bool Entity::exists(int id) {
+	return all.has(id);
+}
+
 Entity& Entity::get(int id) {
 	ensuref(all.has(id), "invalid id %d", id);
 	return all.ref(id);
@@ -42,7 +46,7 @@ void Entity::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/entities.json");
 
-	for (auto &en: all) {
+	for (Entity& en: all) {
 		json state;
 		state["id"] = en.id;
 		state["spec"] = en.spec->name;
@@ -66,31 +70,34 @@ void Entity::loadAll(const char* name) {
 	for (std::string line; std::getline(in, line);) {
 		auto state = json::parse(line);
 		Entity& en = create(state["id"], Spec::byName(state["spec"]));
+		en.unindex();
+
 		en.pos = (Point){state["pos"][0], state["pos"][1], state["pos"][2]};
 		en.flags = state["flags"];
 
 		if (en.spec->hasDirection()) {
 			dirs.set(en.id, state["dir"]);
 		}
+
+		en.index();
 	}
 
 	in.close();
 }
 
 void Entity::reset() {
-	for (auto& en: all) {
+	for (Entity& en: all) {
 		en.destroy();
 	}
 }
 
-std::set<int> Entity::intersecting(Box box) {
-	std::set<int> hits;
+std::unordered_set<int> Entity::intersecting(Box box) {
+	std::unordered_set<int> hits;
 	for (auto [x,y]: Chunk::walk(box)) {
-		auto chunk = Chunk::tryGet(x, y);
+		Chunk* chunk = Chunk::tryGet(x, y);
 		if (!chunk) continue;
-		for (auto id: chunk->entities) {
-			Entity& en = get(id);
-			if (en.box().intersects(box)) {
+		for (int id: chunk->entities) {
+			if (get(id).box().intersects(box)) {
 				hits.insert(id);
 			}
 		}
@@ -99,6 +106,7 @@ std::set<int> Entity::intersecting(Box box) {
 }
 
 void Entity::destroy() {
+	unindex();
 	if (spec->hasDirection()) {
 		dirs.drop(id);
 	}
@@ -123,17 +131,10 @@ enum Direction Entity::dir() {
 	return (spec->hasDirection()) ? dirs.get(id): South;
 }
 
-Entity& Entity::face(enum Direction d) {
-	if (spec->rotate || (isGhost() && spec->rotateGhost)) {
-		dirs.set(id, d);
-	}
-	return *this;
-}
-
 Entity& Entity::index() {
 	unindex();
 	for (auto [x,y]: Chunk::walk(box())) {
-		auto chunk = Chunk::get(x, y);
+		Chunk* chunk = Chunk::get(x, y);
 		chunk->entities.insert(id);
 	}
 	return *this;
@@ -141,8 +142,17 @@ Entity& Entity::index() {
 
 Entity& Entity::unindex() {
 	for (auto [x,y]: Chunk::walk(box())) {
-		auto chunk = Chunk::get(x, y);
+		Chunk* chunk = Chunk::get(x, y);
 		chunk->entities.erase(id);
+	}
+	return *this;
+}
+
+Entity& Entity::face(enum Direction d) {
+	if (spec->rotate || (isGhost() && spec->rotateGhost)) {
+		unindex();
+		dirs.set(id, d);
+		index();
 	}
 	return *this;
 }
@@ -172,71 +182,3 @@ Entity& Entity::rotate() {
 	return *this;
 }
 
-// GuiEntity
-
-GuiEntity::GuiEntity() {
-	id = 0;
-	spec = NULL;
-	dir = South;
-	pos = {0};
-}
-
-GuiEntity::GuiEntity(int id) {
-	Entity& en = Entity::get(id);
-	this->id = id;
-	spec = en.spec;
-	pos = en.pos;
-	dir = en.dir();
-	ghost = en.isGhost();
-}
-
-GuiEntity::~GuiEntity() {
-}
-
-Box GuiEntity::box() {
-	auto animation = &spec->animations[dir];
-	return (Box){pos.x, pos.y, pos.z, animation->w, animation->h, animation->d};
-}
-
-Matrix GuiEntity::transform() {
-	Matrix r = MatrixRotateY(Directions::degrees(dir)*DEG2RAD);
-	Matrix t = MatrixTranslate(pos.x, pos.y, pos.z);
-	return MatrixMultiply(r, t);
-}
-
-// GuiFakeEntity
-
-GuiFakeEntity::GuiFakeEntity(Spec* spec) : GuiEntity() {
-	id = 0;
-	this->spec = spec;
-	dir = South;
-	ghost = true;
-	move((Point){0,0,0});
-}
-
-GuiFakeEntity::~GuiFakeEntity() {
-}
-
-GuiFakeEntity* GuiFakeEntity::face(enum Direction d) {
-	dir = (spec->rotate || (ghost && spec->rotateGhost)) ? d: South;
-	return this;
-}
-
-GuiFakeEntity* GuiFakeEntity::move(Point p) {
-	pos = spec->aligned(p, dir);
-	return this;
-}
-
-GuiFakeEntity* GuiFakeEntity::floor(float level) {
-	auto animation = &spec->animations[dir];
-	pos.y = level + animation->h/2.0f;
-	return this;
-}
-
-GuiFakeEntity* GuiFakeEntity::rotate() {
-	if (spec->rotate || (ghost && spec->rotateGhost)) {
-		dir = Directions::rotate(dir);
-		pos = spec->aligned(pos, dir);
-	}
-	return this;
-}

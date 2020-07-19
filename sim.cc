@@ -20,13 +20,13 @@ namespace Sim {
 		opensimplex = OpenSimplexNew(seed);
 	}
 
-	double noise2D(int x, int y, int layers, double persistence, double frequency) {
+	double noise2D(double x, double y, int layers, double persistence, double frequency) {
 		double amp = 1.0;
 		double ampSum = 0.0;
 		double result = 0.0;
 
 		for (int i = 0; i < layers; i++) {
-			result += OpenSimplexNoise(opensimplex, (double)x*frequency, (double)y*frequency) * amp;
+			result += OpenSimplexNoise(opensimplex, x*frequency, y*frequency) * amp;
 			ampSum += amp;
 			amp *= persistence;
 			frequency *= 2;

@@ -46,6 +46,8 @@ int main(int argc, char const *argv[]) {
 		.type = CAMERA_PERSPECTIVE,
 	};
 
+	float ambientCol[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
+
 	Shader shader = LoadShader(
 		FormatText("shaders/glsl%i/base_lighting.vs", GLSL_VERSION),
 		FormatText("shaders/glsl%i/lighting.fs", GLSL_VERSION)
@@ -54,13 +56,25 @@ int main(int argc, char const *argv[]) {
 	shader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
 	shader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
 
-	int ambientLoc = GetShaderLocation(shader, "ambient");
-	float ambientCol[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
-	SetShaderValue(shader, ambientLoc, &ambientCol, UNIFORM_VEC4);
+	SetShaderValue(shader, GetShaderLocation(shader, "ambient"), &ambientCol, UNIFORM_VEC4);
 
-	Part::shader = shader;
+	Shader pshader = LoadShader(
+		FormatText("shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
+		FormatText("shaders/glsl%i/lighting.fs", GLSL_VERSION)
+	);
 
-	Light light = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, shader);
+	pshader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(pshader, "model");
+	pshader.locs[LOC_MATRIX_VIEW] = GetShaderLocation(pshader, "view");
+	pshader.locs[LOC_MATRIX_PROJECTION] = GetShaderLocation(pshader, "projection");
+	pshader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(pshader, "viewPos");
+
+	SetShaderValue(pshader, GetShaderLocation(pshader, "ambient"), &ambientCol, UNIFORM_VEC4);
+
+	Part::shader = pshader;
+	Part::material = LoadMaterialDefault();
+
+	Light lightA = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, shader);
+	Light lightB = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, pshader);
 
 	Sim::seed(879600773);
 
@@ -79,6 +93,7 @@ int main(int argc, char const *argv[]) {
 	spec->align = true;
 	spec->rotate = false;
 	spec->rotateGhost = true;
+	spec->vehicle = false;
 
 	spec->animations[North] = spec->animations[South];
 	spec->animations[West] = spec->animations[East];
@@ -97,6 +112,7 @@ int main(int argc, char const *argv[]) {
 	spec->align = true;
 	spec->rotate = false;
 	spec->rotateGhost = true;
+	spec->vehicle = false;
 
 	spec->animations[North] = spec->animations[South];
 	spec->animations[West] = spec->animations[East];
@@ -115,6 +131,7 @@ int main(int argc, char const *argv[]) {
 	spec->align = true;
 	spec->rotate = false;
 	spec->rotateGhost = true;
+	spec->vehicle = false;
 
 	spec->animations[North] = spec->animations[South];
 	spec->animations[West] = spec->animations[East];
@@ -130,6 +147,37 @@ int main(int argc, char const *argv[]) {
 	spec->align = true;
 	spec->rotate = true;
 	spec->rotateGhost = true;
+	spec->vehicle = false;
+
+	spec->animations[North] = spec->animations[South];
+	spec->animations[East] = spec->animations[South];
+	spec->animations[West] = spec->animations[South];
+
+	spec = new Spec("belt");
+	spec->image = LoadImage("icons/none.png");
+	spec->animations[South].w = 1;
+	spec->animations[South].h = 0.5;
+	spec->animations[South].d = 1;
+
+	spec->parts = {
+		new Part("models/belt-base.stl", GetColor(0xcccc00ff)),
+		(new Part("models/belt-chevron.stl", GetColor(0x0000ccff)))->translate(0,0.23,0),
+		(new PartRoller("models/belt-roller.stl", GetColor(0xccccccff)))->translate(0,0.25,0),
+	};
+
+	for (int i = 1; i < 4; i++) {
+		spec->parts.push_back(
+			(new PartRoller("models/belt-roller.stl", GetColor(0xccccccff)))->translate(0,0.25,0.14f*i)
+		);
+		spec->parts.push_back(
+			(new PartRoller("models/belt-roller.stl", GetColor(0xccccccff)))->translate(0,0.25,0.14f*-i)
+		);
+	}
+
+	spec->align = true;
+	spec->rotate = true;
+	spec->rotateGhost = true;
+	spec->vehicle = false;
 
 	spec->animations[North] = spec->animations[South];
 	spec->animations[East] = spec->animations[South];
@@ -150,12 +198,33 @@ int main(int argc, char const *argv[]) {
 		spec->align = false;
 		spec->rotate = false;
 		spec->rotateGhost = false;
+		spec->vehicle = false;
 	}
+
+	spec = new Spec("engineer-truck");
+	spec->image = LoadImage("icons/none.png");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 2;
+	spec->animations[South].d = 3;
+	spec->parts = {
+		(new Part("models/truck-chassis.stl", GetColor(0xcccc00ff)))->translate(0,0.3,0),
+		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->speed(1)->steer(20)->translate(-0.8,-0.75,-1),
+		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(-0.8,-0.75,0),
+		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(-0.8,-0.75,1),
+		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(0.8,-0.75,-1),
+		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(0.8,-0.75,0),
+		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(0.8,-0.75,1),
+	};
+	spec->align = false;
+	spec->rotate = false;
+	spec->rotateGhost = false;
+	spec->vehicle = true;
 
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;
 
 	Model waterCube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
+	waterCube.materials[0].shader = pshader;
 	waterCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x010190FF);
 
 	if (loadSave) {
@@ -178,14 +247,14 @@ int main(int argc, char const *argv[]) {
 	mod->load();
 
 	while (!WindowShouldClose()) {
-		
 		Sim::locked(Sim::update);
 		mod->update();
 
 		Gui::updateMouseState();
 		Gui::updateCamera();
 
-		UpdateLightValues(shader, light);
+		UpdateLightValues(shader, lightA);
+		UpdateLightValues(pshader, lightB);
 
 		float cameraPos[3] = { Gui::camera.position.x, Gui::camera.position.y, Gui::camera.position.z };
 		SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
@@ -206,6 +275,10 @@ int main(int argc, char const *argv[]) {
 							.rotate();
 					});
 				}
+			}
+
+			if (IsKeyReleased(KEY_T) && Gui::hovering) {
+				Gui::camera.target = Gui::hovering->pos.vec();
 			}
 
 			if (IsKeyReleased(KEY_E)) {
@@ -230,6 +303,15 @@ int main(int argc, char const *argv[]) {
 				});
 			}
 
+			if (IsKeyReleased(KEY_DELETE) && Gui::hovering) {
+				Sim::locked([&]() {
+					int id = Gui::hovering->id;
+					if (Entity::exists(id)) {
+						Entity::get(id).destroy();
+					};
+				});
+			}
+
 			if (IsKeyReleased(KEY_ESCAPE)) {
 				if (Gui::popup) {
 					Gui::popup = NULL;
@@ -250,14 +332,28 @@ int main(int argc, char const *argv[]) {
 			Gui::popup->update();
 		}
 
+		for (auto spec: Spec::all) {
+			for (auto part: spec.second->parts) {
+				part->update();
+			}
+		}
+
 		BeginDrawing();
 			ClearBackground(BLANK);
 
 			BeginMode3D(Gui::camera);
-				DrawGrid(64,1);
+
+				Vector3 groundZero = {
+					std::floor(Gui::camera.target.x),
+					std::floor(0),
+					std::floor(Gui::camera.target.z),
+				};
+
+				Gui::drawGrid(groundZero, 64, 1);
+
+				std::vector<Matrix> water;
 
 				float size = (float)Chunk::size;
-				float e = -(size/2.0f)-0.5f;
 				for (auto pair: Chunk::all) {
 					Chunk *chunk = pair.second;
 					if (!chunk->heightmap.meshes) {
@@ -267,25 +363,30 @@ int main(int argc, char const *argv[]) {
 					float x = chunk->x;
 					float y = chunk->y;
 					DrawModel(chunk->heightmap, Vector3Zero(), 1.0f, WHITE);
-					DrawModel(
-						waterCube,
-						(Vector3){
-							size*x + (size/2.0f),
-							e,
-							size*y + (size/2.0f)
-						},
-						1.0f*size,
-						WHITE
+					water.push_back(
+						MatrixMultiply(
+							MatrixTranslate(x+0.5f, -0.51f, y+0.5f),
+							MatrixScale(size,size,size)
+						)
 					);
 				}
 
+				//rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
+
 				Gui::findEntities();
+
+				std::map<Part*,std::vector<Matrix>> batches;
 
 				for (auto ge: Gui::entities) {
 					Matrix t = ge->transform();
 					for (auto part: ge->spec->parts) {
-						part->draw(t);
+						batches[part].push_back(t);
 					}
+				}
+
+				for (auto pair: batches) {
+					Part *part = pair.first;
+					part->drawInstanced(pair.second.size(), pair.second.data());
 				}
 
 				if (Gui::hovering) {
@@ -295,12 +396,10 @@ int main(int argc, char const *argv[]) {
 				}
 
 				if (Gui::placing) {
-					BeginBlendMode(BLEND_ADDITIVE);
-						Matrix t = Gui::placing->transform();
-						for (auto part: Gui::placing->spec->parts) {
-							part->draw(t);
-						}
-					EndBlendMode();
+					Matrix t = Gui::placing->transform();
+					for (auto part: Gui::placing->spec->parts) {
+						part->drawGhost(t);
+					}
 				}
 
 			EndMode3D();

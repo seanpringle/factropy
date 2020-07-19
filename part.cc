@@ -118,20 +118,17 @@ namespace {
 void Part::test() {
 }
 
-Part::Part(std::string path, Color color) {
+Part::Part(std::string path, Color colour) {
 	if (models.count(path) == 0) {
 		models[path] = (path.find(".stl") != path.npos) ? LoadSTL(path) : LoadModel(path.c_str());
 	}
 	Model model = models[path];
 	mesh = model.meshes[0];
-	material = LoadMaterialDefault();
-	material.shader = shader;
-	material.maps[MAP_DIFFUSE].color = color;
+	color = colour;
 	transform = model.transform;
 }
 
 Part::~Part() {
-	UnloadMaterial(material);
 }
 
 Part* Part::rotate(Vector3 axis, float degrees) {
@@ -144,11 +141,36 @@ Part* Part::translate(float x, float y, float z) {
 	return this;
 }
 
+void Part::update() {
+}
+
 Matrix Part::delta(Matrix trx) {
 	return MatrixMultiply(transform, trx);
 }
 
 void Part::draw(Matrix trx) {
+	material.shader = shader;
+	material.maps[MAP_DIFFUSE].color = color;
+	rlDrawMesh(mesh, material, delta(trx));
+}
+
+void Part::drawInstanced(int count, Matrix* trx) {
+	material.shader = shader;
+	material.maps[MAP_DIFFUSE].color = color;
+	for (int i = 0; i < count; i++) {
+		trx[i] = delta(trx[i]);
+	}
+	rlDrawMeshInstanced(mesh, material, count, trx);
+}
+
+void Part::drawGhost(Matrix trx) {
+	material.shader = GetShaderDefault();
+	material.maps[MAP_DIFFUSE].color = (Color){
+		color.r,
+		color.g,
+		color.b,
+		(unsigned char)((float)color.a*0.5),
+	};
 	rlDrawMesh(mesh, material, delta(trx));
 }
 
@@ -200,4 +222,46 @@ Matrix PartSpinner::delta(Matrix trx) {
 	noise += trx.m15;
 	Matrix r = MatrixRotateY((Sim::tick%360*4)*DEG2RAD + noise);
 	return MatrixMultiply(MatrixMultiply(transform, r), trx);
+}
+
+PartRoller::PartRoller(std::string obj, Color color) : Part(obj, color) {
+	r = MatrixIdentity();
+	t = MatrixIdentity();
+}
+
+void PartRoller::update() {
+	r = MatrixRotateX(-(float)(Sim::tick%360)*DEG2RAD);
+	t = MatrixMultiply(r, transform);
+}
+
+Matrix PartRoller::delta(Matrix trx) {
+	return MatrixMultiply(t, trx);
+}
+
+
+PartWheel::PartWheel(std::string obj, Color color) : Part(obj, color) {
+	r = MatrixIdentity();
+	t = MatrixIdentity();
+	s = 0.0f;
+	o = 0.0f;
+}
+
+PartWheel* PartWheel::speed(float ss) {
+	s = ss;
+	return this;
+}
+
+PartWheel* PartWheel::steer(float ss) {
+	o = ss;
+	return this;
+}
+
+void PartWheel::update() {
+	r = MatrixRotateX(-(float)(Sim::tick%360)*DEG2RAD*s);
+	r = MatrixMultiply(r, MatrixRotateZ(o*DEG2RAD));
+	t = MatrixMultiply(r, transform);
+}
+
+Matrix PartWheel::delta(Matrix trx) {
+	return MatrixMultiply(t, trx);
 }

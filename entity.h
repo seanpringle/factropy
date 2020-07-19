@@ -5,7 +5,7 @@
 #include "spec.h"
 #include "point.h"
 #include "box.h"
-#include <set>
+#include <unordered_set>
 
 #define MaxEntity 1000000
 
@@ -18,13 +18,14 @@ struct Entity {
 	static int next();
 
 	static Entity& create(int id, Spec* spec);
+	static bool exists(int id);
 	static Entity& get(int id);
 
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 	static void reset();
 
-	static std::set<int> intersecting(Box box);
+	static std::unordered_set<int> intersecting(Box box);
 
 	int id;
 	uint32_t flags;

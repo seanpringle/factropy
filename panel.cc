@@ -251,7 +251,7 @@ void BuildPopup::build() {
 			images[spec->name] = img;
 		}
 
-		if (nk_button_image(&nuklear->ctx, images[spec->name])) {
+		if (nk_button_image_label(&nuklear->ctx, images[spec->name], spec->name.c_str(), NK_TEXT_CENTERED)) {
 			Gui::build(spec);
 			Gui::popup = NULL;
 		}
@@ -284,8 +284,8 @@ void EntityPopup::build() {
 		auto sy = std::to_string(y);
 		nk_label(&nuklear->ctx, (sx + "," + sy).c_str(), NK_TEXT_LEFT);
 
-		auto chunk = Chunk::get(x,y);
-		for (auto id: chunk->entities) {
+		Chunk* chunk = Chunk::get(x,y);
+		for (int id: chunk->entities) {
 			auto sid = std::to_string(id);
 			nk_label(&nuklear->ctx, sid.c_str(), NK_TEXT_LEFT);
 		}
