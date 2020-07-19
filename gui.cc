@@ -9,6 +9,7 @@ namespace Gui {
 
 	Camera3D camera;
 	MouseState mouse;
+	bool showGrid;
 
 	GuiEntity* hovering = NULL;
 	GuiFakeEntity* placing = NULL;

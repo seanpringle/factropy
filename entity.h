@@ -3,6 +3,7 @@
 
 #include "sparse.h"
 #include "spec.h"
+#include "chunk.h"
 #include "point.h"
 #include "box.h"
 #include <unordered_set>
@@ -12,6 +13,7 @@
 struct Entity {
 
 	static const uint32_t GHOST = 1<<0;
+	static inline std::map<Chunk::XY,std::set<int>> grid;
 
 	static inline SparseArray<Entity> all = (MaxEntity);
 	static inline SparseArray<enum Direction> dirs = (MaxEntity);

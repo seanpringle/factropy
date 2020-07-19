@@ -284,8 +284,7 @@ void EntityPopup::build() {
 		auto sy = std::to_string(y);
 		nk_label(&nuklear->ctx, (sx + "," + sy).c_str(), NK_TEXT_LEFT);
 
-		Chunk* chunk = Chunk::get(x,y);
-		for (int id: chunk->entities) {
+		for (int id: Entity::grid[(Chunk::XY){x,y}]) {
 			auto sid = std::to_string(id);
 			nk_label(&nuklear->ctx, sid.c_str(), NK_TEXT_LEFT);
 		}

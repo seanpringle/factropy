@@ -33,6 +33,7 @@ int main(int argc, char const *argv[]) {
 		fatalf("unexpected argument: %s", arg.c_str());
 	}
 
+	SetTraceLogLevel(LOG_WARNING);
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_VSYNC_HINT|FLAG_MSAA_4X_HINT);
 	InitWindow(1920,1080,"test9");
 	SetTargetFPS(60);
@@ -76,7 +77,8 @@ int main(int argc, char const *argv[]) {
 	Light lightA = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, shader);
 	Light lightB = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, pshader);
 
-	Sim::seed(879600773);
+	//Sim::seed(879600773);
+	Sim::seed(1);
 
 	Spec *spec = new Spec("provider-container");
 	spec->image = LoadImage("icons/provider-container.png");
@@ -126,7 +128,7 @@ int main(int argc, char const *argv[]) {
 	spec->animations[East].h = 2;
 	spec->animations[East].d = 2;
 	spec->parts = {
-		new Part("models/container.stl", GetColor(0x009900ff)),
+		new Part("models/container.stl", GetColor(0x006600ff)),
 	};
 	spec->align = true;
 	spec->rotate = false;
@@ -183,6 +185,8 @@ int main(int argc, char const *argv[]) {
 	spec->animations[East] = spec->animations[South];
 	spec->animations[West] = spec->animations[South];
 
+	std::vector<Spec*> rocks;
+
 	for (int i = 1; i < 4; i++) {
 		auto name = "rock" + std::to_string(i);
 		auto part = "models/" + name + ".stl";
@@ -199,7 +203,32 @@ int main(int argc, char const *argv[]) {
 		spec->rotate = false;
 		spec->rotateGhost = false;
 		spec->vehicle = false;
+
+		rocks.push_back(spec);
 	}
+
+	Chunk::generator([&](Chunk *chunk) {
+		for (int y = 0; y < Chunk::size; y++) {
+			for (int x = 0; x < Chunk::size; x++) {
+				float e = chunk->tiles[y][x].elevation;
+				if (e < 0.01 && e > -0.01) {
+					double n = Sim::noise2D(chunk->x*Chunk::size+x + 1000000, chunk->y*Chunk::size+y + 1000000, 8, 0.6, 0.015);
+					if (n < 0.4 && Sim::random() < 0.04) {
+						Spec *spec = rocks[Sim::choose(rocks.size())];
+						Entity::create(Entity::next(), spec)
+							.setGhost(true)
+							.move((Point){
+								(float)(chunk->x*Chunk::size+x),
+								0.5,
+								(float)(chunk->y*Chunk::size+y),
+							})
+							.setGhost(false)
+						;
+					}
+				}
+			}
+		}
+	});
 
 	spec = new Spec("engineer-truck");
 	spec->image = LoadImage("icons/none.png");
@@ -232,8 +261,9 @@ int main(int argc, char const *argv[]) {
 	}
 
 	if (!loadSave) {
-		for (int cy = -5; cy < 5; cy++) {
-			for (int cx = -5; cx < 5; cx++) {
+		int horizon = 15;
+		for (int cy = -horizon; cy < horizon; cy++) {
+			for (int cx = -horizon; cx < horizon; cx++) {
 				Chunk::get(cx,cy);
 			}
 		}
@@ -283,6 +313,10 @@ int main(int argc, char const *argv[]) {
 
 			if (IsKeyReleased(KEY_E)) {
 				Gui::popup = (Gui::popup && Gui::popup == Gui::buildPopup) ? NULL: Gui::buildPopup;
+			}
+
+			if (IsKeyReleased(KEY_G)) {
+				Gui::showGrid = !Gui::showGrid;
 			}
 
 			if (Gui::mouse.left && Gui::mouse.leftChanged && Gui::placing) {
@@ -339,17 +373,19 @@ int main(int argc, char const *argv[]) {
 		}
 
 		BeginDrawing();
-			ClearBackground(BLANK);
+			ClearBackground(SKYBLUE);
 
 			BeginMode3D(Gui::camera);
 
-				Vector3 groundZero = {
-					std::floor(Gui::camera.target.x),
-					std::floor(0),
-					std::floor(Gui::camera.target.z),
-				};
+				if (Gui::showGrid) {
+					Vector3 groundZero = {
+						std::floor(Gui::camera.target.x),
+						std::floor(0),
+						std::floor(Gui::camera.target.z),
+					};
 
-				Gui::drawGrid(groundZero, 64, 1);
+					Gui::drawGrid(groundZero, 64, 1);
+				}
 
 				std::vector<Matrix> water;
 
@@ -362,16 +398,16 @@ int main(int argc, char const *argv[]) {
 					}
 					float x = chunk->x;
 					float y = chunk->y;
-					DrawModel(chunk->heightmap, Vector3Zero(), 1.0f, WHITE);
+					DrawModel(chunk->heightmap, (Vector3){0,-21.81,0}, 1.0f, WHITE);
 					water.push_back(
 						MatrixMultiply(
-							MatrixTranslate(x+0.5f, -0.51f, y+0.5f),
+							MatrixTranslate(x+0.5f, -0.52f, y+0.5f),
 							MatrixScale(size,size,size)
 						)
 					);
 				}
 
-				//rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
+				rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
 				Gui::findEntities();
 
@@ -433,8 +469,6 @@ int main(int argc, char const *argv[]) {
 	Entity::reset();
 	Chunk::reset();
 	Spec::reset();
-
-	Part::test();
 
 	CloseWindow();
 	return 0;

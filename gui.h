@@ -21,6 +21,7 @@ namespace Gui {
 
 	extern Camera3D camera;
 	extern MouseState mouse;
+	extern bool showGrid;
 
 	extern GuiEntity* hovering;
 	extern GuiFakeEntity* placing;

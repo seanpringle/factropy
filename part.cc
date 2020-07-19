@@ -115,7 +115,62 @@ namespace {
 	}
 }
 
-void Part::test() {
+struct Vertex {
+	Vector3 v;
+	static constexpr float epsilon = 0.000001;
+
+	bool operator==(const Vertex &o) const {
+		bool match = true;
+		match = match && std::abs(v.x - o.v.x) < epsilon;
+		match = match && std::abs(v.y - o.v.y) < epsilon;
+		match = match && std::abs(v.z - o.v.z) < epsilon;
+		return match;
+	}
+
+	bool operator<(const Vertex &o) const {
+		return Vector3Length(v) < Vector3Length(o.v);
+	}
+};
+
+void Part::terrainNormals(Mesh *mesh) {
+
+	// Slightly randomize normals so ground appears slightly uneven or rough, even when untextured
+	for (int i = 0; i < mesh->vertexCount; i++) {
+		Vector3 n = { mesh->normals[(i + 0)*3 + 0], mesh->normals[(i + 0)*3 + 1], mesh->normals[(i + 0)*3 + 2] };
+		Vector3 d = { Sim::random()*0.25f, Sim::random()*0.25f, Sim::random()*0.25f };
+		n = Vector3Normalize(Vector3Add(n, d));
+		mesh->normals[(i + 0)*3 + 0] = n.x;
+		mesh->normals[(i + 0)*3 + 1] = n.y;
+		mesh->normals[(i + 0)*3 + 2] = n.z;
+	}
+
+	// Now sum and average vertex normals so mesh has an overall smooth terrain look
+	std::map<Vertex,Vector3> normals;
+
+	for (int i = 0; i < mesh->vertexCount; i++) {
+		Vector3 v = { mesh->vertices[(i + 0)*3 + 0], mesh->vertices[(i + 0)*3 + 1], mesh->vertices[(i + 0)*3 + 2] };
+		Vector3 n = { mesh->normals[(i + 0)*3 + 0], mesh->normals[(i + 0)*3 + 1], mesh->normals[(i + 0)*3 + 2] };
+
+		Vertex vt = {v};
+
+		if (normals.count(vt) == 1) {
+			normals[vt] = Vector3Add(normals[vt], n);
+		} else {
+			normals[vt] = n;
+		}
+	}
+
+	for (int i = 0; i < mesh->vertexCount; i++) {
+		Vector3 v = { mesh->vertices[(i + 0)*3 + 0], mesh->vertices[(i + 0)*3 + 1], mesh->vertices[(i + 0)*3 + 2] };
+		Vertex vt = {v};
+		Vector3 n = normals[vt];
+		mesh->normals[(i + 0)*3 + 0] = n.x;
+		mesh->normals[(i + 0)*3 + 1] = n.y;
+		mesh->normals[(i + 0)*3 + 2] = n.z;
+	}
+
+	// 2=normals, see rlUpdateMeshAt()
+	rlUpdateMesh(*mesh, 2, mesh->vertexCount);
 }
 
 Part::Part(std::string path, Color colour) {

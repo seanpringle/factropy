@@ -1,10 +1,11 @@
 #include "common.h"
 #include "chunk.h"
+#include "part.h"
 #include "sim.h"
 #include "json.hpp"
 #include <fstream>
 
-bool Chunk::XY::operator=(const XY &o) const {
+bool Chunk::XY::operator==(const XY &o) const {
 	return x == o.x && y == o.y;
 }
 
@@ -23,6 +24,10 @@ Chunk::Coords::Coords(float xx, float yy) {
 	oy = ty - (cy*Chunk::size);
 }
 
+void Chunk::generator(Chunk::Generator fn) {
+	generators.push_back(fn);
+}
+
 Chunk* Chunk::tryGet(int x, int y) {
 	XY xy = {x,y};
 	return all.count(xy) == 1 ? all[xy]: NULL;
@@ -36,31 +41,27 @@ Chunk* Chunk::get(int x, int y) {
 		for (int ty = 0; ty < Chunk::size; ty++) {
 			for (int tx = 0; tx < Chunk::size; tx++) {
 
-				double n = Sim::noise2D(x*Chunk::size+tx, y*Chunk::size+ty, 8, 0.5, 0.007);
-				n -= 0.5;
-				n *= 1.5;
-				n += 0.5;
+				float elevation = (float)Sim::noise2D(x*Chunk::size+tx, y*Chunk::size+ty, 8, 0.5, 0.007) - 0.5f; // -0.5->0.5
 
-				int elevation = 0;
+				elevation += 0.1;
 
-				if (n < 0.2) {
-					elevation = -2;
-				}
-				else
-				if (n < 0.4) {
-					elevation = -1;
-				}
-				else
-				if (n < 0.6) {
-					elevation = 0;
-				}
-				else
-				if (n < 0.8) {
-					elevation = 1;
+				// floodplain
+				if (elevation > 0.0f) {
+					if (elevation < 0.3f) {
+						elevation = 0.0f;
+					} else {
+						elevation -= 0.3f;
+					}
 				}
 
-				chunk->tiles[ty][tx] = (Chunk::Tile){.elevation = elevation};
+				chunk->tiles[ty][tx] = (Chunk::Tile){
+					elevation : elevation,
+				};
 			}
+		}
+
+		for (auto fn: generators) {
+			fn(chunk);
 		}
 	}
 	return chunk;
@@ -138,29 +139,13 @@ Image Chunk::heightImage() {
 			*pixel = BLANK;
 			Tile *tile = tileTryGet(this->x*size+x, this->y*size+y);
 			if (tile != NULL) {
-				uint8_t intensity = 0;
-				switch (tile->elevation) {
-					case -2: {
-						intensity = 0;
-						break;
-					}
-					case -1: {
-						intensity = 128;
-						break;
-					}
-					case 0: {
-						intensity = 255;
-						break;
-					}
-					case 1: {
-						intensity = 255;
-						break;
-					}
-					case 2: {
-						intensity = 255;
-						break;
-					}
-				}
+
+				float elevation = tile->elevation;
+				//if (elevation < 0.00001f && elevation > -0.00001f) {
+				//	elevation += Sim::random()*0.003f;
+				//}
+
+				uint8_t intensity = std::clamp(elevation+(0.5f), 0.0f, 1.0f)*255.0f;
 				*pixel = (Color){intensity, intensity, intensity, 255};
 			}
 		}
@@ -183,13 +168,13 @@ Image Chunk::colorImage() {
 	int width = size+1;
 	int height = size+1;
 
-	Color colors[5] = {
-		GetColor(0x45320AFF),
-		GetColor(0x85421AFF),
-		GetColor(0xA5622AFF),
-		GetColor(0xE18339FF),
-		GetColor(0xE6A644FF),
-	};
+	//Color colors[6] = {
+	//	GetColor(0x45320AFF),
+	//	GetColor(0x85421AFF),
+	//	GetColor(0xA5622AFF),
+	//	GetColor(0xE18339FF),
+	//	GetColor(0xE6A644FF),
+	//};
 
 	Color *pixels = (Color *)RL_MALLOC(width*height*sizeof(Color));
 
@@ -199,7 +184,28 @@ Image Chunk::colorImage() {
 			Tile *tile = tileTryGet(this->x*size+x, this->y*size+y);
 			*pixel = BLANK;
 			if (tile != NULL) {
-				*pixel = colors[tile->elevation+2];
+				float elevation = std::clamp(tile->elevation+0.5, 0.0, 1.0);
+				if (elevation < 0.501) {
+					*pixel = {
+						(uint8_t)(elevation * 1.5f * (float)0xE6),
+						(uint8_t)(elevation * 1.5f * (float)0xA6),
+						(uint8_t)(elevation * 1.5f * (float)0x44),
+						0xff,
+					};
+					//*pixel = {
+					//	(uint8_t)(elevation * 1.5f * (float)0x76),
+					//	(uint8_t)(elevation * 1.5f * (float)0xB6),
+					//	(uint8_t)(elevation * 1.5f * (float)0x14),
+					//	0xff,
+					//};
+				} else {
+					*pixel = {
+						(uint8_t)(elevation * 1.25f * (float)0xE1),
+						(uint8_t)(elevation * 1.25f * (float)0x83),
+						(uint8_t)(elevation * 1.25f * (float)0x39),
+						0xff,
+					};
+				}
 			}
 		}
 	}
@@ -219,7 +225,10 @@ void Chunk::genHeightMap() {
 	Image heightImg = heightImage();
 	Image colorImg = colorImage();
 
-	Mesh mesh = GenMeshHeightmap(heightImg, (Vector3){ size+1, 3, size+1 });
+	Mesh mesh = GenMeshHeightmap(heightImg, (Vector3){ size+1, 50, size+1 });
+
+	Part::terrainNormals(&mesh);
+
 	Model model = LoadModelFromMesh(mesh);
 
 	Texture2D texture = LoadTextureFromImage(colorImg);

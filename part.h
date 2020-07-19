@@ -26,7 +26,7 @@ struct Part {
 	void drawInstanced(int count, Matrix* trx);
 	void drawGhost(Matrix trx);
 
-	static void test();
+	static void terrainNormals(Mesh *mesh);
 };
 
 struct PartFacer : public Part {

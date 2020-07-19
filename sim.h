@@ -13,6 +13,11 @@ namespace Sim {
 	void locked(lockCallback cb);
 
 	void seed(int64_t seed);
+	float random();
+	int choose(uint range);
+
+	// increase frequency to make lakes smaller
+	// decrease persistence to make coastline smoother
 	double noise2D(double x, double y, int layers, double persistence, double frequency);
 
 	void save(const char *path);

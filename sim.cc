@@ -4,6 +4,7 @@
 #include "chunk.h"
 #include "sim.h"
 #include <filesystem>
+#include <cstdlib>
 
 namespace Sim {
 	OpenSimplex* opensimplex;
@@ -17,7 +18,16 @@ namespace Sim {
 	}
 
 	void seed(int64_t seed) {
+		std::srand((unsigned)seed);
 		opensimplex = OpenSimplexNew(seed);
+	}
+
+	float random() {
+		return (float)(std::rand()%1000) / 1000.0f;
+	}
+
+	int choose(uint range) {
+		return std::rand()%(int)range;
 	}
 
 	double noise2D(double x, double y, int layers, double persistence, double frequency) {
@@ -31,7 +41,12 @@ namespace Sim {
 			amp *= persistence;
 			frequency *= 2;
 		}
-		return result / ampSum;
+
+		double noise = result / ampSum;
+		noise -= 0.5;
+		noise *= 1.5;
+		noise += 0.5;
+		return noise;
 	}
 
 	namespace fs = std::filesystem;

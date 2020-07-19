@@ -79,7 +79,8 @@ public:
 		for (int p = 0; p < width; p++) {
 			Page *page = pages[p];
 			if (page == NULL) {
-				return (!zero && p == 0 ? 1:0);
+				if (!zero && p == 0) continue;
+				return p*1024;
 			}
 		}
 

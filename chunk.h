@@ -6,17 +6,19 @@
 #include "box.h"
 #include <map>
 #include <set>
+#include <vector>
+#include <functional>
 
 struct Chunk {
 	static const int size = 32;
 
 	struct Tile {
-		int elevation;
+		float elevation;
 	};
 		
 	struct XY {
 		int x, y;
-		bool operator=(const XY &o) const;
+		bool operator==(const XY &o) const;
 		bool operator<(const XY &o) const;
 	};
 
@@ -62,6 +64,10 @@ struct Chunk {
 	static ChunkBox walk(Box);
 	static inline std::map<XY,Chunk*> all;
 
+	typedef std::function<void(Chunk*)> Generator;
+	static inline std::vector<Generator> generators;
+	static void generator(Generator fn);
+
 	static Chunk* tryGet(int x, int y);
 	static Chunk* get(int x, int y);
 	static Chunk::Tile* tileTryGet(int x, int y);
@@ -72,7 +78,6 @@ struct Chunk {
 
 	int x, y;
 	Tile tiles[size][size];
-	std::set<int> entities;
 	Model heightmap = {0};
 
 	Chunk(int cx, int cy);

@@ -93,10 +93,8 @@ void Entity::reset() {
 
 std::unordered_set<int> Entity::intersecting(Box box) {
 	std::unordered_set<int> hits;
-	for (auto [x,y]: Chunk::walk(box)) {
-		Chunk* chunk = Chunk::tryGet(x, y);
-		if (!chunk) continue;
-		for (int id: chunk->entities) {
+	for (auto xy: Chunk::walk(box)) {
+		for (int id: grid[xy]) {
 			if (get(id).box().intersects(box)) {
 				hits.insert(id);
 			}
@@ -133,17 +131,15 @@ enum Direction Entity::dir() {
 
 Entity& Entity::index() {
 	unindex();
-	for (auto [x,y]: Chunk::walk(box())) {
-		Chunk* chunk = Chunk::get(x, y);
-		chunk->entities.insert(id);
+	for (auto xy: Chunk::walk(box())) {
+		grid[xy].insert(id);
 	}
 	return *this;
 }
 
 Entity& Entity::unindex() {
-	for (auto [x,y]: Chunk::walk(box())) {
-		Chunk* chunk = Chunk::get(x, y);
-		chunk->entities.erase(id);
+	for (auto xy: Chunk::walk(box())) {
+		grid[xy].erase(id);
 	}
 	return *this;
 }
