@@ -38,9 +38,11 @@ namespace {
 	}
 }
 
-MainCamera::MainCamera(Vector3 ppos, Vector3 tar) {
-	position = ppos;
-	target = tar;
+MainCamera::MainCamera(Vector3 pos, Vector3 dir) {
+	position = pos;
+	nextPosition = pos;
+	direction = dir;
+	nextDirection = dir;
 	up = (Vector3){0,1,0};
 
 	mouse = {0};
@@ -57,9 +59,6 @@ MainCamera::MainCamera(Vector3 ppos, Vector3 tar) {
 }
 
 void MainCamera::lookAt(Point p) {
-	Vector3 delta = Vector3Subtract(p.vec(), target);
-	target = p.vec();
-	position = Vector3Add(position, delta);
 }
 
 void MainCamera::build(Spec* spec) {
@@ -70,13 +69,24 @@ void MainCamera::build(Spec* spec) {
 	}
 }
 
+Vector3 MainCamera::groundTarget(float ground) {
+	RayHitInfo spot = GetCollisionRayGround((Ray){position, direction}, ground);
+	return spot.position;
+}
+
+Camera3D MainCamera::raylibCamera() {
+	return (Camera3D){
+		position : position,
+		target   : groundTarget(0),
+		up       : up,
+		fovy     : fovy,
+		type     : CAMERA_PERSPECTIVE,
+	};
+}
+
 void MainCamera::updateMouseState() {
 	MouseState last = mouse;
-
 	Vector2 pos = GetMousePosition();
-	bool left = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-	bool middle = IsMouseButtonDown(MOUSE_MIDDLE_BUTTON);
-	bool right = IsMouseButtonDown(MOUSE_RIGHT_BUTTON);
 
 	mouse = (MouseState) {
 		x : (int)pos.x,
@@ -84,35 +94,99 @@ void MainCamera::updateMouseState() {
 		dx : (int)pos.x - last.x,
 		dy : (int)pos.y - last.y,
 		wheel : GetMouseWheelMove(),
-		left : left,
-		leftChanged : left != last.left,
-		middle : middle,
-		middleChanged : middle != last.middle,
-		right : right,
-		rightChanged : right != last.right,
 		rH : last.rH,
 		rV : last.rV,
 		zW : last.zW,
 	};
 
+	mouse.left = last.left;
+	mouse.right = last.right;
+	mouse.middle = last.middle;
+
+	mouse.left.down = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+	mouse.right.down = IsMouseButtonDown(MOUSE_RIGHT_BUTTON);
+	mouse.middle.down = IsMouseButtonDown(MOUSE_MIDDLE_BUTTON);
+
+	mouse.left.changed = last.left.down != mouse.left.down;
+	mouse.right.changed = last.right.down != mouse.right.down;
+	mouse.middle.changed = last.middle.down != mouse.middle.down;
+
+	for (MouseButton *button: {&mouse.left, &mouse.right, &mouse.middle}) {
+		if (button->down && button->changed) {
+			button->downAt = {mouse.x, mouse.y};
+			button->drag = {0,0};
+		}
+
+		if (!button->down && button->changed) {
+			button->upAt = {mouse.x, mouse.y};
+			button->drag = {mouse.x-button->downAt.x, mouse.y-button->downAt.y};
+		}
+
+		if (button->down && !button->changed) {
+			button->drag = {mouse.x-button->downAt.x, mouse.y-button->downAt.y};
+		}
+
+		if (!button->down && !button->changed) {
+			button->drag = {0,0};
+		}
+
+		button->dragged = (std::abs(button->drag.x) > 5 || std::abs(button->drag.y) > 5);
+		button->pressed = button->down && button->changed;
+		button->released = !button->down && button->changed;
+		button->clicked = button->released && !button->dragged;
+	}
+
 	popupFocused = popup ? popup->contains(mouse.x, mouse.y): false;
 	worldFocused = !popupFocused;
 
-	if (mouse.right) {
+	if (mouse.right.down) {
 		mouse.rH += speedH * (float)mouse.dx;
 		mouse.rV += speedV * (float)mouse.dy;
 	}
 
 	if (mouse.wheel) {
-		bool tooFar = mouse.wheel < 0 && Vector3Distance(position, target) > 100;
-		bool tooClose = mouse.wheel > 0 && Vector3Distance(position, target) < 5;
-		if (!tooClose && !tooFar) {
-			mouse.zW += speedW * -(float)mouse.wheel;
-		}
+		mouse.zW += speedW * -(float)mouse.wheel;
 	}
 }
 
 void MainCamera::updateCamera() {
+
+	if (IsKeyDown(KEY_W)) {
+		Vector3 ahead = (Vector3){direction.x, 0, direction.z};
+		position = Vector3Add(position, Vector3Normalize(ahead));
+		nextPosition = position;
+	}
+
+	if (IsKeyDown(KEY_S)) {
+		Vector3 ahead = (Vector3){direction.x, 0, direction.z};
+		position = Vector3Subtract(position, Vector3Normalize(ahead));
+		nextPosition = position;
+	}
+
+	if (IsKeyDown(KEY_D)) {
+		Vector3 ahead = (Vector3){direction.x, 0, direction.z};
+		Vector3 left = Vector3Transform(ahead, MatrixRotate(up, -90*DEG2RAD));
+		position = Vector3Add(position, Vector3Normalize(left));
+		nextPosition = position;
+	}
+
+	if (IsKeyDown(KEY_A)) {
+		Vector3 ahead = (Vector3){direction.x, 0, direction.z};
+		Vector3 left = Vector3Transform(ahead, MatrixRotate(up, 90*DEG2RAD));
+		position = Vector3Add(position, Vector3Normalize(left));
+		nextPosition = position;
+	}
+
+	if (!Vector3Equal(position, nextPosition, 0.0001)) {
+		Vector3 delta = Vector3Subtract(nextPosition, position);
+		position = Vector3Add(position, Vector3Scale(delta, 0.01));
+	}
+
+	if (!Vector3Equal(direction, nextDirection, 0.0001)) {
+		Vector3 delta = Vector3Subtract(nextDirection, direction);
+		direction = Vector3Normalize(Vector3Add(direction, Vector3Scale(delta, 0.1)));
+	}
+
 	if (mouse.rH > 0.0f || mouse.rH < 0.0f || mouse.rV > 0.0f || mouse.rV < 0.0f) {
 		float rDH = 0.0f;
 		float rDV = 0.0f;
@@ -135,13 +209,21 @@ void MainCamera::updateCamera() {
 			mouse.rV -= rDV;
 		}
 
-		Vector3 direction = Vector3Subtract(position, target);
-		Vector3 right = Vector3Normalize(Vector3CrossProduct(direction, up));
+		Vector3 target = groundTarget(0);
+		Vector3 radius = Vector3Subtract(position, target);
+		Vector3 right = Vector3Normalize(Vector3CrossProduct(radius, up));
 		Matrix rotateH = MatrixRotate(up, -rDH);
 		Matrix rotateV = MatrixRotate(right, rDV);
 		Matrix rotate = MatrixMultiply(rotateH, rotateV);
-		direction = Vector3Transform(direction, rotate);
-		position = Vector3Add(target, direction);
+		radius = Vector3Transform(radius, rotate);
+
+		position = Vector3Add(target, radius);
+		position.y = std::max(5.0f, position.y);
+
+		direction = Vector3Normalize(Vector3Subtract(target, position));
+
+		nextPosition = position;
+		nextDirection = direction;
 	}
 
 	if (mouse.zW > 0.0f || mouse.zW < 0.0f) {
@@ -158,22 +240,30 @@ void MainCamera::updateCamera() {
 			mouse.zW -= zDW;
 		}
 
-		Vector3 direction = Vector3Subtract(position, target);
-		Vector3 delta = Vector3Scale(direction, zDW);
-		position = Vector3Add(position, delta);
+		Vector3 target = groundTarget(0);
+		Vector3 radius = Vector3Subtract(position, target);
+
+		if (Vector3Length(radius) > 10.0f || zDW > 0.0f) {
+			Vector3 delta = Vector3Scale(radius, zDW);
+
+			position = Vector3Add(position, delta);
+			position.y = std::max(5.0f, position.y);
+
+			direction = Vector3Normalize(Vector3Subtract(target, position));
+
+			nextPosition = position;
+			nextDirection = direction;
+		}
 	}
 
-	position.y = std::max(1.0f, position.y);
+	mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, raylibCamera());
 
-	Camera3D camera = {
-		position : position,
-		target   : target,
-		up       : up,
-		fovy     : fovy,
-		type     : CAMERA_PERSPECTIVE,
-	};
+	if (mouse.right.clicked) {
+		RayHitInfo spot = GetCollisionRayGround(mouse.ray, 0);
+		nextDirection = Vector3Normalize(Vector3Negate(Vector3Subtract(position, spot.position)));
+	}
 
-	mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, camera);
+	mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, raylibCamera());
 }
 
 void MainCamera::update() {
@@ -188,6 +278,7 @@ void MainCamera::update() {
 	updateMouseState();
 	updateCamera();
 
+	Vector3 target = groundTarget(0);
 	Box view = (Box){target.x, target.y, target.z, 500, 500, 500};
 
 	Sim::locked([&]() {
@@ -226,7 +317,7 @@ void MainCamera::draw() {
 
 	Camera3D camera = {
 		position : position,
-		target   : target,
+		target   : groundTarget(0),
 		up       : up,
 		fovy     : fovy,
 		type     : CAMERA_PERSPECTIVE,
@@ -237,11 +328,9 @@ void MainCamera::draw() {
 	BeginMode3D(camera);
 
 		if (showGrid) {
-			Vector3 groundZero = {
-				std::floor(target.x),
-				std::floor(0),
-				std::floor(target.z),
-			};
+			Vector3 groundZero = groundTarget(0);
+			groundZero.x = std::floor(groundZero.x);
+			groundZero.z = std::floor(groundZero.z);
 			drawGrid(groundZero, 64, 1);
 		}
 

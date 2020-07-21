@@ -46,7 +46,7 @@ int main(int argc, char const *argv[]) {
 
 	MainCamera *camera = new MainCamera(
 		(Vector3){5,5,5},
-		(Vector3){0,0,0}
+		(Vector3){-1,-1,-1}
 	);
 
 	float ambientCol[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
@@ -398,10 +398,6 @@ int main(int argc, char const *argv[]) {
 				}
 			}
 
-			if (IsKeyReleased(KEY_T) && camera->hovering) {
-				camera->lookAt(camera->hovering->pos.floor(0));
-			}
-
 			if (IsKeyReleased(KEY_E)) {
 				camera->popup = (camera->popup && camera->popup == camera->buildPopup) ? NULL: camera->buildPopup;
 			}
@@ -410,7 +406,7 @@ int main(int argc, char const *argv[]) {
 				camera->showGrid = !camera->showGrid;
 			}
 
-			if (camera->mouse.left && camera->mouse.leftChanged && camera->placing) {
+			if (camera->mouse.left.clicked && camera->placing) {
 				Sim::locked([&]() {
 					Entity::create(Entity::next(), camera->placing->spec)
 						.setGhost(true)
@@ -420,7 +416,7 @@ int main(int argc, char const *argv[]) {
 				});
 			}
 
-			if (camera->mouse.left && camera->mouse.leftChanged && !camera->placing && camera->hovering) {
+			if (camera->mouse.left.clicked && !camera->placing && camera->hovering) {
 				camera->popup = camera->entityPopup;
 				Sim::locked([&]() {
 					GuiEntity *ge = new GuiEntity(camera->hovering->id);

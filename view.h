@@ -34,17 +34,36 @@ struct SiteCamera : View {
 
 struct MainCamera : View {
 	Vector3 position;
-	Vector3 target;
+	Vector3 direction;
 	Vector3 up;
+
+	Vector3 nextPosition;
+	Vector3 nextDirection;
+	bool moving;
+
+	struct MouseXY {
+		int x, y;
+	};
+
+	struct MouseButton {
+		bool down;
+		bool changed;
+		MouseXY downAt, upAt, drag;
+		bool dragged;
+		bool pressed;
+		bool released;
+		bool clicked;
+	};
 
 	struct MouseState {
 		int x, y, dx, dy;
 		int wheel;
-		bool left, leftChanged;
-		bool middle, middleChanged;
-		bool right, rightChanged;
 		float rH, rV, zW;
 		Ray ray;
+
+		MouseButton left;
+		MouseButton right;
+		MouseButton middle;
 	};
 
 	MouseState mouse;
@@ -65,6 +84,8 @@ struct MainCamera : View {
 	virtual void update();
 	virtual void draw();
 
+	Vector3 groundTarget(float ground);
+	Camera3D raylibCamera();
 	void updateMouseState();
 	void updateCamera();
 	void lookAt(Point);
