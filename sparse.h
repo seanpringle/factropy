@@ -52,8 +52,14 @@ public:
 	}
 
 	~SparseArray<T>() {
+		clear();
+		pages.clear();
+	}
+
+	void clear() {
 		for (uint i = 0; i < pages.size(); i++) {
 			delete pages[i];
+			pages[i] = NULL;
 		}
 	}
 
@@ -172,6 +178,7 @@ public:
 
 		return v;
 	}
+
 
 	class iter {
 		int p;

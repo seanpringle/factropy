@@ -17,3 +17,7 @@ Box Point::box() {
 float Point::distance(Point p) {
 	return Vector3Distance(vec(), p.vec());
 }
+
+Point Point::floor(float fy) {
+	return (Point){x,fy,z};
+}

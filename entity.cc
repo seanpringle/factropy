@@ -1,4 +1,5 @@
 #include "common.h"
+#include "item.h"
 #include "entity.h"
 #include "chunk.h"
 #include "sparse.h"
@@ -8,6 +9,16 @@
 #include <stdio.h>
 #include <fstream>
 #include <algorithm>
+
+void Entity::reset() {
+	for (Entity& en: all) {
+		en.destroy();
+	}
+	all.clear();
+	dirs.clear();
+	grid.clear();
+	Store::reset();
+}
 
 int Entity::next() {
 	int i = all.next(false);
@@ -23,6 +34,10 @@ Entity& Entity::create(int id, Spec *spec) {
 
 	if (spec->hasDirection()) {
 		dirs.set(id, South);
+	}
+
+	if (spec->hasStore()) {
+		Store::create(id);
 	}
 
 	en.pos = {0};
@@ -66,7 +81,7 @@ void Entity::saveAll(const char* name) {
 void Entity::loadAll(const char* name) {
 	auto path = std::string(name);
 	auto in = std::ifstream(path + "/entities.json");
-	
+
 	for (std::string line; std::getline(in, line);) {
 		auto state = json::parse(line);
 		Entity& en = create(state["id"], Spec::byName(state["spec"]));
@@ -85,11 +100,6 @@ void Entity::loadAll(const char* name) {
 	in.close();
 }
 
-void Entity::reset() {
-	for (Entity& en: all) {
-		en.destroy();
-	}
-}
 
 std::unordered_set<int> Entity::intersecting(Box box) {
 	std::unordered_set<int> hits;
@@ -107,6 +117,9 @@ void Entity::destroy() {
 	unindex();
 	if (spec->hasDirection()) {
 		dirs.drop(id);
+	}
+	if (spec->hasStore()) {
+		store().destroy();
 	}
 	all.drop(id);
 }
@@ -178,3 +191,6 @@ Entity& Entity::rotate() {
 	return *this;
 }
 
+Store& Entity::store() {
+	return Store::get(id);
+}

@@ -8,13 +8,13 @@
 #include "rlights.h"
 
 #include "common.h"
-#include "gui.h"
 #include "panel.h"
 #include "mod.h"
 #include "sim.h"
 #include "chunk.h"
 #include "spec.h"
 #include "entity.h"
+#include "view.h"
 
 int main(int argc, char const *argv[]) {
 	//nvidia-settings --query=fsaa --verbose
@@ -39,13 +39,15 @@ int main(int argc, char const *argv[]) {
 	SetTargetFPS(60);
 	SetExitKey(0);
 
-	Gui::camera = {
-		.position = (Vector3){5,5,5},
-		.target = (Vector3){0,0,0},
-		.up = (Vector3){0,1,0},
-		.fovy = 45,
-		.type = CAMERA_PERSPECTIVE,
-	};
+	SiteCamera *camSec = new SiteCamera(
+		(Vector3){50,50,50},
+		(Vector3){-1,-1,-1}
+	);
+
+	MainCamera *camera = new MainCamera(
+		(Vector3){5,5,5},
+		(Vector3){0,0,0}
+	);
 
 	float ambientCol[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
 
@@ -54,8 +56,8 @@ int main(int argc, char const *argv[]) {
 		FormatText("shaders/glsl%i/lighting.fs", GLSL_VERSION)
 	);
 
+	shader.locs[LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
 	shader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
-	shader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
 
 	SetShaderValue(shader, GetShaderLocation(shader, "ambient"), &ambientCol, UNIFORM_VEC4);
 
@@ -64,10 +66,8 @@ int main(int argc, char const *argv[]) {
 		FormatText("shaders/glsl%i/lighting.fs", GLSL_VERSION)
 	);
 
-	pshader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(pshader, "model");
-	pshader.locs[LOC_MATRIX_VIEW] = GetShaderLocation(pshader, "view");
-	pshader.locs[LOC_MATRIX_PROJECTION] = GetShaderLocation(pshader, "projection");
-	pshader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(pshader, "viewPos");
+	pshader.locs[LOC_MATRIX_MVP] = GetShaderLocation(pshader, "mvp");
+	pshader.locs[LOC_MATRIX_MODEL] = GetShaderAttribLocation(pshader, "instance");
 
 	SetShaderValue(pshader, GetShaderLocation(pshader, "ambient"), &ambientCol, UNIFORM_VEC4);
 
@@ -78,9 +78,12 @@ int main(int argc, char const *argv[]) {
 	Light lightB = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, pshader);
 
 	//Sim::seed(879600773);
-	Sim::seed(1);
+	Sim::seed(2);
 
-	Spec *spec = new Spec("provider-container");
+	Item* item = new Item(Item::next(), "log");
+	item->image = LoadImage("icons/none.png");
+
+	Spec* spec = new Spec("provider-container");
 	spec->image = LoadImage("icons/provider-container.png");
 	spec->animations[South].w = 2;
 	spec->animations[South].h = 2;
@@ -96,6 +99,7 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = false;
 	spec->rotateGhost = true;
 	spec->vehicle = false;
+	spec->store = true;
 
 	spec->animations[North] = spec->animations[South];
 	spec->animations[West] = spec->animations[East];
@@ -115,6 +119,7 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = false;
 	spec->rotateGhost = true;
 	spec->vehicle = false;
+	spec->store = true;
 
 	spec->animations[North] = spec->animations[South];
 	spec->animations[West] = spec->animations[East];
@@ -134,6 +139,7 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = false;
 	spec->rotateGhost = true;
 	spec->vehicle = false;
+	spec->store = true;
 
 	spec->animations[North] = spec->animations[South];
 	spec->animations[West] = spec->animations[East];
@@ -150,6 +156,7 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = true;
 	spec->rotateGhost = true;
 	spec->vehicle = false;
+	spec->store = true;
 
 	spec->animations[North] = spec->animations[South];
 	spec->animations[East] = spec->animations[South];
@@ -219,7 +226,62 @@ int main(int argc, char const *argv[]) {
 							.setGhost(true)
 							.move((Point){
 								(float)(chunk->x*Chunk::size+x),
-								0.5,
+								spec->animations[South].h/2.0f,
+								(float)(chunk->y*Chunk::size+y),
+							})
+							.setGhost(false)
+						;
+					}
+				}
+			}
+		}
+	});
+
+	std::vector<Spec*> trees;
+
+	spec = new Spec("tree1");
+	spec->image = LoadImage("icons/none.png");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 5;
+	spec->animations[South].d = 2;
+	spec->parts = {
+		(new PartFacer("models/tree1.stl", GetColor(0x224400ff)))->translate(0,-2.5,0),
+	};
+	spec->align = false;
+	spec->rotate = false;
+	spec->rotateGhost = false;
+	spec->vehicle = false;
+
+	trees.push_back(spec);
+
+	spec = new Spec("tree2");
+	spec->image = LoadImage("icons/none.png");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 6;
+	spec->animations[South].d = 2;
+	spec->parts = {
+		(new PartFacer("models/tree2.stl", GetColor(0x006600ff)))->translate(-5,-3,0),
+	};
+	spec->align = false;
+	spec->rotate = false;
+	spec->rotateGhost = false;
+	spec->vehicle = false;
+
+	trees.push_back(spec);
+
+	Chunk::generator([&](Chunk *chunk) {
+		for (int y = 0; y < Chunk::size; y++) {
+			for (int x = 0; x < Chunk::size; x++) {
+				float e = chunk->tiles[y][x].elevation;
+				if (e > -0.01) {
+					double n = Sim::noise2D(chunk->x*Chunk::size+x + 2000000, chunk->y*Chunk::size+y + 2000000, 8, 0.6, 0.015);
+					if (n < 0.4 && Sim::random() < 0.04) {
+						Spec *spec = trees[Sim::choose(trees.size())];
+						Entity::create(Entity::next(), spec)
+							.setGhost(true)
+							.move((Point){
+								(float)(chunk->x*Chunk::size+x),
+								(e*100.0f) + spec->animations[South].h/2.0f,
 								(float)(chunk->y*Chunk::size+y),
 							})
 							.setGhost(false)
@@ -248,13 +310,30 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = false;
 	spec->rotateGhost = false;
 	spec->vehicle = true;
+	spec->store = true;
+
+	spec = new Spec("camera-drone");
+	spec->image = LoadImage("icons/none.png");
+	spec->animations[South].w = 1;
+	spec->animations[South].h = 1;
+	spec->animations[South].d = 1;
+	spec->parts = {
+		(new Part("models/drone-chassis.stl", GetColor(0x660000ff))),
+	};
+	spec->align = false;
+	spec->rotate = false;
+	spec->rotateGhost = false;
+	spec->drone = true;
 
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;
 
-	Model waterCube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
-	waterCube.materials[0].shader = pshader;
-	waterCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x010190FF);
+	View::waterCube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
+	View::waterCube.materials[0].shader = pshader;
+	View::waterCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x010190FF);
+
+	Chunk::material = LoadMaterialDefault();
+	Chunk::material.shader = shader;
 
 	if (loadSave) {
 		Sim::load("autosave");
@@ -267,79 +346,91 @@ int main(int argc, char const *argv[]) {
 				Chunk::get(cx,cy);
 			}
 		}
+
+		Entity::create(Entity::next(), Spec::byName("engineer-truck")).floor(0)
+			.store()
+				.insert((Stack){Item::byName("log")->id, 10})
+		;
+
+		Entity::create(Entity::next(), Spec::byName("camera-drone"))
+			.move((Point){0,20,0})
+		;
 	}
 
 	Panels::init();
-	Gui::buildPopup = new BuildPopup(800, 800);
-	Gui::entityPopup = new EntityPopup(800, 800);
+	camera->buildPopup = new BuildPopup(camera, 800, 800);
+	camera->entityPopup = new EntityPopup(camera, 800, 800);
 
 	Mod* mod = new Mod("base");
 	mod->load();
+
+	RenderTexture secondary = LoadRenderTexture(GetScreenWidth()/4, GetScreenHeight()/4);
 
 	while (!WindowShouldClose()) {
 		Sim::locked(Sim::update);
 		mod->update();
 
-		Gui::updateMouseState();
-		Gui::updateCamera();
+		camera->update();
+		camSec->update();
 
 		UpdateLightValues(shader, lightA);
 		UpdateLightValues(pshader, lightB);
 
-		float cameraPos[3] = { Gui::camera.position.x, Gui::camera.position.y, Gui::camera.position.z };
+		float cameraPos[3] = { camera->position.x, camera->position.y, camera->position.z };
 		SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
 
-		if (!Gui::popup || !Gui::popup->contains(Gui::mouse.x, Gui::mouse.y)) {
+		if (!camera->popup || !camera->popup->contains(camera->mouse.x, camera->mouse.y)) {
+
 			if (IsKeyReleased(KEY_Q)) {
-				Gui::build(Gui::hovering ? Gui::hovering->spec: NULL);
+				camera->build(camera->hovering ? camera->hovering->spec: NULL);
 			}
 
 			if (IsKeyReleased(KEY_R)) {
-				if (Gui::placing) {
-					Gui::placing->rotate();
+				if (camera->placing) {
+					camera->placing->rotate();
 				}
 				else
-				if (Gui::hovering) {
+				if (camera->hovering) {
 					Sim::locked([&]() {
-						Entity::get(Gui::hovering->id)
+						Entity::get(camera->hovering->id)
 							.rotate();
 					});
 				}
 			}
 
-			if (IsKeyReleased(KEY_T) && Gui::hovering) {
-				Gui::camera.target = Gui::hovering->pos.vec();
+			if (IsKeyReleased(KEY_T) && camera->hovering) {
+				camera->lookAt(camera->hovering->pos.floor(0));
 			}
 
 			if (IsKeyReleased(KEY_E)) {
-				Gui::popup = (Gui::popup && Gui::popup == Gui::buildPopup) ? NULL: Gui::buildPopup;
+				camera->popup = (camera->popup && camera->popup == camera->buildPopup) ? NULL: camera->buildPopup;
 			}
 
 			if (IsKeyReleased(KEY_G)) {
-				Gui::showGrid = !Gui::showGrid;
+				camera->showGrid = !camera->showGrid;
 			}
 
-			if (Gui::mouse.left && Gui::mouse.leftChanged && Gui::placing) {
+			if (camera->mouse.left && camera->mouse.leftChanged && camera->placing) {
 				Sim::locked([&]() {
-					Entity::create(Entity::next(), Gui::placing->spec)
+					Entity::create(Entity::next(), camera->placing->spec)
 						.setGhost(true)
-						.face(Gui::placing->dir)
-						.move(Gui::placing->pos)
+						.face(camera->placing->dir)
+						.move(camera->placing->pos)
 						.setGhost(false);
 				});
 			}
 
-			if (Gui::mouse.left && Gui::mouse.leftChanged && !Gui::placing && Gui::hovering) {
-				Gui::popup = Gui::entityPopup;
+			if (camera->mouse.left && camera->mouse.leftChanged && !camera->placing && camera->hovering) {
+				camera->popup = camera->entityPopup;
 				Sim::locked([&]() {
-					GuiEntity *ge = new GuiEntity(Gui::hovering->id);
-					Gui::entityPopup->useEntity(ge);
+					GuiEntity *ge = new GuiEntity(camera->hovering->id);
+					camera->entityPopup->useEntity(ge);
 				});
 			}
 
-			if (IsKeyReleased(KEY_DELETE) && Gui::hovering) {
+			if (IsKeyReleased(KEY_DELETE) && camera->hovering) {
 				Sim::locked([&]() {
-					int id = Gui::hovering->id;
+					int id = camera->hovering->id;
 					if (Entity::exists(id)) {
 						Entity::get(id).destroy();
 					};
@@ -347,13 +438,13 @@ int main(int argc, char const *argv[]) {
 			}
 
 			if (IsKeyReleased(KEY_ESCAPE)) {
-				if (Gui::popup) {
-					Gui::popup = NULL;
+				if (camera->popup) {
+					camera->popup = NULL;
 				}
 				else
-				if (Gui::placing) {
-					delete Gui::placing;
-					Gui::placing = NULL;
+				if (camera->placing) {
+					delete camera->placing;
+					camera->placing = NULL;
 				}
 			}
 
@@ -362,8 +453,8 @@ int main(int argc, char const *argv[]) {
 			}
 		}
 
-		if (Gui::popup) {
-			Gui::popup->update();
+		if (camera->popup) {
+			camera->popup->update();
 		}
 
 		for (auto spec: Spec::all) {
@@ -373,89 +464,30 @@ int main(int argc, char const *argv[]) {
 		}
 
 		BeginDrawing();
-			ClearBackground(SKYBLUE);
 
-			BeginMode3D(Gui::camera);
+			camSec->draw(secondary);
 
-				if (Gui::showGrid) {
-					Vector3 groundZero = {
-						std::floor(Gui::camera.target.x),
-						std::floor(0),
-						std::floor(Gui::camera.target.z),
-					};
+			camera->draw();
 
-					Gui::drawGrid(groundZero, 64, 1);
-				}
-
-				std::vector<Matrix> water;
-
-				float size = (float)Chunk::size;
-				for (auto pair: Chunk::all) {
-					Chunk *chunk = pair.second;
-					if (!chunk->heightmap.meshes) {
-						chunk->genHeightMap();
-						chunk->heightmap.materials[MAP_DIFFUSE].shader = shader;
-					}
-					float x = chunk->x;
-					float y = chunk->y;
-					DrawModel(chunk->heightmap, (Vector3){0,-21.81,0}, 1.0f, WHITE);
-					water.push_back(
-						MatrixMultiply(
-							MatrixTranslate(x+0.5f, -0.52f, y+0.5f),
-							MatrixScale(size,size,size)
-						)
-					);
-				}
-
-				rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
-
-				Gui::findEntities();
-
-				std::map<Part*,std::vector<Matrix>> batches;
-
-				for (auto ge: Gui::entities) {
-					Matrix t = ge->transform();
-					for (auto part: ge->spec->parts) {
-						batches[part].push_back(t);
-					}
-				}
-
-				for (auto pair: batches) {
-					Part *part = pair.first;
-					part->drawInstanced(pair.second.size(), pair.second.data());
-				}
-
-				if (Gui::hovering) {
-					Spec::Animation* animation = &Gui::hovering->spec->animations[Gui::hovering->dir];
-					Vector3 bounds = (Vector3){animation->w, animation->h, animation->d};
-					DrawCubeWiresV(Gui::hovering->pos.vec(), Vector3AddValue(bounds, 0.01), WHITE);
-				}
-
-				if (Gui::placing) {
-					Matrix t = Gui::placing->transform();
-					for (auto part: Gui::placing->spec->parts) {
-						part->drawGhost(t);
-					}
-				}
-
-			EndMode3D();
-
-			if (Gui::popup) {
-				Gui::popup->draw();
-			}
+			DrawTexturePro(secondary.texture,
+				(Rectangle){0,0,(float)secondary.texture.width,(float)-secondary.texture.height},
+				(Rectangle){0,0,(float)secondary.texture.width,(float)secondary.texture.height},
+				(Vector2){0,0}, 0.0f, WHITE
+			);
 
 			DrawFPS(10,10);
 		EndDrawing();
 	}
 
-//	for (auto [name, spec]: Spec::all) {
-//		notef("Spec unload model: %s %s", name.c_str(), spec->obj.c_str());
-//		UnloadModel(spec->model);
-//	}
+	delete camSec;
+
+	UnloadRenderTexture(secondary);
+
+	UnloadShader(shader);
+	UnloadShader(pshader);
 
 	UnloadModel(cube);
-	UnloadModel(waterCube);
-	UnloadShader(shader);
+	UnloadModel(View::waterCube);
 
 	for (auto pair: Chunk::all) {
 		Chunk *chunk = pair.second;
@@ -463,12 +495,13 @@ int main(int argc, char const *argv[]) {
 	}
 
 	delete mod;
-	delete Gui::buildPopup;
+	delete camera->buildPopup;
 
-	Gui::reset();
 	Entity::reset();
 	Chunk::reset();
 	Spec::reset();
+	Part::reset();
+	Item::reset();
 
 	CloseWindow();
 	return 0;

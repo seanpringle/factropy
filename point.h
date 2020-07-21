@@ -14,6 +14,7 @@ struct Point {
 
 	Box box();
 	float distance(Point p);
+	Point floor(float fy);
 
 };
 

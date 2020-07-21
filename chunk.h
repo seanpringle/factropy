@@ -15,7 +15,7 @@ struct Chunk {
 	struct Tile {
 		float elevation;
 	};
-		
+
 	struct XY {
 		int x, y;
 		bool operator==(const XY &o) const;
@@ -78,7 +78,10 @@ struct Chunk {
 
 	int x, y;
 	Tile tiles[size][size];
-	Model heightmap = {0};
+	bool generated = false;
+	Mesh heightmap = {0};
+	Matrix transform;
+	static inline Material material;
 
 	Chunk(int cx, int cy);
 

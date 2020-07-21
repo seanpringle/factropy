@@ -7,6 +7,8 @@
 #include "raymath.h"
 
 struct Part {
+	static void reset();
+
 	static inline Shader shader;
 	static inline Material material;
 	static inline std::map<std::string,Model> models;
@@ -16,7 +18,7 @@ struct Part {
 	Color color;
 
 	Part(std::string obj, Color color);
-	~Part();
+	virtual ~Part();
 
 	Part* rotate(Vector3 axis, float degrees);
 	Part* translate(float x, float y, float z);

@@ -1,14 +1,17 @@
 #ifndef _H_entity
 #define _H_entity
 
+#define MaxEntity 1000000
+
 #include "sparse.h"
 #include "spec.h"
 #include "chunk.h"
 #include "point.h"
 #include "box.h"
+#include "store.h"
 #include <unordered_set>
 
-#define MaxEntity 1000000
+struct Store;
 
 struct Entity {
 
@@ -47,6 +50,8 @@ struct Entity {
 
 	Entity& index();
 	Entity& unindex();
+
+	Store& store();
 };
 
 struct GuiEntity {

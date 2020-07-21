@@ -26,9 +26,13 @@ void Spec::loadAll(const char* name) {
 }
 
 void Spec::reset() {
-	for (auto& pair: all) {
+	for (auto pair: all) {
+		for (auto part: pair.second->parts) {
+			delete part;
+		}
 		delete pair.second;
 	}
+	all.clear();
 }
 
 Spec::Spec(std::string name) {
@@ -36,6 +40,13 @@ Spec::Spec(std::string name) {
 	notef("Spec: %s", name.c_str());
 	this->name = name;
 	all[name] = this;
+
+	align = false;
+	rotate = false;
+	rotateGhost = false;
+	vehicle = false;
+	drone = false;
+	store = false;
 }
 
 Spec* Spec::byName(std::string name) {
@@ -71,4 +82,8 @@ bool Spec::hasDirection() {
 
 bool Spec::hasOrientation() {
 	return vehicle;
+}
+
+bool Spec::hasStore() {
+	return store;
 }

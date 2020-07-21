@@ -32,6 +32,8 @@ struct Spec {
 	bool rotate;
 	bool rotateGhost;
 	bool vehicle;
+	bool drone;
+	bool store;
 	Image image;
 
 	Animation animations[4];
@@ -40,6 +42,7 @@ struct Spec {
 	Point aligned(Point p, enum Direction dir);
 	bool hasDirection();
 	bool hasOrientation();
+	bool hasStore();
 };
 
 #endif

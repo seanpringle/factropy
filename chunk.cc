@@ -162,91 +162,16 @@ Image Chunk::heightImage() {
 	return image;
 }
 
-Image Chunk::colorImage() {
-	// When generating a Mesh from a heightmap each pixel becomes a vertex on a tile centroid.
-	// Without the +1 there would be gaps on the +X and +Y edges.
-	int width = size+1;
-	int height = size+1;
-
-	//Color colors[6] = {
-	//	GetColor(0x45320AFF),
-	//	GetColor(0x85421AFF),
-	//	GetColor(0xA5622AFF),
-	//	GetColor(0xE18339FF),
-	//	GetColor(0xE6A644FF),
-	//};
-
-	Color *pixels = (Color *)RL_MALLOC(width*height*sizeof(Color));
-
-	for (int y = 0; y < height; y++) {
-		for (int x = 0; x < width; x++) {
-			Color *pixel = &pixels[y*width+x];
-			Tile *tile = tileTryGet(this->x*size+x, this->y*size+y);
-			*pixel = BLANK;
-			if (tile != NULL) {
-				float elevation = std::clamp(tile->elevation+0.5, 0.0, 1.0);
-				if (elevation < 0.501) {
-					*pixel = {
-						(uint8_t)(elevation * 1.5f * (float)0xE6),
-						(uint8_t)(elevation * 1.5f * (float)0xA6),
-						(uint8_t)(elevation * 1.5f * (float)0x44),
-						0xff,
-					};
-					//*pixel = {
-					//	(uint8_t)(elevation * 1.5f * (float)0x76),
-					//	(uint8_t)(elevation * 1.5f * (float)0xB6),
-					//	(uint8_t)(elevation * 1.5f * (float)0x14),
-					//	0xff,
-					//};
-				} else {
-					*pixel = {
-						(uint8_t)(elevation * 1.25f * (float)0xE1),
-						(uint8_t)(elevation * 1.25f * (float)0x83),
-						(uint8_t)(elevation * 1.25f * (float)0x39),
-						0xff,
-					};
-				}
-			}
-		}
-	}
-
-	Image image = {
-		.data = pixels,
-		.width = width,
-		.height = height,
-		.mipmaps = 1,
-		.format = UNCOMPRESSED_R8G8B8A8,
-	};
-
-	return image;
-}
-
 void Chunk::genHeightMap() {
 	Image heightImg = heightImage();
-	Image colorImg = colorImage();
-
-	Mesh mesh = GenMeshHeightmap(heightImg, (Vector3){ size+1, 50, size+1 });
-
-	Part::terrainNormals(&mesh);
-
-	Model model = LoadModelFromMesh(mesh);
-
-	Texture2D texture = LoadTextureFromImage(colorImg);
-	model.materials[0].maps[MAP_DIFFUSE].texture = texture;
-
-	//model.transform = MatrixMultiply(model.transform, MatrixScale(1.0, 1.0, 1.0));
-
-	// Move to chunk position
-	model.transform = MatrixMultiply(model.transform, MatrixTranslate(this->x*size, -3.1, this->y*size));
-
+	heightmap = GenMeshHeightmap(heightImg, (Vector3){ size+1, 100, size+1 });
+	Part::terrainNormals(&heightmap);
+	transform = MatrixTranslate(this->x*size, -49.82, this->y*size);
 	UnloadImage(heightImg);
-	UnloadImage(colorImg);
-
-	heightmap = model;
 }
 
 void Chunk::dropHeightMap() {
-	UnloadModel(heightmap);
+	UnloadMesh(heightmap);
 }
 
 Chunk::ChunkBox Chunk::walk(Box box) {

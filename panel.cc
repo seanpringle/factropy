@@ -1,6 +1,5 @@
 
 #include "common.h"
-#include "gui.h"
 #include "panel.h"
 #include "spec.h"
 #include "chunk.h"
@@ -94,7 +93,8 @@ namespace Panels {
 	}
 }
 
-Panel::Panel(int w, int h) {
+Panel::Panel(MainCamera *cam, int w, int h) {
+	camera = cam;
 	this->w = w;
 	this->h = h;
 	canvas = GenImageColor(w, h, BLACK);
@@ -220,13 +220,13 @@ void Panel::input() {
 	}
 
 	if (IsKeyReleased(KEY_ESCAPE)) {
-		Gui::popup = NULL;
+		camera->popup = NULL;
 	}
 
 	nk_input_end(&nuklear->ctx);
 }
 
-BuildPopup::BuildPopup(int w, int h) : Panel(w, h) {
+BuildPopup::BuildPopup(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
 }
 
 void BuildPopup::build() {
@@ -252,14 +252,14 @@ void BuildPopup::build() {
 		}
 
 		if (nk_button_image_label(&nuklear->ctx, images[spec->name], spec->name.c_str(), NK_TEXT_CENTERED)) {
-			Gui::build(spec);
-			Gui::popup = NULL;
+			camera->build(spec);
+			camera->popup = NULL;
 		}
 	}
 	nk_end(&nuklear->ctx);
 }
 
-EntityPopup::EntityPopup(int w, int h) : Panel(w, h) {
+EntityPopup::EntityPopup(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
 	ge = NULL;
 }
 
@@ -272,7 +272,7 @@ void EntityPopup::useEntity(GuiEntity *uge) {
 
 void EntityPopup::build() {
 	if (!ge) {
-		Gui::popup = NULL;
+		camera->popup = NULL;
 		return;
 	}
 

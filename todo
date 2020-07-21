@@ -1,0 +1,17 @@
+fog
+placing collision
+template
+	select box
+ore patches
+	seams?
+	hill removal?
+entity popup ui
+port
+	path finder
+	belts
+	depot/drone
+	assembler
+	inserter
+	electricity
+		generic network class?
+move popup out of main camera

@@ -6,7 +6,7 @@
 #include <fstream>
 #include <regex>
 
-#include <algorithm> 
+#include <algorithm>
 #include <cctype>
 #include <locale>
 
@@ -84,7 +84,7 @@ namespace {
 		mesh.vertices = (float *)RL_CALLOC(mesh.vertexCount*3, sizeof(float));
 		mesh.texcoords = (float *)RL_CALLOC(mesh.vertexCount*2, sizeof(float));
 		mesh.normals = (float *)RL_CALLOC(mesh.vertexCount*3, sizeof(float));
-		
+
 		// raylib models.c DEFAULT_MESH_VERTEX_BUFFERS=7
 		mesh.vboId = (unsigned int *)RL_CALLOC(7, sizeof(unsigned int));
 
@@ -112,6 +112,12 @@ namespace {
 		Model model = LoadModelFromMesh(mesh);
 		model.transform = MatrixRotateX(90.0f*DEG2RAD);
 		return model;
+	}
+}
+
+void Part::reset() {
+	for (auto pair: models) {
+		UnloadModel(pair.second);
 	}
 }
 

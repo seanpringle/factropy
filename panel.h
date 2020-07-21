@@ -1,12 +1,18 @@
 #ifndef _H_panel
 #define _H_panel
 
+class Panel;
+class BuildPopup;
+class EntityPopup;
+
+#include "view.h"
 #include "entity.h"
 
 struct Nuklear;
 
 class Panel {
 public:
+	MainCamera *camera;
 	int x;
 	int y;
 	int w;
@@ -25,7 +31,7 @@ public:
 	bool buttons[3] = {0};
 	bool keys[512] = {0};
 
-	Panel(int w, int h);
+	Panel(MainCamera *cam, int w, int h);
 	virtual ~Panel();
 	void center();
 	void draw();
@@ -41,14 +47,14 @@ namespace Panels {
 
 class BuildPopup : public Panel {
 public:
-	BuildPopup(int w, int h);
+	BuildPopup(MainCamera *cam, int w, int h);
 	void build() override;
 };
 
 class EntityPopup : public Panel {
 public:
 	GuiEntity *ge;
-	EntityPopup(int w, int h);
+	EntityPopup(MainCamera *cam, int w, int h);
 	void useEntity(GuiEntity *ge);
 	void build() override;
 };
