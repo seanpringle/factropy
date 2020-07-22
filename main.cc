@@ -77,8 +77,8 @@ int main(int argc, char const *argv[]) {
 	Light lightA = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, shader);
 	Light lightB = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, pshader);
 
-	//Sim::seed(879600773);
-	Sim::seed(2);
+	Sim::seed(879600773);
+	//Sim::seed(4);
 
 	Item* item = new Item(Item::next(), "log");
 	item->image = LoadImage("icons/none.png");
