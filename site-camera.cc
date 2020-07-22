@@ -68,9 +68,8 @@ void SiteCamera::draw(RenderTexture canvas) {
 			std::map<Part*,std::vector<Matrix>> batches;
 
 			for (auto ge: entities) {
-				Matrix t = ge->transform();
 				for (auto part: ge->spec->parts) {
-					batches[part].push_back(t);
+					batches[part].push_back(part->instance(ge));
 				}
 			}
 

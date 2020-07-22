@@ -5,7 +5,7 @@ GuiEntity::GuiEntity() {
 	id = 0;
 	spec = NULL;
 	dir = South;
-	pos = {0};
+	pos = {0,0,0};
 }
 
 GuiEntity::GuiEntity(int id) {

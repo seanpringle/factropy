@@ -1,8 +1,8 @@
 fog
 placing collision
 template
-	select box
-ore patches
+ore
+	patches?
 	seams?
 	hill removal?
 entity popup ui

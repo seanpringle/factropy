@@ -123,6 +123,7 @@ Chunk::Chunk(int cx, int cy) {
 	y = cy;
 	XY xy = {x,y};
 	all[xy] = this;
+	ZERO(heightmap);
 }
 
 Image Chunk::heightImage() {

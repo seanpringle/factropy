@@ -3,13 +3,19 @@
 
 #define MaxEntity 1000000
 
+struct Entity;
+struct GuiEntity;
+struct GuiFakeEntity;
+
 #include "sparse.h"
 #include "spec.h"
+#include "part.h"
 #include "chunk.h"
 #include "point.h"
 #include "box.h"
 #include "store.h"
 #include <unordered_set>
+#include <vector>
 
 struct Store;
 

@@ -1,6 +1,8 @@
 #ifndef _H_spec
 #define _H_spec
 
+struct Spec;
+
 #include <string>
 #include <vector>
 #include <map>

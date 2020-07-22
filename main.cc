@@ -83,6 +83,16 @@ int main(int argc, char const *argv[]) {
 	Item* item = new Item(Item::next(), "log");
 	item->image = LoadImage("icons/none.png");
 
+	auto thingContainer = Thing("models/container.stl");
+	auto thingFan = Thing("models/fan.stl");
+	auto thingAssembler = Thing("models/assembler.stl");
+	auto thingBeltBase = Thing("models/belt-base.stl");
+	auto thingBeltChevron = Thing("models/belt-chevron.stl");
+	auto thingBeltRoller = Thing("models/belt-roller.stl");
+	auto thingTruckChassisEngineer = Thing("models/truck-chassis-engineer.stl");
+	auto thingTruckChassisHauler = Thing("models/truck-chassis-hauler.stl");
+	auto thingTruckWheel = Thing("models/truck-wheel.stl");
+
 	Spec* spec = new Spec("provider-container");
 	spec->image = LoadImage("icons/provider-container.png");
 	spec->animations[South].w = 2;
@@ -92,8 +102,8 @@ int main(int argc, char const *argv[]) {
 	spec->animations[East].h = 2;
 	spec->animations[East].d = 2;
 	spec->parts = {
-		new Part("models/container.stl", GetColor(0x990000ff)),
-		(new PartSpinner("models/fan.stl", GetColor(0xccccccff)))->translate(0,1.1,0),
+		(new Part(thingContainer))->paint(0x990000ff),
+		(new PartSpinner(thingFan))->paint(0xccccccff)->translate(0,1.1,0),
 	};
 	spec->align = true;
 	spec->rotate = false;
@@ -113,7 +123,7 @@ int main(int argc, char const *argv[]) {
 	spec->animations[East].h = 2;
 	spec->animations[East].d = 2;
 	spec->parts = {
-		new Part("models/container.stl", GetColor(0x0044ccff)),
+		(new Part(thingContainer))->paint(0x0044ccff),
 	};
 	spec->align = true;
 	spec->rotate = false;
@@ -133,7 +143,7 @@ int main(int argc, char const *argv[]) {
 	spec->animations[East].h = 2;
 	spec->animations[East].d = 2;
 	spec->parts = {
-		new Part("models/container.stl", GetColor(0x006600ff)),
+		(new Part(thingContainer))->paint(0x006600ff),
 	};
 	spec->align = true;
 	spec->rotate = false;
@@ -150,7 +160,7 @@ int main(int argc, char const *argv[]) {
 	spec->animations[South].h = 3;
 	spec->animations[South].d = 5;
 	spec->parts = {
-		new Part("models/assembler.stl", GetColor(0x009900ff)),
+		(new Part(thingAssembler))->paint(0x009900ff),
 	};
 	spec->align = true;
 	spec->rotate = true;
@@ -169,17 +179,17 @@ int main(int argc, char const *argv[]) {
 	spec->animations[South].d = 1;
 
 	spec->parts = {
-		new Part("models/belt-base.stl", GetColor(0xcccc00ff)),
-		(new Part("models/belt-chevron.stl", GetColor(0x0000ccff)))->translate(0,0.23,0),
-		(new PartRoller("models/belt-roller.stl", GetColor(0xccccccff)))->translate(0,0.25,0),
+		(new Part(thingBeltBase))->paint(0xcccc00ff),
+		(new Part(thingBeltChevron))->paint(0x0000ccff)->translate(0,0.23,0),
+		(new PartRoller(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0),
 	};
 
 	for (int i = 1; i < 4; i++) {
 		spec->parts.push_back(
-			(new PartRoller("models/belt-roller.stl", GetColor(0xccccccff)))->translate(0,0.25,0.14f*i)
+			(new PartRoller(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0.14f*i)
 		);
 		spec->parts.push_back(
-			(new PartRoller("models/belt-roller.stl", GetColor(0xccccccff)))->translate(0,0.25,0.14f*-i)
+			(new PartRoller(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0.14f*-i)
 		);
 	}
 
@@ -204,7 +214,7 @@ int main(int argc, char const *argv[]) {
 		spec->animations[South].h = 1;
 		spec->animations[South].d = 2;
 		spec->parts = {
-			new PartFacer(part, GetColor(0x666666ff)),
+			(new PartFacer(Thing(part)))->paint(0x666666ff),
 		};
 		spec->align = false;
 		spec->rotate = false;
@@ -245,7 +255,7 @@ int main(int argc, char const *argv[]) {
 	spec->animations[South].h = 5;
 	spec->animations[South].d = 2;
 	spec->parts = {
-		(new PartFacer("models/tree1.stl", GetColor(0x224400ff)))->translate(0,-2.5,0),
+		(new PartFacer(Thing("models/tree1.stl")))->paint(0x224400ff)->translate(0,-2.5,0),
 	};
 	spec->align = false;
 	spec->rotate = false;
@@ -260,7 +270,7 @@ int main(int argc, char const *argv[]) {
 	spec->animations[South].h = 6;
 	spec->animations[South].d = 2;
 	spec->parts = {
-		(new PartFacer("models/tree2.stl", GetColor(0x006600ff)))->translate(-5,-3,0),
+		(new PartFacer(Thing("models/tree2.stl")))->paint(0x006600ff)->translate(-5,-3,0),
 	};
 	spec->align = false;
 	spec->rotate = false;
@@ -292,19 +302,19 @@ int main(int argc, char const *argv[]) {
 		}
 	});
 
-	spec = new Spec("engineer-truck");
+	spec = new Spec("truck-engineer");
 	spec->image = LoadImage("icons/none.png");
 	spec->animations[South].w = 2;
 	spec->animations[South].h = 2;
 	spec->animations[South].d = 3;
 	spec->parts = {
-		(new Part("models/truck-chassis.stl", GetColor(0xcccc00ff)))->translate(0,0.3,0),
-		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->speed(1)->steer(20)->translate(-0.8,-0.75,-1),
-		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(-0.8,-0.75,0),
-		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(-0.8,-0.75,1),
-		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(0.8,-0.75,-1),
-		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(0.8,-0.75,0),
-		(new PartWheel("models/truck-wheel.stl", GetColor(0x444444ff)))->translate(0.8,-0.75,1),
+		(new Part(thingTruckChassisEngineer))->paint(0xff6600ff)->translate(0,0.3,0),
+		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,-1),
+		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,0),
+		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,1),
+		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,-1),
+		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,0),
+		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,1),
 	};
 	spec->align = false;
 	spec->rotate = false;
@@ -312,13 +322,45 @@ int main(int argc, char const *argv[]) {
 	spec->vehicle = true;
 	spec->store = true;
 
+	spec = new Spec("truck-hauler");
+	spec->image = LoadImage("icons/none.png");
+	spec->animations[South].w = 2;
+	spec->animations[South].h = 2;
+	spec->animations[South].d = 3;
+	spec->parts = {
+		(new Part(thingTruckChassisHauler))->paint(0xffcc00ff)->translate(0,0.3,0),
+		Spec::byName("truck-engineer")->parts[1],
+		Spec::byName("truck-engineer")->parts[2],
+		Spec::byName("truck-engineer")->parts[3],
+		Spec::byName("truck-engineer")->parts[4],
+		Spec::byName("truck-engineer")->parts[5],
+		Spec::byName("truck-engineer")->parts[6],
+	};
+	spec->align = false;
+	spec->rotate = false;
+	spec->rotateGhost = false;
+	spec->vehicle = true;
+	spec->store = true;
+
+	spec = new Spec("truck-stop");
+	spec->image = LoadImage("icons/none.png");
+	spec->animations[South].w = 3;
+	spec->animations[South].h = 0.1;
+	spec->animations[South].d = 3;
+	spec->parts = {
+		(new Part(Thing("models/truck-stop.stl")))->paint(0x662222ff),
+	};
+	spec->align = true;
+	spec->rotate = true;
+	spec->rotateGhost = true;
+
 	spec = new Spec("camera-drone");
 	spec->image = LoadImage("icons/none.png");
 	spec->animations[South].w = 1;
 	spec->animations[South].h = 1;
 	spec->animations[South].d = 1;
 	spec->parts = {
-		(new Part("models/drone-chassis.stl", GetColor(0x660000ff))),
+		(new Part(Thing("models/drone-chassis.stl")))->paint(0x660000ff),
 	};
 	spec->align = false;
 	spec->rotate = false;
@@ -347,7 +389,7 @@ int main(int argc, char const *argv[]) {
 			}
 		}
 
-		Entity::create(Entity::next(), Spec::byName("engineer-truck")).floor(0)
+		Entity::create(Entity::next(), Spec::byName("truck-engineer")).floor(0)
 			.store()
 				.insert((Stack){Item::byName("log")->id, 10})
 		;

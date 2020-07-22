@@ -79,7 +79,7 @@ struct Chunk {
 	int x, y;
 	Tile tiles[size][size];
 	bool generated = false;
-	Mesh heightmap = {0};
+	Mesh heightmap;
 	Matrix transform;
 	static inline Material material;
 

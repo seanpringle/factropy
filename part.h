@@ -1,64 +1,75 @@
 #ifndef _H_part
 #define _H_part
 
+struct Part;
+
 #include <string>
 #include <map>
 #include "raylib.h"
 #include "raymath.h"
+#include "entity.h"
 
-struct Part {
+struct Thing {
+	Mesh mesh;
+	Matrix transform;
+
+	Thing();
+	Thing(std::string);
+
+	void drawBatch(Color color, int count, Matrix *trx);
+	void drawGhostBatch(Color color, int count, Matrix *trx);
+};
+
+struct Part: Thing {
 	static void reset();
+	static void terrainNormals(Mesh *mesh);
 
 	static inline Shader shader;
 	static inline Material material;
-	static inline std::map<std::string,Model> models;
 
-	Mesh mesh;
-	Matrix transform;
-	Color color;
-
-	Part(std::string obj, Color color);
+	Part(Thing thing);
 	virtual ~Part();
 
+	Color color;
+
+	Part* paint(int colour);
 	Part* rotate(Vector3 axis, float degrees);
 	Part* translate(float x, float y, float z);
 	virtual void update();
-	virtual Matrix delta(Matrix trx);
-	void draw(Matrix trx);
+
 	void drawInstanced(int count, Matrix* trx);
 	void drawGhost(Matrix trx);
 
-	static void terrainNormals(Mesh *mesh);
+	virtual Matrix instance(GuiEntity *ge);
 };
 
-struct PartFacer : public Part {
-	PartFacer(std::string obj, Color color);
-	virtual Matrix delta(Matrix trx);
+struct PartFacer : Part {
+	PartFacer(Thing thing);
+	virtual Matrix instance(GuiEntity *ge);
 };
 
-struct PartSpinner : public Part {
-	PartSpinner(std::string obj, Color color);
-	virtual Matrix delta(Matrix trx);
+struct PartSpinner : Part {
+	PartSpinner(Thing thing);
+	virtual Matrix instance(GuiEntity *ge);
 };
 
-struct PartRoller : public Part {
+struct PartRoller : Part {
 	Matrix r;
 	Matrix t;
-	PartRoller(std::string obj, Color color);
+	PartRoller(Thing thing);
 	virtual void update();
-	virtual Matrix delta(Matrix trx);
+	virtual Matrix instance(GuiEntity *ge);
 };
 
-struct PartWheel : public Part {
-	Matrix r;
-	Matrix t;
+struct PartWheel : Part {
 	float s;
 	float o;
-	PartWheel(std::string obj, Color color);
+	Matrix m;
+	PartWheel(Thing thing);
 	PartWheel* speed(float ss);
 	PartWheel* steer(float ss);
 	virtual void update();
-	virtual Matrix delta(Matrix trx);
+	virtual Matrix instance(GuiEntity *ge);
 };
 
 #endif

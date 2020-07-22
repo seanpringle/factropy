@@ -28,8 +28,8 @@ public:
 	Texture2D texture;
 
 	bool changed;
-	bool buttons[3] = {0};
-	bool keys[512] = {0};
+	bool buttons[3];
+	bool keys[512];
 
 	Panel(MainCamera *cam, int w, int h);
 	virtual ~Panel();

@@ -40,7 +40,7 @@ Entity& Entity::create(int id, Spec *spec) {
 		Store::create(id);
 	}
 
-	en.pos = {0};
+	en.pos = {0,0,0};
 	en.move((Point){0,0,0});
 
 	return en;

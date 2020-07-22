@@ -32,93 +32,113 @@ namespace {
 //	bool prefixed(const std::string &s, const std::string &p) {
 //		return s.find(p) == 0;
 //	}
+}
 
-	Model LoadSTL(std::string stl) {
-		auto in = std::ifstream(stl);
+Thing::Thing() {
+	ZERO(mesh);
+	ZERO(transform);
+}
 
-		struct Triangle {
-			size_t count;
-			Vector3 vertices[3];
-			Vector3 normal;
-		};
+Thing::Thing(std::string stl) {
+	auto in = std::ifstream(stl);
 
-		std::vector<Triangle> triangles;
+	struct Triangle {
+		size_t count;
+		Vector3 vertices[3];
+		Vector3 normal;
+	};
 
-		auto facet = std::regex("facet normal ([^ ]+) ([^ ]+) ([^ ]+)");
-		auto vertex = std::regex("vertex ([^ ]+) ([^ ]+) ([^ ]+)");
-		Triangle triangle = {0};
+	std::vector<Triangle> triangles;
 
-		for (std::string line; std::getline(in, line);) {
-			trim(line);
+	auto facet = std::regex("facet normal ([^ ]+) ([^ ]+) ([^ ]+)");
+	auto vertex = std::regex("vertex ([^ ]+) ([^ ]+) ([^ ]+)");
+	Triangle triangle; ZERO(triangle);
 
-			std::smatch fm;
-			if (std::regex_match(line, fm, facet)) {
-				float x = (float)std::stod(fm[1].str());
-				float y = (float)std::stod(fm[2].str());
-				float z = (float)std::stod(fm[3].str());
-				triangle.normal = (Vector3){x,y,z};
-				continue;
-			}
+	for (std::string line; std::getline(in, line);) {
+		trim(line);
 
-			std::smatch vm;
-			if (std::regex_match(line, vm, vertex)) {
-				float x = (float)std::stod(vm[1].str());
-				float y = (float)std::stod(vm[2].str());
-				float z = (float)std::stod(vm[3].str());
-				triangle.vertices[triangle.count++] = (Vector3){x,y,z};
-
-				if (triangle.count == 3) {
-					triangles.push_back(triangle);
-					triangle.count = 0;
-				}
-
-				continue;
-			}
+		std::smatch fm;
+		if (std::regex_match(line, fm, facet)) {
+			float x = (float)std::stod(fm[1].str());
+			float y = (float)std::stod(fm[2].str());
+			float z = (float)std::stod(fm[3].str());
+			triangle.normal = (Vector3){x,y,z};
+			continue;
 		}
 
-		in.close();
+		std::smatch vm;
+		if (std::regex_match(line, vm, vertex)) {
+			float x = (float)std::stod(vm[1].str());
+			float y = (float)std::stod(vm[2].str());
+			float z = (float)std::stod(vm[3].str());
+			triangle.vertices[triangle.count++] = (Vector3){x,y,z};
 
-		Mesh mesh = {0};
-		mesh.vertexCount = (int)triangles.size()*3;
-		mesh.triangleCount = (int)triangles.size();
-		mesh.vertices = (float *)RL_CALLOC(mesh.vertexCount*3, sizeof(float));
-		mesh.texcoords = (float *)RL_CALLOC(mesh.vertexCount*2, sizeof(float));
-		mesh.normals = (float *)RL_CALLOC(mesh.vertexCount*3, sizeof(float));
-
-		// raylib models.c DEFAULT_MESH_VERTEX_BUFFERS=7
-		mesh.vboId = (unsigned int *)RL_CALLOC(7, sizeof(unsigned int));
-
-		int vCount = 0;
-		int nCount = 0;
-
-		for (size_t t = 0; t < triangles.size(); t++) {
-			Triangle& triangle = triangles[t];
-
-			for (int v = 0; v < 3; v++) {
-				mesh.vertices[vCount++] = triangle.vertices[v].x;
-				mesh.vertices[vCount++] = triangle.vertices[v].y;
-				mesh.vertices[vCount++] = triangle.vertices[v].z;
+			if (triangle.count == 3) {
+				triangles.push_back(triangle);
+				triangle.count = 0;
 			}
 
-			for (size_t v = 0; v < 3; v++) {
-				mesh.normals[nCount++] = triangle.normal.x;
-				mesh.normals[nCount++] = triangle.normal.y;
-				mesh.normals[nCount++] = triangle.normal.z;
-			}
+			continue;
+		}
+	}
+
+	in.close();
+
+	Mesh mesh; ZERO(mesh);
+	mesh.vertexCount = (int)triangles.size()*3;
+	mesh.triangleCount = (int)triangles.size();
+	mesh.vertices = (float *)RL_CALLOC(mesh.vertexCount*3, sizeof(float));
+	mesh.texcoords = (float *)RL_CALLOC(mesh.vertexCount*2, sizeof(float));
+	mesh.normals = (float *)RL_CALLOC(mesh.vertexCount*3, sizeof(float));
+
+	// raylib models.c DEFAULT_MESH_VERTEX_BUFFERS=7
+	mesh.vboId = (unsigned int *)RL_CALLOC(7, sizeof(unsigned int));
+
+	int vCount = 0;
+	int nCount = 0;
+
+	for (size_t t = 0; t < triangles.size(); t++) {
+		Triangle& triangle = triangles[t];
+
+		for (int v = 0; v < 3; v++) {
+			mesh.vertices[vCount++] = triangle.vertices[v].x;
+			mesh.vertices[vCount++] = triangle.vertices[v].y;
+			mesh.vertices[vCount++] = triangle.vertices[v].z;
 		}
 
-    rlLoadMesh(&mesh, false);
+		for (size_t v = 0; v < 3; v++) {
+			mesh.normals[nCount++] = triangle.normal.x;
+			mesh.normals[nCount++] = triangle.normal.y;
+			mesh.normals[nCount++] = triangle.normal.z;
+		}
+	}
 
-		Model model = LoadModelFromMesh(mesh);
-		model.transform = MatrixRotateX(90.0f*DEG2RAD);
-		return model;
+  rlLoadMesh(&mesh, false);
+
+	this->mesh = mesh;
+	transform = MatrixRotateX(90.0f*DEG2RAD);
+}
+
+void Thing::drawBatch(Color color, int count, Matrix *trx) {
+	Part::material.shader = Part::shader;
+	Part::material.maps[MAP_DIFFUSE].color = color;
+	rlDrawMeshInstanced(mesh, Part::material, count, trx);
+}
+
+void Thing::drawGhostBatch(Color color, int count, Matrix *trx) {
+	Part::material.shader = GetShaderDefault();
+	Part::material.maps[MAP_DIFFUSE].color = (Color){
+		color.r,
+		color.g,
+		color.b,
+		(unsigned char)((float)color.a*0.5),
+	};
+	for (int i = 0; i < count; i++) {
+		rlDrawMesh(mesh, Part::material, trx[i]);
 	}
 }
 
 void Part::reset() {
-	for (auto pair: models) {
-		UnloadModel(pair.second);
-	}
 }
 
 struct Vertex {
@@ -179,17 +199,18 @@ void Part::terrainNormals(Mesh *mesh) {
 	rlUpdateMesh(*mesh, 2, mesh->vertexCount);
 }
 
-Part::Part(std::string path, Color colour) {
-	if (models.count(path) == 0) {
-		models[path] = (path.find(".stl") != path.npos) ? LoadSTL(path) : LoadModel(path.c_str());
-	}
-	Model model = models[path];
-	mesh = model.meshes[0];
-	color = colour;
-	transform = model.transform;
+Part::Part(Thing thing) {
+	mesh = thing.mesh;
+	transform = thing.transform;
+	color = WHITE;
 }
 
 Part::~Part() {
+}
+
+Part* Part::paint(int hexcolor) {
+	color = GetColor(hexcolor);
+	return this;
 }
 
 Part* Part::rotate(Vector3 axis, float degrees) {
@@ -205,40 +226,23 @@ Part* Part::translate(float x, float y, float z) {
 void Part::update() {
 }
 
-Matrix Part::delta(Matrix trx) {
-	return MatrixMultiply(transform, trx);
-}
-
-void Part::draw(Matrix trx) {
-	material.shader = shader;
-	material.maps[MAP_DIFFUSE].color = color;
-	rlDrawMesh(mesh, material, delta(trx));
+Matrix Part::instance(GuiEntity* ge) {
+	return MatrixMultiply(transform, ge->transform());
 }
 
 void Part::drawInstanced(int count, Matrix* trx) {
-	material.shader = shader;
-	material.maps[MAP_DIFFUSE].color = color;
-	for (int i = 0; i < count; i++) {
-		trx[i] = delta(trx[i]);
-	}
-	rlDrawMeshInstanced(mesh, material, count, trx);
+	drawBatch(color, count, trx);
 }
 
 void Part::drawGhost(Matrix trx) {
-	material.shader = GetShaderDefault();
-	material.maps[MAP_DIFFUSE].color = (Color){
-		color.r,
-		color.g,
-		color.b,
-		(unsigned char)((float)color.a*0.5),
-	};
-	rlDrawMesh(mesh, material, delta(trx));
+	drawGhostBatch(color, 1, &trx);
 }
 
-PartFacer::PartFacer(std::string obj, Color color) : Part(obj, color) {
+PartFacer::PartFacer(Thing thing) : Part(thing) {
 }
 
-Matrix PartFacer::delta(Matrix trx) {
+Matrix PartFacer::instance(GuiEntity* ge) {
+	Matrix trx = ge->transform();
 	float noise = 0.0f;
 	noise += trx.m0;
 	noise += trx.m4;
@@ -260,10 +264,11 @@ Matrix PartFacer::delta(Matrix trx) {
 	return MatrixMultiply(MatrixMultiply(transform, r), trx);
 }
 
-PartSpinner::PartSpinner(std::string obj, Color color) : Part(obj, color) {
+PartSpinner::PartSpinner(Thing thing) : Part(thing) {
 }
 
-Matrix PartSpinner::delta(Matrix trx) {
+Matrix PartSpinner::instance(GuiEntity* ge) {
+	Matrix trx = ge->transform();
 	float noise = 0.0f;
 	noise += trx.m0;
 	noise += trx.m4;
@@ -285,7 +290,7 @@ Matrix PartSpinner::delta(Matrix trx) {
 	return MatrixMultiply(MatrixMultiply(transform, r), trx);
 }
 
-PartRoller::PartRoller(std::string obj, Color color) : Part(obj, color) {
+PartRoller::PartRoller(Thing thing) : Part(thing) {
 	r = MatrixIdentity();
 	t = MatrixIdentity();
 }
@@ -295,14 +300,11 @@ void PartRoller::update() {
 	t = MatrixMultiply(r, transform);
 }
 
-Matrix PartRoller::delta(Matrix trx) {
-	return MatrixMultiply(t, trx);
+Matrix PartRoller::instance(GuiEntity* ge) {
+	return MatrixMultiply(t, ge->transform());
 }
 
-
-PartWheel::PartWheel(std::string obj, Color color) : Part(obj, color) {
-	r = MatrixIdentity();
-	t = MatrixIdentity();
+PartWheel::PartWheel(Thing thing) : Part(thing) {
 	s = 0.0f;
 	o = 0.0f;
 }
@@ -318,11 +320,13 @@ PartWheel* PartWheel::steer(float ss) {
 }
 
 void PartWheel::update() {
-	r = MatrixRotateX(-(float)(Sim::tick%360)*DEG2RAD*s);
-	r = MatrixMultiply(r, MatrixRotateZ(o*DEG2RAD));
-	t = MatrixMultiply(r, transform);
+	m = MatrixRotateX(-(float)(Sim::tick%360)*DEG2RAD*s);
+	m = MatrixMultiply(m, MatrixRotateZ(o*DEG2RAD));
 }
 
-Matrix PartWheel::delta(Matrix trx) {
-	return MatrixMultiply(t, trx);
+Matrix PartWheel::instance(GuiEntity* ge) {
+	return (ge->spec->vehicle)
+		? MatrixMultiply(MatrixMultiply(m, transform), ge->transform())
+		: MatrixMultiply(transform, ge->transform())
+	;
 }

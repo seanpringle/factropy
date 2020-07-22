@@ -31,6 +31,10 @@ static std::map<std::string,struct nk_image> images;
 namespace Panels {
 	void init() {
 		nk_cairo_init();
+
+		ZERO(buttonsRaylibNuklear);
+		ZERO(keysRaylibNuklear);
+
 		buttonsRaylibNuklear[MOUSE_LEFT_BUTTON]   = NK_BUTTON_LEFT;
 		buttonsRaylibNuklear[MOUSE_MIDDLE_BUTTON] = NK_BUTTON_MIDDLE;
 		buttonsRaylibNuklear[MOUSE_RIGHT_BUTTON]  = NK_BUTTON_RIGHT;

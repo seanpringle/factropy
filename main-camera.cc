@@ -45,8 +45,9 @@ MainCamera::MainCamera(Vector3 pos, Vector3 dir) {
 	nextDirection = dir;
 	up = (Vector3){0,1,0};
 
-	mouse = {0};
+	ZERO(mouse);
 	showGrid = false;
+	selecting = false;
 
 	hovering = NULL;
 	placing = NULL;
@@ -400,9 +401,8 @@ void MainCamera::draw() {
 		std::map<Part*,std::vector<Matrix>> batches;
 
 		for (auto ge: entities) {
-			Matrix t = ge->transform();
 			for (auto part: ge->spec->parts) {
-				batches[part].push_back(t);
+				batches[part].push_back(part->instance(ge));
 			}
 		}
 
@@ -426,9 +426,8 @@ void MainCamera::draw() {
 		}
 
 		if (placing) {
-			Matrix t = placing->transform();
 			for (auto part: placing->spec->parts) {
-				part->drawGhost(t);
+				part->drawGhost(part->instance(placing));
 			}
 		}
 
