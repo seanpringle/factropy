@@ -44,6 +44,7 @@ struct Entity {
 	enum Direction dir();
 	Entity& face(enum Direction);
 	Entity& move(Point p);
+	Entity& move(float x, float y, float z);
 	Entity& floor(float level);
 	Entity& rotate();
 	void destroy();
@@ -75,6 +76,7 @@ struct GuiFakeEntity : GuiEntity {
 
 	GuiFakeEntity* face(enum Direction);
 	GuiFakeEntity* move(Point p);
+	GuiFakeEntity* move(float x, float y, float z);
 	GuiFakeEntity* floor(float level);
 	GuiFakeEntity* rotate();
 };

@@ -69,10 +69,15 @@ struct MainCamera : View {
 	MouseState mouse;
 	bool showGrid;
 
+	bool selecting;
+	Rectangle selection;
+
 	GuiEntity* hovering;
 	GuiFakeEntity* placing;
 	std::vector<GuiEntity*> entities;
 	std::vector<GuiEntity*> hovered;
+	std::vector<GuiEntity*> selected;
+
 	bool worldFocused;
 
 	Panel *popup;

@@ -5,17 +5,17 @@
 
 struct Point;
 #include "box.h"
+#include <initializer_list>
 
-struct Point {
-	float x, y, z;
-
-	Vector3 vec();
-	static Point fromVec(Vector3 vec);
+struct Point : Vector3 {
+	Point();
+	Point(std::initializer_list<float>);
+	Point(Vector3);
+	Point(float xx, float yy, float zz);
 
 	Box box();
 	float distance(Point p);
 	Point floor(float fy);
-
 };
 
 #endif

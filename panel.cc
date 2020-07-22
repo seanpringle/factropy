@@ -180,7 +180,7 @@ void Panel::input() {
 	}
 
 	for (int i = 0; i < 3; i++) {
-		if (buttons[i] && !IsMouseButtonPressed(i)) {
+		if (buttons[i] && IsMouseButtonReleased(i)) {
 			nk_input_button(&nuklear->ctx, buttonsRaylibNuklear[i], mx, my, false);
 			buttons[i] = false;
 			changed = true;

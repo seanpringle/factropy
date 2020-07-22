@@ -379,7 +379,7 @@ int main(int argc, char const *argv[]) {
 		float cameraPos[3] = { camera->position.x, camera->position.y, camera->position.z };
 		SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
 
-		if (!camera->popup || !camera->popup->contains(camera->mouse.x, camera->mouse.y)) {
+		if (camera->worldFocused) {
 
 			if (IsKeyReleased(KEY_Q)) {
 				camera->build(camera->hovering ? camera->hovering->spec: NULL);

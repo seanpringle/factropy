@@ -54,6 +54,10 @@ GuiFakeEntity* GuiFakeEntity::move(Point p) {
 	return this;
 }
 
+GuiFakeEntity* GuiFakeEntity::move(float x, float y, float z) {
+	return move(Point(x, y, z));
+}
+
 GuiFakeEntity* GuiFakeEntity::floor(float level) {
 	auto animation = &spec->animations[dir];
 	pos.y = level + animation->h/2.0f;

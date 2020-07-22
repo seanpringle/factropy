@@ -147,6 +147,16 @@ void MainCamera::updateMouseState() {
 	if (mouse.wheel) {
 		mouse.zW += speedW * -(float)mouse.wheel;
 	}
+
+	if (mouse.left.dragged) {
+		selection = {(float)mouse.left.downAt.x, (float)mouse.left.downAt.y, (float)mouse.left.drag.x, (float)mouse.left.drag.y};
+		selecting = std::abs(selection.width) > 5 && std::abs(selection.height) > 5;
+	}
+
+	if (selecting && mouse.left.clicked) {
+		selection = {0,0,0,0};
+		selecting = false;
+	}
 }
 
 void MainCamera::updateCamera() {
@@ -269,6 +279,7 @@ void MainCamera::updateCamera() {
 void MainCamera::update() {
 	hovering = NULL;
 	hovered.clear();
+	selected.clear();
 
 	while (entities.size() > 0) {
 		delete entities.back();
@@ -277,6 +288,22 @@ void MainCamera::update() {
 
 	updateMouseState();
 	updateCamera();
+
+	if (IsKeyReleased(KEY_ESCAPE)) {
+		if (popup) {
+			popup = NULL;
+		}
+		else
+		if (placing) {
+			delete placing;
+			placing = NULL;
+		}
+		else
+		if (selecting) {
+			selection = {0,0,0,0};
+			selecting = false;
+		}
+	}
 
 	Vector3 target = groundTarget(0);
 	Box view = (Box){target.x, target.y, target.z, 500, 500, 500};
@@ -298,7 +325,7 @@ void MainCamera::update() {
 		if (hovered.size() > 0) {
 			float distance = 0.0f;
 			for (auto ge: hovered) {
-				float d = Vector3Distance(ge->pos.vec(), position);
+				float d = Vector3Distance(ge->pos, position);
 				if (hovering == NULL || d < distance) {
 					hovering = ge;
 					distance = d;
@@ -306,9 +333,19 @@ void MainCamera::update() {
 			}
 		}
 
+		if (selecting) {
+			Camera3D rcam = raylibCamera();
+			for (auto ge: entities) {
+				Vector2 at = GetWorldToScreen(ge->pos, rcam);
+				if (at.x > selection.x && at.x < selection.x+selection.width && at.y > selection.y && at.y < selection.y+selection.height) {
+					selected.push_back(ge);
+				}
+			}
+		}
+
 		if (placing) {
 			RayHitInfo hit = GetCollisionRayGround(mouse.ray, 0);
-			placing->move(Point::fromVec(hit.position))->floor(placing->pos.y);
+			placing->move(Point(hit.position))->floor(placing->pos.y);
 		}
 	}
 }
@@ -377,7 +414,15 @@ void MainCamera::draw() {
 		if (hovering) {
 			Spec::Animation* animation = &hovering->spec->animations[hovering->dir];
 			Vector3 bounds = (Vector3){animation->w, animation->h, animation->d};
-			DrawCubeWiresV(hovering->pos.vec(), Vector3AddValue(bounds, 0.01), WHITE);
+			DrawCubeWiresV(hovering->pos, Vector3AddValue(bounds, 0.01), SKYBLUE);
+		}
+
+		if (selecting) {
+			for (auto ge: selected) {
+				Spec::Animation* animation = &ge->spec->animations[ge->dir];
+				Vector3 bounds = (Vector3){animation->w, animation->h, animation->d};
+				DrawCubeWiresV(ge->pos, Vector3AddValue(bounds, 0.01), SKYBLUE);
+			}
 		}
 
 		if (placing) {
@@ -388,6 +433,10 @@ void MainCamera::draw() {
 		}
 
 	EndMode3D();
+
+	if (selecting) {
+		DrawRectangleRec(selection, GetColor(0x0000ff99));
+	}
 
 	if (popup) {
 		popup->draw();

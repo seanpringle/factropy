@@ -173,6 +173,10 @@ Entity& Entity::move(Point p) {
 	return *this;
 }
 
+Entity& Entity::move(float x, float y, float z) {
+	return move(Point(x, y, z));
+}
+
 Entity& Entity::floor(float level) {
 	unindex();
 	auto animation = &spec->animations[dir()];
