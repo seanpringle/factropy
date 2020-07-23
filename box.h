@@ -11,10 +11,14 @@ struct Box {
 
 	Point centroid();
 	BoundingBox bounds();
-	Box translate(Point p);
-	Box grow(Point p);
-	Box shrink(Point p);
+	Box translate(const Point p);
+	Box translate(float x, float y, float z);
+	Box grow(const Point p);
+	Box grow(float x, float y, float z);
+	Box shrink(const Point p);
+	Box shrink(float x, float y, float z);
 	bool intersects(Box b);
+	bool contains(Point p);
 };
 
 #endif

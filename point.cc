@@ -26,6 +26,33 @@ Point::Point(Vector3 vec) {
 	z = vec.z;
 }
 
+bool Point::operator==(const Point& o) const {
+	bool xeq = std::abs(x-o.x) < 0.001;
+	bool yeq = std::abs(y-o.y) < 0.001;
+	bool zeq = std::abs(z-o.z) < 0.001;
+	return xeq && yeq && zeq;
+}
+
+bool Point::operator<(const Point& o) const {
+	bool xeq = std::abs(x-o.x) < 0.001;
+	bool zeq = std::abs(z-o.z) < 0.001;
+	if (!xeq) {
+		return x < o.x;
+	}
+	if (!zeq) {
+		return z < o.z;
+	}   
+	return y < o.y;
+}
+
+Point Point::operator+(const Point& o) const {
+	return {x+o.x, y+o.y, z+o.z};
+}
+
+Point Point::operator-(const Point& o) const {
+	return {x-o.x, y-o.y, z-o.z};
+}
+
 Box Point::box() {
 	float ep = std::numeric_limits<float>::epsilon() * 2;
 	return (Box){x, y, z, ep, ep, ep};
@@ -35,6 +62,67 @@ float Point::distance(Point p) {
 	return Vector3Distance(*this, p);
 }
 
+Point Point::round() {
+	return (Point){
+		std::round(x),
+		std::round(y),
+		std::round(z),
+	};
+}
+
+Point Point::tileCentroid() {
+	return (Point){
+		std::floor(x) + 0.5f,
+		std::floor(y) + 0.5f,
+		std::floor(z) + 0.5f,
+	};
+}
+
 Point Point::floor(float fy) {
 	return (Point){x,fy,z};
+}
+
+float Point::lineDistance(Point a, Point b) {
+	// https://gamedev.stackexchange.com/questions/72528/how-can-i-project-a-3d-point-onto-a-3d-line
+	Vector3 ap = Vector3Subtract(*this, a);
+	Vector3 ab = Vector3Subtract(b, a);
+	Vector3 i = Vector3Add(a, Vector3Scale(ab, Vector3DotProduct(ap,ab) / Vector3DotProduct(ab,ab)));
+	return std::min(std::min(distance(i), distance(a)), distance(b));
+}
+
+Point Point::normalize() {
+	return Point(Vector3Normalize(*this));
+}
+
+Point Point::cross(Point b) {
+	return Point(Vector3CrossProduct(*this, b));
+}
+
+float Point::dot(Point b) {
+	return Vector3DotProduct(*this, b);
+}
+
+Point Point::pivot(Point target, float speed) {
+	Matrix r;
+	target = target.normalize();
+	// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
+
+	Point ahead = normalize();
+	Point behind = Point(Vector3Negate(ahead));
+
+	if (target == behind) {
+		r = MatrixRotate(Vector3Perpendicular(ahead), 180.0f*DEG2RAD);
+	}
+	else
+	if (target == ahead) {
+		r = MatrixIdentity();
+	}
+	else {
+		Point axis = ahead.cross(target);
+		float angle = std::acos(ahead.dot(target));
+		float sign = angle < 0 ? -1.0f: 1.0f;
+		float delta = std::abs(angle) < speed ? angle: speed*sign;
+		r = MatrixRotate(axis, delta);
+	}
+	return Point(Vector3Transform(*this, r));
 }

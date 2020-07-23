@@ -73,6 +73,12 @@ Chunk::Tile* Chunk::tileTryGet(int x, int y) {
 	return (chunk != NULL) ? &chunk->tiles[co.oy][co.ox]: NULL;
 }
 
+Chunk::Tile* Chunk::tileTryGet(Point p) {
+	int x = (int)std::floor(p.x);
+	int y = (int)std::floor(p.z); // 3d is Y-up
+	return tileTryGet(x, y);
+}
+
 using json = nlohmann::json;
 
 void Chunk::saveAll(const char* name) {

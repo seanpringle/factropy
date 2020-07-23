@@ -14,6 +14,7 @@ struct GuiFakeEntity;
 #include "point.h"
 #include "box.h"
 #include "store.h"
+#include "vehicle.h"
 #include <unordered_set>
 #include <vector>
 
@@ -25,7 +26,8 @@ struct Entity {
 	static inline std::map<Chunk::XY,std::set<int>> grid;
 
 	static inline SparseArray<Entity> all = (MaxEntity);
-	static inline SparseArray<enum Direction> dirs = (MaxEntity);
+	static inline SparseArray<enum Direction> directions = (MaxEntity);
+	static inline SparseArray<Point> orientations = (MaxEntity);
 	static int next();
 
 	static Entity& create(int id, Spec* spec);
@@ -48,6 +50,10 @@ struct Entity {
 
 	Box box();
 	enum Direction dir();
+	Point looking();
+	void look(Point); // rel
+	void lookAt(Point); // abs
+	bool lookAtPivot(Point);
 	Entity& face(enum Direction);
 	Entity& move(Point p);
 	Entity& move(float x, float y, float z);
@@ -59,6 +65,7 @@ struct Entity {
 	Entity& unindex();
 
 	Store& store();
+	Vehicle& vehicle();
 };
 
 struct GuiEntity {
@@ -66,6 +73,7 @@ struct GuiEntity {
 	Spec* spec;
 	Point pos;
 	enum Direction dir;
+	Point orientation;
 	bool ghost;
 
 	GuiEntity();

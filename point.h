@@ -8,6 +8,11 @@ struct Point;
 #include <initializer_list>
 
 struct Point : Vector3 {
+	bool operator==(const Point& o) const;
+	bool operator<(const Point& o) const;
+	Point operator+(const Point& o) const;
+	Point operator-(const Point& o) const;
+
 	Point();
 	Point(std::initializer_list<float>);
 	Point(Vector3);
@@ -15,7 +20,14 @@ struct Point : Vector3 {
 
 	Box box();
 	float distance(Point p);
+	Point round();
+	Point tileCentroid();
 	Point floor(float fy);
+	float lineDistance(Point a, Point b);
+	Point normalize();
+	Point cross(Point);
+	float dot(Point);
+	Point pivot(Point target, float speed);
 };
 
 #endif

@@ -45,7 +45,7 @@ int main(int argc, char const *argv[]) {
 	);
 
 	MainCamera *camera = new MainCamera(
-		(Vector3){5,5,5},
+		(Vector3){10,10,10},
 		(Vector3){-1,-1,-1}
 	);
 
@@ -446,6 +446,18 @@ int main(int argc, char const *argv[]) {
 
 			if (IsKeyReleased(KEY_G)) {
 				camera->showGrid = !camera->showGrid;
+			}
+
+			if (camera->mouse.left.clicked && IsKeyDown(KEY_LEFT_SHIFT)) {
+				Sim::locked([&]() {
+					for (Entity& en: Entity::all) {
+						if (en.spec->vehicle) {
+							RayHitInfo spot = GetCollisionRayGround(camera->mouse.ray, 0);
+							en.vehicle().addWaypoint(Point(spot.position));
+							break;
+						}
+					}
+				});
 			}
 
 			if (camera->mouse.left.clicked && camera->placing) {

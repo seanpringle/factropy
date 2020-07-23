@@ -71,6 +71,7 @@ struct Chunk {
 	static Chunk* tryGet(int x, int y);
 	static Chunk* get(int x, int y);
 	static Chunk::Tile* tileTryGet(int x, int y);
+	static Chunk::Tile* tileTryGet(Point p);
 
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);

@@ -431,6 +431,41 @@ void MainCamera::draw() {
 			}
 		}
 
+		if (Path::jobs.size() > 0) {
+			Path* job = Path::jobs.front();
+			DrawCube(job->target, 0.5f, 0.5f, 0.5f, GOLD);
+
+			for (auto pair: job->nodes) {
+				Path::Node* node = pair.second;
+				DrawCube(node->point, 0.5f, 0.5f, 0.5f,
+					job->inOpenSet(node) ? GREEN: RED
+				);
+			}
+		}
+
+		for (auto ge: entities) {
+			Entity& en = Entity::get(ge->id);
+			if (en.spec->vehicle) {
+				Vehicle& vehicle = en.vehicle();
+				Vector3 p = en.pos;
+				for (auto n: vehicle.path) {
+					DrawSphere(n, 0.25f, RED);
+					DrawLine3D(p, n, RED);
+					p = n;
+				}
+
+				DrawRay((Ray){en.pos, en.looking()}, BLUE);
+			}
+
+			for (auto part: ge->spec->parts) {
+				batches[part].push_back(part->instance(ge));
+			}
+		}
+
+		DrawCube(Point(0,0,2.5), 0.5f, 0.5f, 5.0f, BLUE);
+		DrawCube(Point(2.5,0,0), 5.0f, 0.5f, 0.5f, RED);
+		DrawCube(Point(0,2.5,0), 0.5f, 5.0f, 0.5f, GREEN);
+
 	EndMode3D();
 
 	if (selecting) {

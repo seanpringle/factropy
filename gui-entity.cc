@@ -6,6 +6,7 @@ GuiEntity::GuiEntity() {
 	spec = NULL;
 	dir = South;
 	pos = {0,0,0};
+	orientation = {0,0,1};
 }
 
 GuiEntity::GuiEntity(int id) {
@@ -14,6 +15,7 @@ GuiEntity::GuiEntity(int id) {
 	spec = en.spec;
 	pos = en.pos;
 	dir = en.dir();
+	orientation = en.looking();
 	ghost = en.isGhost();
 }
 
@@ -26,7 +28,27 @@ Box GuiEntity::box() {
 }
 
 Matrix GuiEntity::transform() {
-	Matrix r = MatrixRotateY(Directions::degrees(dir)*DEG2RAD);
+	Matrix r;
+
+	if (spec->hasOrientation()) {
+		// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
+		if (orientation == Point(0,0,-1)) {
+			r = MatrixRotate(Point(0,1,0), 180.0f*DEG2RAD);
+		}
+		else
+		if (orientation == Point(0,0,1)) {
+			r = MatrixIdentity();
+		}
+		else {
+			Point axis = Point(0,0,1).cross(orientation);
+			float angle = std::acos(Point(0,0,1).dot(orientation));
+			r = MatrixRotate(axis, angle);
+		}
+	}
+	else {
+		r = MatrixRotateY(Directions::degrees(dir)*DEG2RAD);
+	}
+
 	Matrix t = MatrixTranslate(pos.x, pos.y, pos.z);
 	return MatrixMultiply(r, t);
 }

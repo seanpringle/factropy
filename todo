@@ -15,3 +15,4 @@ port
 	electricity
 		generic network class?
 move popup out of main camera
+combine direction and orientation

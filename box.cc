@@ -16,12 +16,24 @@ Box Box::translate(Point p) {
 	return (Box){x + p.x, y + p.y, z + p.z, w, h, d};
 }
 
+Box Box::translate(float xx, float yy, float zz) {
+	return translate(Point(xx,yy,zz));
+}
+
 Box Box::grow(Point p) {
 	return (Box){x, y, z, w + p.x*2, h + p.y*2, d + p.z*2};
 }
 
+Box Box::grow(float xx, float yy, float zz) {
+	return grow(Point(xx,yy,zz));
+}
+
 Box Box::shrink(Point p) {
 	return grow((Point){-p.x, -p.y, -p.z});
+}
+
+Box Box::shrink(float xx, float yy, float zz) {
+	return shrink(Point(xx,yy,zz));
 }
 
 bool Box::intersects(Box a) {
@@ -40,4 +52,19 @@ bool Box::intersects(Box a) {
 	float azMax = a.z+a.d/2.0f;
 
 	return (axMin <= xMax && axMax >= xMin) && (ayMin <= yMax && ayMax >= yMin) && (azMin <= zMax && azMax >= zMin);
+}
+
+bool Box::contains(Point p) {
+	float xMin = x-w/2.0f - 0.000001;
+	float yMin = y-h/2.0f - 0.000001;
+	float zMin = z-d/2.0f - 0.000001;
+	float xMax = x+w/2.0f + 0.000001;
+	float yMax = y+h/2.0f + 0.000001;
+	float zMax = z+d/2.0f + 0.000001;
+
+	bool xc = xMin < p.x && xMax > p.x;
+	bool yc = yMin < p.y && yMax > p.y;
+	bool zc = zMin < p.z && zMax > p.z;
+
+	return xc && yc && zc;
 }
