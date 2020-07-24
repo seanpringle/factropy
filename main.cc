@@ -180,7 +180,7 @@ int main(int argc, char const *argv[]) {
 		spec->parts = {
 			(new PartFacer(Thing(part)))->paint(0x666666ff),
 		};
-		spec->align = false;
+		spec->align = true;
 		spec->vehicle = false;
 
 		rocks.push_back(spec);
@@ -189,8 +189,8 @@ int main(int argc, char const *argv[]) {
 	Chunk::generator([&](Chunk *chunk) {
 		for (int y = 0; y < Chunk::size; y++) {
 			for (int x = 0; x < Chunk::size; x++) {
-				float e = chunk->tiles[y][x].elevation;
-				if (e < 0.01 && e > -0.01) {
+				Box bounds = {(float)chunk->x*Chunk::size+x, 0.0f, (float)chunk->y*Chunk::size+y, 2.0f, 1.0f, 2.0f};
+				if (Chunk::flatSurface(bounds.grow(1.0f))) {
 					double n = Sim::noise2D(chunk->x*Chunk::size+x + 1000000, chunk->y*Chunk::size+y + 1000000, 8, 0.6, 0.015);
 					if (n < 0.4 && Sim::random() < 0.04) {
 						Spec *spec = rocks[Sim::choose(rocks.size())];
@@ -219,7 +219,7 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new PartFacer(Thing("models/tree1.stl")))->paint(0x224400ff)->translate(0,-2.5,0),
 	};
-	spec->align = false;
+	spec->align = true;
 	spec->vehicle = false;
 
 	trees.push_back(spec);
@@ -232,7 +232,7 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new PartFacer(Thing("models/tree2.stl")))->paint(0x006600ff)->translate(-5,-3,0),
 	};
-	spec->align = false;
+	spec->align = true;
 	spec->vehicle = false;
 
 	trees.push_back(spec);
@@ -278,6 +278,9 @@ int main(int argc, char const *argv[]) {
 	spec->pivot = true;
 	spec->vehicle = true;
 	spec->store = true;
+
+	spec->costGreedy = 1.3;
+	spec->clearance = 1.5;
 
 	spec = new Spec("truck-hauler");
 	spec->image = LoadImage("icons/none.png");

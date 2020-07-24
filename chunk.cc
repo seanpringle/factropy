@@ -79,6 +79,16 @@ Chunk::Tile* Chunk::tileTryGet(Point p) {
 	return tileTryGet(x, y);
 }
 
+bool Chunk::flatSurface(Box b) {
+	for (auto [x,y]: walkTiles(b)) {
+		Tile *tile = tileTryGet(x, y);
+		if (!tile || tile->elevation > 0.001 || tile->elevation < -0.001) {
+			return false;
+		}
+	}
+	return true;
+}
+
 using json = nlohmann::json;
 
 void Chunk::saveAll(const char* name) {
@@ -173,7 +183,7 @@ void Chunk::genHeightMap() {
 	Image heightImg = heightImage();
 	heightmap = GenMeshHeightmap(heightImg, (Vector3){ size+1, 100, size+1 });
 	Part::terrainNormals(&heightmap);
-	transform = MatrixTranslate(this->x*size, -49.82, this->y*size);
+	transform = MatrixTranslate((float)(this->x*size)+0.5f, -49.82, (float)(this->y*size)+0.5f);
 	UnloadImage(heightImg);
 }
 
@@ -181,11 +191,11 @@ void Chunk::dropHeightMap() {
 	UnloadMesh(heightmap);
 }
 
-Chunk::ChunkBox Chunk::walk(Box box) {
-	return ChunkBox(box);
+Chunk::ChunkWalker Chunk::walk(Box box) {
+	return ChunkWalker(box);
 }
 
-Chunk::ChunkBox::ChunkBox(Box box) {
+Chunk::ChunkWalker::ChunkWalker(Box box) {
 	a = Chunk::Coords(box.x-box.w/2, box.z-box.d/2);
 	b = Chunk::Coords(box.x+box.w/2, box.z+box.d/2);
 	if (a.cy == b.cy || b.ty > b.cy*Chunk::size) {
@@ -196,27 +206,27 @@ Chunk::ChunkBox::ChunkBox(Box box) {
 	}
 }
 
-Chunk::ChunkBoxIter Chunk::ChunkBox::begin() {
-	return (Chunk::ChunkBoxIter){a.cx, a.cy, b.cx, b.cy, a.cx, a.cy};
+Chunk::ChunkWalkerIter Chunk::ChunkWalker::begin() {
+	return (Chunk::ChunkWalkerIter){a.cx, a.cy, b.cx, b.cy, a.cx, a.cy};
 }
 
-Chunk::ChunkBoxIter Chunk::ChunkBox::end() {
-	return (Chunk::ChunkBoxIter){a.cx, a.cy, b.cx, b.cy, b.cx, b.cy};
+Chunk::ChunkWalkerIter Chunk::ChunkWalker::end() {
+	return (Chunk::ChunkWalkerIter){a.cx, a.cy, b.cx, b.cy, b.cx, b.cy};
 }
 
-Chunk::XY Chunk::ChunkBoxIter::operator*() const {
+Chunk::XY Chunk::ChunkWalkerIter::operator*() const {
 	return (Chunk::XY){cx, cy};
 }
 
-bool Chunk::ChunkBoxIter::operator==(const Chunk::ChunkBoxIter& other) const {
+bool Chunk::ChunkWalkerIter::operator==(const Chunk::ChunkWalkerIter& other) const {
 	return cx == other.cx && cy == other.cy;
 }
 
-bool Chunk::ChunkBoxIter::operator!=(const Chunk::ChunkBoxIter& other) const {
+bool Chunk::ChunkWalkerIter::operator!=(const Chunk::ChunkWalkerIter& other) const {
 	return cx != other.cx || cy != other.cy;
 }
 
-Chunk::ChunkBoxIter& Chunk::ChunkBoxIter::operator++() {
+Chunk::ChunkWalkerIter& Chunk::ChunkWalkerIter::operator++() {
 	if (cx < cx1) {
 		cx++;
 	}
@@ -224,6 +234,54 @@ Chunk::ChunkBoxIter& Chunk::ChunkBoxIter::operator++() {
 		cy++;
 		if (cy < cy1) {
 			cx = cx0;
+		}
+	}
+	return *this;
+}
+
+Chunk::TileWalker Chunk::walkTiles(Box box) {
+	return TileWalker(box);
+}
+
+Chunk::TileWalker::TileWalker(Box box) {
+	a = Chunk::Coords(box.x-box.w/2, box.z-box.d/2);
+	b = Chunk::Coords(box.x+box.w/2, box.z+box.d/2);
+	if (a.ty == b.ty || b.y > (float)b.ty) {
+		b.ty++;
+	}
+	if (a.tx == b.tx || b.x > (float)b.tx) {
+		b.tx++;
+	}
+}
+
+Chunk::TileWalkerIter Chunk::TileWalker::begin() {
+	return (Chunk::TileWalkerIter){a.tx, a.ty, b.tx, b.ty, a.tx, a.ty};
+}
+
+Chunk::TileWalkerIter Chunk::TileWalker::end() {
+	return (Chunk::TileWalkerIter){a.tx, a.ty, b.tx, b.ty, b.tx, b.ty};
+}
+
+Chunk::XY Chunk::TileWalkerIter::operator*() const {
+	return (Chunk::XY){tx, ty};
+}
+
+bool Chunk::TileWalkerIter::operator==(const Chunk::TileWalkerIter& other) const {
+	return tx == other.tx && ty == other.ty;
+}
+
+bool Chunk::TileWalkerIter::operator!=(const Chunk::TileWalkerIter& other) const {
+	return tx != other.tx || ty != other.ty;
+}
+
+Chunk::TileWalkerIter& Chunk::TileWalkerIter::operator++() {
+	if (tx < tx1) {
+		tx++;
+	}
+	if (tx == tx1 && ty < ty1) {
+		ty++;
+		if (ty < ty1) {
+			tx = tx0;
 		}
 	}
 	return *this;

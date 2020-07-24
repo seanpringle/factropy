@@ -34,8 +34,12 @@ struct Spec {
 	float h;
 	float d;
 
+	float costGreedy;
+	float clearance;
+
 	Spec(std::string name);
-	Point aligned(Point p, Point axis);
+	Point aligned(Point p, Point dir);
+	Box box(Point pos, Point dir);
 	bool hasStore();
 };
 

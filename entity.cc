@@ -55,6 +55,17 @@ Entity& Entity::get(int id) {
 	return all.ref(id);
 }
 
+bool Entity::fits(Spec *spec, Point pos, Point dir) {
+	Box bounds = spec->box(pos, dir);
+	if (!Chunk::flatSurface(bounds)) {
+		return false;
+	}
+	if (intersecting(bounds).size() > 0) {
+		return false;
+	}
+	return true;
+}
+
 using json = nlohmann::json;
 
 void Entity::saveAll(const char* name) {
@@ -125,15 +136,13 @@ Entity& Entity::setGhost(bool state) {
 }
 
 Box Entity::box() {
-	return (Box){pos.x, pos.y, pos.z, spec->w, spec->h, spec->d};
+	return spec->box(pos, dir);
 }
 
 Entity& Entity::look(Point p) {
-	if (spec->pivot) {
-		unindex();
-		dir = p.normalize();
-		index();
-	}
+	unindex();
+	dir = p.normalize();
+	index();
 	return *this;
 }
 

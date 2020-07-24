@@ -143,11 +143,26 @@ Point Point::floor(float fy) {
 }
 
 float Point::lineDistance(Point a, Point b) {
+	float ad = distance(a);
+	float bd = distance(b);
+
 	// https://gamedev.stackexchange.com/questions/72528/how-can-i-project-a-3d-point-onto-a-3d-line
 	Vector3 ap = Vector3Subtract(*this, a);
 	Vector3 ab = Vector3Subtract(b, a);
 	Vector3 i = Vector3Add(a, Vector3Scale(ab, Vector3DotProduct(ap,ab) / Vector3DotProduct(ab,ab)));
-	return std::min(std::min(distance(i), distance(a)), distance(b));
+	float d = distance(i);
+
+	float dl = a.distance(b);
+
+	if (dl < bd) {
+		return ad;
+	}
+
+	if (dl < ad) {
+		return bd;
+	}
+
+	return d;
 }
 
 Point Point::normalize() {
@@ -172,7 +187,7 @@ Point Point::pivot(Point target, float speed) {
 	// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
 
 	Point ahead = normalize();
-	Point behind = Point(Vector3Negate(ahead));
+	Point behind = -ahead;
 
 	if (target == behind) {
 		r = MatrixRotate(Vector3Perpendicular(ahead), 180.0f*DEG2RAD);
@@ -220,6 +235,7 @@ Point Point::roundCardinal() {
 
 Point Point::rotateHorizontal() {
 	Point p = roundCardinal();
+	notef("%f %f %f", p.x, p.y, p.z);
 
 	if (p == North()) return East();
 	if (p == East()) return South();

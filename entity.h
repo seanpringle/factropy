@@ -36,6 +36,8 @@ struct Entity {
 	static void loadAll(const char* name);
 	static void reset();
 
+	static bool fits(Spec *spec, Point pos, Point dir);
+
 	static std::unordered_set<int> intersecting(Box box);
 
 	int id;

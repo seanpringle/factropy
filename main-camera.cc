@@ -303,6 +303,13 @@ void MainCamera::update() {
 		}
 	}
 
+	if (worldFocused) {
+		if (placing) {
+			RayHitInfo hit = GetCollisionRayGround(mouse.ray, 0);
+			placing->move(Point(hit.position))->floor(placing->pos.y);
+		}
+	}
+
 	Point target = groundTarget(0);
 	Box view = (Box){target.x, target.y, target.z, 500, 500, 500};
 
@@ -310,6 +317,8 @@ void MainCamera::update() {
 		for (int id: Entity::intersecting(view)) {
 			entities.push_back(new GuiEntity(id));
 		}
+
+		placingFits = !placing || Entity::fits(placing->spec, placing->pos, placing->dir);
 	});
 
 	if (worldFocused) {
@@ -339,11 +348,6 @@ void MainCamera::update() {
 					selected.push_back(ge);
 				}
 			}
-		}
-
-		if (placing) {
-			RayHitInfo hit = GetCollisionRayGround(mouse.ray, 0);
-			placing->move(Point(hit.position))->floor(placing->pos.y);
 		}
 	}
 }
@@ -408,13 +412,15 @@ void MainCamera::draw() {
 		}
 
 		if (hovering) {
-			Point bounds = {hovering->spec->w, hovering->spec->h, hovering->spec->d};
+			Box box = hovering->box();
+			Point bounds = {box.w, box.h, box.d};
 			DrawCubeWiresV(hovering->pos, bounds + 0.01f, SKYBLUE);
 		}
 
 		if (selecting) {
 			for (auto ge: selected) {
-				Point bounds = {ge->spec->w, ge->spec->h, ge->spec->d};
+				Box box = ge->box();
+				Point bounds = {box.w, box.h, box.d};
 				DrawCubeWiresV(ge->pos, bounds + 0.01f, SKYBLUE);
 			}
 		}
@@ -422,6 +428,12 @@ void MainCamera::draw() {
 		if (placing) {
 			for (auto part: placing->spec->parts) {
 				part->drawGhost(part->instance(placing));
+			}
+
+			if (!placingFits) {
+				Box box = placing->box();
+				Point bounds = {box.w, box.h, box.d};
+				DrawCubeWiresV(placing->pos, bounds + 0.01f, RED);
 			}
 		}
 
@@ -459,7 +471,7 @@ void MainCamera::draw() {
 					p = n;
 				}
 
-				DrawRay((Ray){en.pos, en.dir}, BLUE);
+				//DrawRay((Ray){en.pos, en.dir}, BLUE);
 			}
 		}
 

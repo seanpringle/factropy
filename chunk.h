@@ -36,7 +36,7 @@ struct Chunk {
 		Coords(float x, float y);
 	};
 
-	struct ChunkBoxIter {
+	struct ChunkWalkerIter {
 		int cx0, cy0;
 		int cx1, cy1;
 		int cx, cy;
@@ -48,20 +48,48 @@ struct Chunk {
 		typedef std::input_iterator_tag iterator_category;
 
 		XY operator*() const;
-		bool operator==(const ChunkBoxIter& other) const;
-		bool operator!=(const ChunkBoxIter& other) const;
-		ChunkBoxIter& operator++();
+		bool operator==(const ChunkWalkerIter& other) const;
+		bool operator!=(const ChunkWalkerIter& other) const;
+		ChunkWalkerIter& operator++();
 	};
 
-	struct ChunkBox {
+	struct ChunkWalker {
 		Coords a;
 		Coords b;
-		ChunkBox(Box box);
-		ChunkBoxIter begin();
-		ChunkBoxIter end();
+		ChunkWalker(Box box);
+		ChunkWalkerIter begin();
+		ChunkWalkerIter end();
 	};
 
-	static ChunkBox walk(Box);
+	static ChunkWalker walk(Box);
+
+	struct TileWalkerIter {
+		int tx0, ty0;
+		int tx1, ty1;
+		int tx, ty;
+
+		typedef XY value_type;
+		typedef std::ptrdiff_t difference_type;
+		typedef XY* pointer;
+		typedef XY& reference;
+		typedef std::input_iterator_tag iterator_category;
+
+		XY operator*() const;
+		bool operator==(const TileWalkerIter& other) const;
+		bool operator!=(const TileWalkerIter& other) const;
+		TileWalkerIter& operator++();
+	};
+
+	struct TileWalker {
+		Coords a;
+		Coords b;
+		TileWalker(Box box);
+		TileWalkerIter begin();
+		TileWalkerIter end();
+	};
+
+	static TileWalker walkTiles(Box);
+
 	static inline std::map<XY,Chunk*> all;
 
 	typedef std::function<void(Chunk*)> Generator;
@@ -72,6 +100,7 @@ struct Chunk {
 	static Chunk* get(int x, int y);
 	static Chunk::Tile* tileTryGet(int x, int y);
 	static Chunk::Tile* tileTryGet(Point p);
+	static bool flatSurface(Box b);
 
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);

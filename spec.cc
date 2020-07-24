@@ -46,6 +46,11 @@ Spec::Spec(std::string name) {
 	vehicle = false;
 	drone = false;
 	store = false;
+
+	w = 1.0;
+	d = 1.0;
+	h = 1.0;
+	costGreedy = 1.0;
 }
 
 Spec* Spec::byName(std::string name) {
@@ -53,11 +58,20 @@ Spec* Spec::byName(std::string name) {
 	return all[name];
 }
 
-Point Spec::aligned(Point p, Point axis) {
+Point Spec::aligned(Point p, Point dir) {
 	if (align) {
 
+		float ww = w;
+		//float hh = h;
+		float dd = d;
+
+		if (dir == Point::West() || dir == Point::East()) {
+			ww = d;
+			dd = w;
+		}
+
 		p.x = std::floor(p.x);
-		if ((int)ceil(w)%2 != 0) {
+		if ((int)ceil(ww)%2 != 0) {
 			p.x += 0.5;
 		}
 
@@ -67,9 +81,24 @@ Point Spec::aligned(Point p, Point axis) {
 		//}
 
 		p.z = std::floor(p.z);
-		if ((int)ceil(d)%2 != 0) {
+		if ((int)ceil(dd)%2 != 0) {
 			p.z += 0.5;
 		}
 	}
 	return p;
 }
+
+Box Spec::box(Point pos, Point dir) {
+
+	float ww = w;
+	//float hh = h;
+	float dd = d;
+
+	if (dir == Point::West() || dir == Point::East()) {
+		ww = d;
+		dd = w;
+	}
+
+	return {pos.x, pos.y, pos.z, ww, h, dd};
+}
+

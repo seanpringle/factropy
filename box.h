@@ -14,8 +14,10 @@ struct Box {
 	Box translate(const Point p);
 	Box translate(float x, float y, float z);
 	Box grow(const Point p);
+	Box grow(float n);
 	Box grow(float x, float y, float z);
 	Box shrink(const Point p);
+	Box shrink(float n);
 	Box shrink(float x, float y, float z);
 	bool intersects(Box b);
 	bool contains(Point p);

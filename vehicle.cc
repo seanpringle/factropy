@@ -66,7 +66,6 @@ void Vehicle::update() {
 		return;
 	}
 
-
 	if (path.empty()) {
 		pause = Sim::tick + 15;
 		return;
@@ -109,8 +108,9 @@ Vehicle::Route::Route(Vehicle *v) : Path() {
 
 std::vector<Point> Vehicle::Route::getNeighbours(Point p) {
 	p = p.tileCentroid();
+	float clearance = Entity::get(vehicle->id).spec->clearance;
 
-	auto entities = Entity::intersecting(p.box().grow(1.5, 0.5, 1.5));
+	auto entities = Entity::intersecting(p.box().grow(clearance));
 
 	std::vector<Point> points = {
 		(p + Point( 1.0f, 0.0f, 0.0f)).tileCentroid(),
@@ -140,8 +140,7 @@ std::vector<Point> Vehicle::Route::getNeighbours(Point p) {
 	float range = origin.distance(target);
 
 	for (auto it = points.begin(); it != points.end(); ) {
-		Chunk::Tile *tile = Chunk::tileTryGet(*it);
-		if (!tile || tile->elevation > 0.01 || tile->elevation < -0.01) {
+		if (!Chunk::flatSurface(it->box().grow(clearance))) {
 			points.erase(it);
 			continue;
 		}
@@ -167,13 +166,46 @@ std::vector<Point> Vehicle::Route::getNeighbours(Point p) {
 }
 
 double Vehicle::Route::calcCost(Point a, Point b) {
-	return a.distance(b);
+	float clearance = Entity::get(vehicle->id).spec->clearance;
+	float cost = a.distance(b);
+
+	if (!Chunk::flatSurface(b.box().grow(clearance))) {
+		cost *= 1000.0f;
+	}
+
+	auto entities = Entity::intersecting(b.box().grow(clearance));
+
+	for (int eid: entities) {
+		if (vehicle->id != eid) {
+			cost *= 5.0f;
+		}
+	}
+
+	return cost;
 }
 
 double Vehicle::Route::calcHeuristic(Point p) {
-	return p.distance(target);
+	return p.distance(target) * Entity::get(vehicle->id).spec->costGreedy;
 }
 
 bool Vehicle::Route::rayCast(Point a, Point b) {
-	return false;
+	float clearance = Entity::get(vehicle->id).spec->clearance;
+
+	float d = a.distance(b);
+	if (d > 32.0f) return false;
+
+	Point n = (b-a).normalize();
+
+	for (Point c = a; c.distance(b) > 1.0f; c += n) {
+		if (!Chunk::flatSurface(c.box().grow(clearance))) {
+			return false;
+		}
+		for (int eid: Entity::intersecting(c.box().grow(1))) {
+			if (vehicle->id != eid) {
+				return false;
+			}
+		}
+	}
+
+	return true;
 }

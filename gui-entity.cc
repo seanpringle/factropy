@@ -21,26 +21,24 @@ GuiEntity::~GuiEntity() {
 }
 
 Box GuiEntity::box() {
-	return (Box){pos.x, pos.y, pos.z, spec->w, spec->h, spec->d};
+	return spec->box(pos, dir);
 }
 
 Matrix GuiEntity::transform() {
 	Matrix r = MatrixIdentity();
 
-	if (spec->pivot) {
-		// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
-		if (dir == Point::North()) {
-			r = MatrixRotate(Point::Up(), 180.0f*DEG2RAD);
-		}
-		else
-		if (dir == Point::South()) {
-			r = MatrixIdentity();
-		}
-		else {
-			Point axis = Point::South().cross(dir);
-			float angle = std::acos(Point::South().dot(dir));
-			r = MatrixRotate(axis, angle);
-		}
+	// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
+	if (dir == Point::North()) {
+		r = MatrixRotate(Point::Up(), 180.0f*DEG2RAD);
+	}
+	else
+	if (dir == Point::South()) {
+		r = MatrixIdentity();
+	}
+	else {
+		Point axis = Point::South().cross(dir);
+		float angle = std::acos(Point::South().dot(dir));
+		r = MatrixRotate(axis, angle);
 	}
 
 	Matrix t = MatrixTranslate(pos.x, pos.y, pos.z);
@@ -76,7 +74,8 @@ GuiFakeEntity* GuiFakeEntity::floor(float level) {
 
 GuiFakeEntity* GuiFakeEntity::rotate() {
 	if (spec->align) {
-		pos = spec->aligned(pos, dir.rotateHorizontal());
+		dir = dir.rotateHorizontal();
+		pos = spec->aligned(pos, dir);
 	}
 	return this;
 }

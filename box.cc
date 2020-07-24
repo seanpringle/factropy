@@ -24,12 +24,20 @@ Box Box::grow(Point p) {
 	return (Box){x, y, z, w + p.x*2, h + p.y*2, d + p.z*2};
 }
 
+Box Box::grow(float n) {
+	return grow(Point(n,n,n));
+}
+
 Box Box::grow(float xx, float yy, float zz) {
 	return grow(Point(xx,yy,zz));
 }
 
 Box Box::shrink(Point p) {
 	return grow((Point){-p.x, -p.y, -p.z});
+}
+
+Box Box::shrink(float n) {
+	return shrink(Point(n,n,n));
 }
 
 Box Box::shrink(float xx, float yy, float zz) {

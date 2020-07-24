@@ -3,13 +3,15 @@
 #include <limits>
 
 void Path::tick() {
-	if (jobs.size() > 0) {
-		Path* job = jobs.front();
+	for (int i = 0; i < 5; i++) {
+		if (jobs.size() > 0) {
+			Path* job = jobs.front();
 
-		job->update();
+			job->update();
 
-		if (job->done) {
-			jobs.pop_front();
+			if (job->done) {
+				jobs.pop_front();
+			}
 		}
 	}
 }
@@ -103,19 +105,21 @@ void Path::update() {
 			selected.pop_back();
 		}
 
-		// http://theory.stanford.edu/~amitp/GameProgramming/MapRepresentations.html#path-smoothing
-		// Longer distance smoothing at the end. Unlike theta smoothing below, this
-		// smoothing runs only on nodes in the final chosen path, so we can use the
-		// ray caster over longer distances without a huge imapct.
-		for (size_t i = 1, l = result.size()-2; i < l; i++) {
-			// check if the second follower is in sight
-			Point a = result[i];
-			Point b = result[i+2];
-			if (rayCast(a, b)) {
-				// if so, remove the first follower
-				result.erase(result.begin()+i+1);
-				i--;
-				l--;
+		if (result.size() > 2) {
+			// http://theory.stanford.edu/~amitp/GameProgramming/MapRepresentations.html#path-smoothing
+			// Longer distance smoothing at the end. Unlike theta smoothing below, this
+			// smoothing runs only on nodes in the final chosen path, so we can use the
+			// ray caster over longer distances without a huge imapct.
+			for (size_t i = 1, l = result.size()-2; i < l; i++) {
+				// check if the second follower is in sight
+				Point a = result[i];
+				Point b = result[i+2];
+				if (rayCast(a, b)) {
+					// if so, remove the first follower
+					result.erase(result.begin()+i+1);
+					i--;
+					l--;
+				}
 			}
 		}
 
