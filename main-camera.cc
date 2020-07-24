@@ -38,12 +38,12 @@ namespace {
 	}
 }
 
-MainCamera::MainCamera(Vector3 pos, Vector3 dir) {
+MainCamera::MainCamera(Point pos, Point dir) {
 	position = pos;
 	nextPosition = pos;
 	direction = dir;
 	nextDirection = dir;
-	up = (Vector3){0,1,0};
+	up = Point::Up();
 
 	ZERO(mouse);
 	showGrid = false;
@@ -70,9 +70,9 @@ void MainCamera::build(Spec* spec) {
 	}
 }
 
-Vector3 MainCamera::groundTarget(float ground) {
+Point MainCamera::groundTarget(float ground) {
 	RayHitInfo spot = GetCollisionRayGround((Ray){position, direction}, ground);
-	return spot.position;
+	return Point(spot.position);
 }
 
 Camera3D MainCamera::raylibCamera() {
@@ -163,39 +163,38 @@ void MainCamera::updateMouseState() {
 void MainCamera::updateCamera() {
 
 	if (IsKeyDown(KEY_W)) {
-		Vector3 ahead = (Vector3){direction.x, 0, direction.z};
-		position = Vector3Add(position, Vector3Normalize(ahead));
+		Point ahead = {direction.x, 0, direction.z};
+		position += ahead.normalize();
 		nextPosition = position;
 	}
 
 	if (IsKeyDown(KEY_S)) {
-		Vector3 ahead = (Vector3){direction.x, 0, direction.z};
-		position = Vector3Subtract(position, Vector3Normalize(ahead));
+		Point ahead = {direction.x, 0, direction.z};
+		position -= ahead.normalize();
 		nextPosition = position;
 	}
 
 	if (IsKeyDown(KEY_D)) {
-		Vector3 ahead = (Vector3){direction.x, 0, direction.z};
-		Vector3 left = Vector3Transform(ahead, MatrixRotate(up, -90*DEG2RAD));
-		position = Vector3Add(position, Vector3Normalize(left));
+		Point ahead = {direction.x, 0, direction.z};
+		Point left = ahead.transform(MatrixRotate(up, -90*DEG2RAD));
+		position += left.normalize();
 		nextPosition = position;
 	}
 
 	if (IsKeyDown(KEY_A)) {
-		Vector3 ahead = (Vector3){direction.x, 0, direction.z};
-		Vector3 left = Vector3Transform(ahead, MatrixRotate(up, 90*DEG2RAD));
-		position = Vector3Add(position, Vector3Normalize(left));
+		Point ahead = {direction.x, 0, direction.z};
+		Point left = ahead.transform(MatrixRotate(up, 90*DEG2RAD));
+		position += left.normalize();
 		nextPosition = position;
 	}
 
-	if (!Vector3Equal(position, nextPosition, 0.0001)) {
-		Vector3 delta = Vector3Subtract(nextPosition, position);
-		position = Vector3Add(position, Vector3Scale(delta, 0.01));
+	if (position != nextPosition) {
+		position += (nextPosition - position) * 0.01f;
 	}
 
-	if (!Vector3Equal(direction, nextDirection, 0.0001)) {
-		Vector3 delta = Vector3Subtract(nextDirection, direction);
-		direction = Vector3Normalize(Vector3Add(direction, Vector3Scale(delta, 0.1)));
+	if (direction != nextDirection) {
+		direction += (nextDirection - direction) * 0.1f;
+		direction = direction.normalize();
 	}
 
 	if (mouse.rH > 0.0f || mouse.rH < 0.0f || mouse.rV > 0.0f || mouse.rV < 0.0f) {
@@ -220,18 +219,18 @@ void MainCamera::updateCamera() {
 			mouse.rV -= rDV;
 		}
 
-		Vector3 target = groundTarget(0);
-		Vector3 radius = Vector3Subtract(position, target);
-		Vector3 right = Vector3Normalize(Vector3CrossProduct(radius, up));
+		Point target = groundTarget(0);
+		Point radius = position - target;
+		Point right = radius.cross(up).normalize();
 		Matrix rotateH = MatrixRotate(up, -rDH);
 		Matrix rotateV = MatrixRotate(right, rDV);
 		Matrix rotate = MatrixMultiply(rotateH, rotateV);
-		radius = Vector3Transform(radius, rotate);
+		radius = radius.transform(rotate);
 
-		position = Vector3Add(target, radius);
+		position = target + radius;
 		position.y = std::max(5.0f, position.y);
 
-		direction = Vector3Normalize(Vector3Subtract(target, position));
+		direction = (target - position).normalize();
 
 		nextPosition = position;
 		nextDirection = direction;
@@ -251,16 +250,14 @@ void MainCamera::updateCamera() {
 			mouse.zW -= zDW;
 		}
 
-		Vector3 target = groundTarget(0);
-		Vector3 radius = Vector3Subtract(position, target);
+		Point target = groundTarget(0);
+		Point radius = position - target;
 
-		if (Vector3Length(radius) > 10.0f || zDW > 0.0f) {
-			Vector3 delta = Vector3Scale(radius, zDW);
-
-			position = Vector3Add(position, delta);
+		if (radius.length() > 10.0f || zDW > 0.0f) {
+			position += radius * zDW;
 			position.y = std::max(5.0f, position.y);
 
-			direction = Vector3Normalize(Vector3Subtract(target, position));
+			direction = (target - position).normalize();
 
 			nextPosition = position;
 			nextDirection = direction;
@@ -271,7 +268,7 @@ void MainCamera::updateCamera() {
 
 	if (mouse.right.clicked) {
 		RayHitInfo spot = GetCollisionRayGround(mouse.ray, 0);
-		nextDirection = Vector3Normalize(Vector3Negate(Vector3Subtract(position, spot.position)));
+		nextDirection = -(position - Point(spot.position)).normalize();
 	}
 
 	mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, raylibCamera());
@@ -306,7 +303,7 @@ void MainCamera::update() {
 		}
 	}
 
-	Vector3 target = groundTarget(0);
+	Point target = groundTarget(0);
 	Box view = (Box){target.x, target.y, target.z, 500, 500, 500};
 
 	Sim::locked([&]() {
@@ -326,7 +323,7 @@ void MainCamera::update() {
 		if (hovered.size() > 0) {
 			float distance = 0.0f;
 			for (auto ge: hovered) {
-				float d = Vector3Distance(ge->pos, position);
+				float d = ge->pos.distance(position);
 				if (hovering == NULL || d < distance) {
 					hovering = ge;
 					distance = d;
@@ -364,9 +361,8 @@ void MainCamera::draw() {
 	ClearBackground(SKYBLUE);
 
 	BeginMode3D(camera);
-
 		if (showGrid) {
-			Vector3 groundZero = groundTarget(0);
+			Point groundZero = groundTarget(0);
 			groundZero.x = std::floor(groundZero.x);
 			groundZero.z = std::floor(groundZero.z);
 			drawGrid(groundZero, 64, 1);
@@ -412,16 +408,14 @@ void MainCamera::draw() {
 		}
 
 		if (hovering) {
-			Spec::Animation* animation = &hovering->spec->animations[hovering->dir];
-			Vector3 bounds = (Vector3){animation->w, animation->h, animation->d};
-			DrawCubeWiresV(hovering->pos, Vector3AddValue(bounds, 0.01), SKYBLUE);
+			Point bounds = {hovering->spec->w, hovering->spec->h, hovering->spec->d};
+			DrawCubeWiresV(hovering->pos, bounds + 0.01f, SKYBLUE);
 		}
 
 		if (selecting) {
 			for (auto ge: selected) {
-				Spec::Animation* animation = &ge->spec->animations[ge->dir];
-				Vector3 bounds = (Vector3){animation->w, animation->h, animation->d};
-				DrawCubeWiresV(ge->pos, Vector3AddValue(bounds, 0.01), SKYBLUE);
+				Point bounds = {ge->spec->w, ge->spec->h, ge->spec->d};
+				DrawCubeWiresV(ge->pos, bounds + 0.01f, SKYBLUE);
 			}
 		}
 
@@ -435,30 +429,37 @@ void MainCamera::draw() {
 			Path* job = Path::jobs.front();
 			DrawCube(job->target, 0.5f, 0.5f, 0.5f, GOLD);
 
+			std::vector<Matrix> reds;
+			std::vector<Matrix> greens;
+
 			for (auto pair: job->nodes) {
 				Path::Node* node = pair.second;
-				DrawCube(node->point, 0.5f, 0.5f, 0.5f,
-					job->inOpenSet(node) ? GREEN: RED
-				);
+				if (job->inOpenSet(node)) {
+					greens.push_back(MatrixTranslate(node->point.x, node->point.y, node->point.z));
+				} else {
+					reds.push_back(MatrixTranslate(node->point.x, node->point.y, node->point.z));
+				}
 			}
+
+			if (reds.size() > 0)
+				rlDrawMeshInstanced(redCube.meshes[0], redCube.materials[0], reds.size(), reds.data());
+
+			if (greens.size() > 0)
+				rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
 		}
 
 		for (auto ge: entities) {
 			Entity& en = Entity::get(ge->id);
 			if (en.spec->vehicle) {
 				Vehicle& vehicle = en.vehicle();
-				Vector3 p = en.pos;
+				Point p = en.pos;
 				for (auto n: vehicle.path) {
 					DrawSphere(n, 0.25f, RED);
 					DrawLine3D(p, n, RED);
 					p = n;
 				}
 
-				DrawRay((Ray){en.pos, en.looking()}, BLUE);
-			}
-
-			for (auto part: ge->spec->parts) {
-				batches[part].push_back(part->instance(ge));
+				DrawRay((Ray){en.pos, en.dir}, BLUE);
 			}
 		}
 

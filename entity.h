@@ -26,8 +26,6 @@ struct Entity {
 	static inline std::map<Chunk::XY,std::set<int>> grid;
 
 	static inline SparseArray<Entity> all = (MaxEntity);
-	static inline SparseArray<enum Direction> directions = (MaxEntity);
-	static inline SparseArray<Point> orientations = (MaxEntity);
 	static int next();
 
 	static Entity& create(int id, Spec* spec);
@@ -44,17 +42,15 @@ struct Entity {
 	uint32_t flags;
 	Spec* spec;
 	Point pos;
+	Point dir;
 
 	bool isGhost();
 	Entity& setGhost(bool state);
 
 	Box box();
-	enum Direction dir();
-	Point looking();
-	void look(Point); // rel
-	void lookAt(Point); // abs
+	Entity& look(Point); // rel
+	Entity& lookAt(Point); // abs
 	bool lookAtPivot(Point);
-	Entity& face(enum Direction);
 	Entity& move(Point p);
 	Entity& move(float x, float y, float z);
 	Entity& floor(float level);
@@ -72,8 +68,7 @@ struct GuiEntity {
 	int id;
 	Spec* spec;
 	Point pos;
-	enum Direction dir;
-	Point orientation;
+	Point dir;
 	bool ghost;
 
 	GuiEntity();
@@ -88,7 +83,6 @@ struct GuiFakeEntity : GuiEntity {
 	GuiFakeEntity(Spec* spec);
 	~GuiFakeEntity();
 
-	GuiFakeEntity* face(enum Direction);
 	GuiFakeEntity* move(Point p);
 	GuiFakeEntity* move(float x, float y, float z);
 	GuiFakeEntity* floor(float level);

@@ -213,7 +213,7 @@ Part* Part::paint(int hexcolor) {
 	return this;
 }
 
-Part* Part::rotate(Vector3 axis, float degrees) {
+Part* Part::rotate(Point axis, float degrees) {
 	transform = MatrixMultiply(transform, MatrixRotate(axis, degrees*DEG2RAD));
 	return this;
 }

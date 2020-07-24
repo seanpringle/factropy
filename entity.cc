@@ -15,7 +15,6 @@ void Entity::reset() {
 		en.destroy();
 	}
 	all.clear();
-	directions.clear();
 	grid.clear();
 	Store::reset();
 }
@@ -31,16 +30,9 @@ Entity& Entity::create(int id, Spec *spec) {
 	en.id = id;
 	en.spec = spec;
 	en.flags = 0;
+	en.dir = Point::South();
 
-	if (spec->hasDirection()) {
-		directions.set(id, South);
-	}
-
-	if (spec->hasOrientation()) {
-		orientations.set(id, Point(0,0,1));
-	}
-
-	if (spec->hasStore()) {
+	if (spec->store) {
 		Store::create(id);
 	}
 
@@ -76,10 +68,6 @@ void Entity::saveAll(const char* name) {
 		state["flags"] = en.flags;
 		state["pos"] = { en.pos.x, en.pos.y, en.pos.z };
 
-		if (en.spec->hasDirection()) {
-			state["dir"] = directions.get(en.id);
-		}
-
 		out << state << "\n";
 	}
 
@@ -97,10 +85,6 @@ void Entity::loadAll(const char* name) {
 
 		en.pos = (Point){state["pos"][0], state["pos"][1], state["pos"][2]};
 		en.flags = state["flags"];
-
-		if (en.spec->hasDirection()) {
-			directions.set(en.id, state["dir"]);
-		}
 
 		en.index();
 	}
@@ -122,13 +106,7 @@ std::unordered_set<int> Entity::intersecting(Box box) {
 
 void Entity::destroy() {
 	unindex();
-	if (spec->hasDirection()) {
-		directions.drop(id);
-	}
-	if (spec->hasOrientation()) {
-		orientations.drop(id);
-	}
-	if (spec->hasStore()) {
+	if (spec->store) {
 		store().destroy();
 	}
 	if (spec->vehicle) {
@@ -147,34 +125,27 @@ Entity& Entity::setGhost(bool state) {
 }
 
 Box Entity::box() {
-	auto animation = &spec->animations[dir()];
-	return (Box){pos.x, pos.y, pos.z, animation->w, animation->h, animation->d};
+	return (Box){pos.x, pos.y, pos.z, spec->w, spec->h, spec->d};
 }
 
-enum Direction Entity::dir() {
-	return (spec->hasDirection()) ? directions.get(id): South;
-}
-
-Point Entity::looking() {
-	return (spec->hasOrientation()) ? orientations.get(id): Point(0,0,-1);
-}
-
-void Entity::look(Point p) {
-	if (spec->hasOrientation()) {
+Entity& Entity::look(Point p) {
+	if (spec->pivot) {
 		unindex();
-		orientations.set(id, p.normalize());
+		dir = p.normalize();
 		index();
 	}
+	return *this;
 }
 
-void Entity::lookAt(Point p) {
+Entity& Entity::lookAt(Point p) {
 	look(p-pos);
+	return *this;
 }
 
 bool Entity::lookAtPivot(Point o) {
 	o = (o-pos).normalize();
-	look(looking().pivot(o, 0.01));
-	return looking() == o;
+	look(dir.pivot(o, 0.01));
+	return dir == o;
 }
 
 Entity& Entity::index() {
@@ -192,18 +163,9 @@ Entity& Entity::unindex() {
 	return *this;
 }
 
-Entity& Entity::face(enum Direction d) {
-	if (spec->rotate || (isGhost() && spec->rotateGhost)) {
-		unindex();
-		directions.set(id, d);
-		index();
-	}
-	return *this;
-}
-
 Entity& Entity::move(Point p) {
 	unindex();
-	pos = spec->aligned(p, dir());
+	pos = spec->aligned(p, dir);
 	index();
 	return *this;
 }
@@ -214,19 +176,15 @@ Entity& Entity::move(float x, float y, float z) {
 
 Entity& Entity::floor(float level) {
 	unindex();
-	auto animation = &spec->animations[dir()];
-	pos.y = level + animation->h/2.0f;
+	pos.y = level + spec->h/2.0f;
 	index();
 	return *this;
 }
 
 Entity& Entity::rotate() {
-	if (spec->rotate || (isGhost() && spec->rotateGhost)) {
-		unindex();
-		directions.set(id, Directions::rotate(directions.get(id)));
-		pos = spec->aligned(pos, dir());
-		index();
-	}
+	unindex();
+	pos = spec->aligned(pos, dir.rotateHorizontal());
+	index();
 	return *this;
 }
 

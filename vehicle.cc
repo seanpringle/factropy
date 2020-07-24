@@ -75,7 +75,7 @@ void Vehicle::update() {
 	Point centroid = en.pos.floor(0);
 	Point target = path.front().floor(0);
 
-	if (!en.lookAtPivot((Vector3){path.front().x, en.pos.y, path.front().z})) {
+	if (!en.lookAtPivot({path.front().x, en.pos.y, path.front().z})) {
 		return;
 	}
 
@@ -90,11 +90,11 @@ void Vehicle::update() {
 		return;
 	}
 
-	Vector3 v = target - centroid;
-	Vector3 n = Vector3Normalize(v);
-	Vector3 s = Vector3Scale(n, speed);
+	Point v = target - centroid;
+	Point n = v.normalize();
+	Point s = n * speed;
 
-	en.move(centroid + Point(s)).floor(0);
+	en.move(centroid + s).floor(0);
 }
 
 void Vehicle::addWaypoint(Point p) {

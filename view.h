@@ -12,6 +12,8 @@ struct MainCamera;
 
 struct View {
 	static inline Model waterCube;
+	static inline Model redCube;
+	static inline Model greenCube;
 	static constexpr float fovy = 45.0f;
 
 	View();
@@ -22,23 +24,23 @@ struct View {
 };
 
 struct SiteCamera : View {
-	Vector3 pos;
-	Vector3 dir;
+	Point pos;
+	Point dir;
 	std::vector<GuiEntity*> entities;
 	uint64_t refresh;
 
-	SiteCamera(Vector3, Vector3);
+	SiteCamera(Point, Point);
 	virtual void update();
 	virtual void draw(RenderTexture canvas);
 };
 
 struct MainCamera : View {
-	Vector3 position;
-	Vector3 direction;
-	Vector3 up;
+	Point position;
+	Point direction;
+	Point up;
 
-	Vector3 nextPosition;
-	Vector3 nextDirection;
+	Point nextPosition;
+	Point nextDirection;
 	bool moving;
 
 	struct MouseXY {
@@ -85,11 +87,11 @@ struct MainCamera : View {
 	EntityPopup *entityPopup;
 	bool popupFocused;
 
-	MainCamera(Vector3, Vector3);
+	MainCamera(Point, Point);
 	virtual void update();
 	virtual void draw();
 
-	Vector3 groundTarget(float ground);
+	Point groundTarget(float ground);
 	Camera3D raylibCamera();
 	void updateMouseState();
 	void updateCamera();

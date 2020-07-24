@@ -33,20 +33,20 @@ int main(int argc, char const *argv[]) {
 		fatalf("unexpected argument: %s", arg.c_str());
 	}
 
-	SetTraceLogLevel(LOG_WARNING);
+	//SetTraceLogLevel(LOG_WARNING);
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_VSYNC_HINT|FLAG_MSAA_4X_HINT);
 	InitWindow(1920,1080,"test9");
 	SetTargetFPS(60);
 	SetExitKey(0);
 
 	SiteCamera *camSec = new SiteCamera(
-		(Vector3){50,50,50},
-		(Vector3){-1,-1,-1}
+		{50,50,50},
+		{-1,-1,-1}
 	);
 
 	MainCamera *camera = new MainCamera(
-		(Vector3){10,10,10},
-		(Vector3){-1,-1,-1}
+		{10,10,10},
+		{-1,-1,-1}
 	);
 
 	float ambientCol[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
@@ -74,8 +74,8 @@ int main(int argc, char const *argv[]) {
 	Part::shader = pshader;
 	Part::material = LoadMaterialDefault();
 
-	Light lightA = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, shader);
-	Light lightB = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ -1, 1, 0 }, Vector3Zero(), WHITE, pshader);
+	Light lightA = CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero(), WHITE, shader);
+	Light lightB = CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero(), WHITE, pshader);
 
 	Sim::seed(879600773);
 	//Sim::seed(4);
@@ -95,88 +95,58 @@ int main(int argc, char const *argv[]) {
 
 	Spec* spec = new Spec("provider-container");
 	spec->image = LoadImage("icons/provider-container.png");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 2;
-	spec->animations[South].d = 5;
-	spec->animations[East].w = 5;
-	spec->animations[East].h = 2;
-	spec->animations[East].d = 2;
+	spec->w = 2;
+	spec->h = 2;
+	spec->d = 5;
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x990000ff),
 		(new PartSpinner(thingFan))->paint(0xccccccff)->translate(0,1.1,0),
 	};
 	spec->align = true;
-	spec->rotate = false;
-	spec->rotateGhost = true;
 	spec->vehicle = false;
 	spec->store = true;
 
-	spec->animations[North] = spec->animations[South];
-	spec->animations[West] = spec->animations[East];
-
 	spec = new Spec("requester-container");
 	spec->image = LoadImage("icons/requester-container.png");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 2;
-	spec->animations[South].d = 5;
-	spec->animations[East].w = 5;
-	spec->animations[East].h = 2;
-	spec->animations[East].d = 2;
+	spec->w = 2;
+	spec->h = 2;
+	spec->d = 5;
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x0044ccff),
 	};
 	spec->align = true;
-	spec->rotate = false;
-	spec->rotateGhost = true;
 	spec->vehicle = false;
 	spec->store = true;
 
-	spec->animations[North] = spec->animations[South];
-	spec->animations[West] = spec->animations[East];
-
 	spec = new Spec("buffer-container");
 	spec->image = LoadImage("icons/buffer-container.png");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 2;
-	spec->animations[South].d = 5;
-	spec->animations[East].w = 5;
-	spec->animations[East].h = 2;
-	spec->animations[East].d = 2;
+	spec->w = 2;
+	spec->h = 2;
+	spec->d = 5;
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x006600ff),
 	};
 	spec->align = true;
-	spec->rotate = false;
-	spec->rotateGhost = true;
 	spec->vehicle = false;
 	spec->store = true;
 
-	spec->animations[North] = spec->animations[South];
-	spec->animations[West] = spec->animations[East];
-
 	spec = new Spec("assembler");
 	spec->image = LoadImage("icons/none.png");
-	spec->animations[South].w = 5;
-	spec->animations[South].h = 3;
-	spec->animations[South].d = 5;
+	spec->w = 5;
+	spec->h = 3;
+	spec->d = 5;
 	spec->parts = {
 		(new Part(thingAssembler))->paint(0x009900ff),
 	};
 	spec->align = true;
-	spec->rotate = true;
-	spec->rotateGhost = true;
 	spec->vehicle = false;
 	spec->store = true;
 
-	spec->animations[North] = spec->animations[South];
-	spec->animations[East] = spec->animations[South];
-	spec->animations[West] = spec->animations[South];
-
 	spec = new Spec("belt");
 	spec->image = LoadImage("icons/none.png");
-	spec->animations[South].w = 1;
-	spec->animations[South].h = 0.5;
-	spec->animations[South].d = 1;
+	spec->w = 1;
+	spec->h = 0.5;
+	spec->d = 1;
 
 	spec->parts = {
 		(new Part(thingBeltBase))->paint(0xcccc00ff),
@@ -194,13 +164,7 @@ int main(int argc, char const *argv[]) {
 	}
 
 	spec->align = true;
-	spec->rotate = true;
-	spec->rotateGhost = true;
 	spec->vehicle = false;
-
-	spec->animations[North] = spec->animations[South];
-	spec->animations[East] = spec->animations[South];
-	spec->animations[West] = spec->animations[South];
 
 	std::vector<Spec*> rocks;
 
@@ -210,15 +174,13 @@ int main(int argc, char const *argv[]) {
 
 		spec = new Spec(name);
 		spec->image = LoadImage("icons/none.png");
-		spec->animations[South].w = 2;
-		spec->animations[South].h = 1;
-		spec->animations[South].d = 2;
+		spec->w = 2;
+		spec->h = 1;
+		spec->d = 2;
 		spec->parts = {
 			(new PartFacer(Thing(part)))->paint(0x666666ff),
 		};
 		spec->align = false;
-		spec->rotate = false;
-		spec->rotateGhost = false;
 		spec->vehicle = false;
 
 		rocks.push_back(spec);
@@ -236,7 +198,7 @@ int main(int argc, char const *argv[]) {
 							.setGhost(true)
 							.move((Point){
 								(float)(chunk->x*Chunk::size+x),
-								spec->animations[South].h/2.0f,
+								spec->h/2.0f,
 								(float)(chunk->y*Chunk::size+y),
 							})
 							.setGhost(false)
@@ -251,30 +213,26 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("tree1");
 	spec->image = LoadImage("icons/none.png");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 5;
-	spec->animations[South].d = 2;
+	spec->w = 2;
+	spec->h = 5;
+	spec->d = 2;
 	spec->parts = {
 		(new PartFacer(Thing("models/tree1.stl")))->paint(0x224400ff)->translate(0,-2.5,0),
 	};
 	spec->align = false;
-	spec->rotate = false;
-	spec->rotateGhost = false;
 	spec->vehicle = false;
 
 	trees.push_back(spec);
 
 	spec = new Spec("tree2");
 	spec->image = LoadImage("icons/none.png");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 6;
-	spec->animations[South].d = 2;
+	spec->w = 2;
+	spec->h = 6;
+	spec->d = 2;
 	spec->parts = {
 		(new PartFacer(Thing("models/tree2.stl")))->paint(0x006600ff)->translate(-5,-3,0),
 	};
 	spec->align = false;
-	spec->rotate = false;
-	spec->rotateGhost = false;
 	spec->vehicle = false;
 
 	trees.push_back(spec);
@@ -291,7 +249,7 @@ int main(int argc, char const *argv[]) {
 							.setGhost(true)
 							.move((Point){
 								(float)(chunk->x*Chunk::size+x),
-								(e*100.0f) + spec->animations[South].h/2.0f,
+								(e*100.0f) + spec->h/2.0f,
 								(float)(chunk->y*Chunk::size+y),
 							})
 							.setGhost(false)
@@ -304,9 +262,9 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("truck-engineer");
 	spec->image = LoadImage("icons/none.png");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 2;
-	spec->animations[South].d = 3;
+	spec->w = 2;
+	spec->h = 2;
+	spec->d = 3;
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xff6600ff)->translate(0,0.3,0),
 		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,-1),
@@ -317,16 +275,15 @@ int main(int argc, char const *argv[]) {
 		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,1),
 	};
 	spec->align = false;
-	spec->rotate = false;
-	spec->rotateGhost = false;
+	spec->pivot = true;
 	spec->vehicle = true;
 	spec->store = true;
 
 	spec = new Spec("truck-hauler");
 	spec->image = LoadImage("icons/none.png");
-	spec->animations[South].w = 2;
-	spec->animations[South].h = 2;
-	spec->animations[South].d = 3;
+	spec->w = 2;
+	spec->h = 2;
+	spec->d = 3;
 	spec->parts = {
 		(new Part(thingTruckChassisHauler))->paint(0xffcc00ff)->translate(0,0.3,0),
 		Spec::byName("truck-engineer")->parts[1],
@@ -337,34 +294,29 @@ int main(int argc, char const *argv[]) {
 		Spec::byName("truck-engineer")->parts[6],
 	};
 	spec->align = false;
-	spec->rotate = false;
-	spec->rotateGhost = false;
 	spec->vehicle = true;
 	spec->store = true;
 
 	spec = new Spec("truck-stop");
 	spec->image = LoadImage("icons/none.png");
-	spec->animations[South].w = 3;
-	spec->animations[South].h = 0.1;
-	spec->animations[South].d = 3;
+	spec->w = 3;
+	spec->h = 0.1;
+	spec->d = 3;
 	spec->parts = {
 		(new Part(Thing("models/truck-stop.stl")))->paint(0x662222ff),
 	};
 	spec->align = true;
-	spec->rotate = true;
-	spec->rotateGhost = true;
+	spec->pivot = true;
 
 	spec = new Spec("camera-drone");
 	spec->image = LoadImage("icons/none.png");
-	spec->animations[South].w = 1;
-	spec->animations[South].h = 1;
-	spec->animations[South].d = 1;
+	spec->w = 1;
+	spec->h = 1;
+	spec->d = 1;
 	spec->parts = {
 		(new Part(Thing("models/drone-chassis.stl")))->paint(0x660000ff),
 	};
 	spec->align = false;
-	spec->rotate = false;
-	spec->rotateGhost = false;
 	spec->drone = true;
 
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
@@ -373,6 +325,14 @@ int main(int argc, char const *argv[]) {
 	View::waterCube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	View::waterCube.materials[0].shader = pshader;
 	View::waterCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x010190FF);
+
+	View::redCube = LoadModelFromMesh(GenMeshCube(0.5f,0.5f,0.5f));
+	View::redCube.materials[0].shader = pshader;
+	View::redCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0xff0000FF);
+
+	View::greenCube = LoadModelFromMesh(GenMeshCube(0.5f,0.5f,0.5f));
+	View::greenCube.materials[0].shader = pshader;
+	View::greenCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x00ff00FF);
 
 	Chunk::material = LoadMaterialDefault();
 	Chunk::material.shader = shader;
@@ -464,7 +424,7 @@ int main(int argc, char const *argv[]) {
 				Sim::locked([&]() {
 					Entity::create(Entity::next(), camera->placing->spec)
 						.setGhost(true)
-						.face(camera->placing->dir)
+						.look(camera->placing->dir)
 						.move(camera->placing->pos)
 						.setGhost(false);
 				});

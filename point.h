@@ -8,10 +8,26 @@ struct Point;
 #include <initializer_list>
 
 struct Point : Vector3 {
+	static Point Zero();
+	static Point North();
+	static Point South();
+	static Point East();
+	static Point West();
+	static Point Up();
+	static Point Down();
+
 	bool operator==(const Point& o) const;
+	bool operator!=(const Point& o) const;
 	bool operator<(const Point& o) const;
 	Point operator+(const Point& o) const;
+	Point operator+(float n) const;
 	Point operator-(const Point& o) const;
+	Point operator-(float n) const;
+	Point operator-() const;
+	Point operator*(const Point& o) const;
+	Point operator*(float s) const;
+	void operator+=(const Point& o);
+	void operator-=(const Point& o);
 
 	Point();
 	Point(std::initializer_list<float>);
@@ -27,7 +43,12 @@ struct Point : Vector3 {
 	Point normalize();
 	Point cross(Point);
 	float dot(Point);
+	Point scale(float);
 	Point pivot(Point target, float speed);
+	Point roundCardinal();
+	Point rotateHorizontal();
+	Point transform(Matrix);
+	float length();
 };
 
 #endif

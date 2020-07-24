@@ -2,7 +2,7 @@
 #include "sim.h"
 #include "view.h"
 
-SiteCamera::SiteCamera(Vector3 ppos, Vector3 ddir) {
+SiteCamera::SiteCamera(Point ppos, Point ddir) {
 	pos = ppos;
 	dir = ddir;
 	refresh = 60;
@@ -16,7 +16,7 @@ void SiteCamera::update() {
 		entities.pop_back();
 	}
 
-	Vector3 target = Vector3Add(pos, dir);
+	Point target = pos + dir;
 	Box view = (Box){target.x, target.y, target.z, 500, 500, 500};
 
 	Sim::locked([&]() {
@@ -31,8 +31,8 @@ void SiteCamera::draw(RenderTexture canvas) {
 
 	Camera3D camera = {
 		position : pos,
-		target   : Vector3Add(pos, dir),
-		up       : (Vector3){0,-1,0},
+		target   : pos + dir,
+		up       : -Point::Up(),
 		fovy     : -fovy,
 		type     : CAMERA_PERSPECTIVE,
 	};

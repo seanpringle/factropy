@@ -10,7 +10,6 @@ struct Spec;
 #include "raymath.h"
 #include "rlgl.h"
 #include "point.h"
-#include "direction.h"
 #include "part.h"
 
 struct Spec {
@@ -22,28 +21,21 @@ struct Spec {
 	static void loadAll(const char *path);
 	static void reset();
 
-	struct Animation {
-		float w;
-		float h;
-		float d;
-	};
-
 	std::string name;
 	std::vector<Part*> parts;
 	bool align;
-	bool rotate;
-	bool rotateGhost;
+	bool pivot;
 	bool vehicle;
 	bool drone;
 	bool store;
 	Image image;
 
-	Animation animations[4];
+	float w;
+	float h;
+	float d;
 
 	Spec(std::string name);
-	Point aligned(Point p, enum Direction dir);
-	bool hasDirection();
-	bool hasOrientation();
+	Point aligned(Point p, Point axis);
 	bool hasStore();
 };
 

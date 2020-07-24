@@ -4,9 +4,8 @@
 GuiEntity::GuiEntity() {
 	id = 0;
 	spec = NULL;
-	dir = South;
 	pos = {0,0,0};
-	orientation = {0,0,1};
+	dir = Point::South();
 }
 
 GuiEntity::GuiEntity(int id) {
@@ -14,8 +13,7 @@ GuiEntity::GuiEntity(int id) {
 	this->id = id;
 	spec = en.spec;
 	pos = en.pos;
-	dir = en.dir();
-	orientation = en.looking();
+	dir = en.dir;
 	ghost = en.isGhost();
 }
 
@@ -23,30 +21,26 @@ GuiEntity::~GuiEntity() {
 }
 
 Box GuiEntity::box() {
-	auto animation = &spec->animations[dir];
-	return (Box){pos.x, pos.y, pos.z, animation->w, animation->h, animation->d};
+	return (Box){pos.x, pos.y, pos.z, spec->w, spec->h, spec->d};
 }
 
 Matrix GuiEntity::transform() {
-	Matrix r;
+	Matrix r = MatrixIdentity();
 
-	if (spec->hasOrientation()) {
+	if (spec->pivot) {
 		// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
-		if (orientation == Point(0,0,-1)) {
-			r = MatrixRotate(Point(0,1,0), 180.0f*DEG2RAD);
+		if (dir == Point::North()) {
+			r = MatrixRotate(Point::Up(), 180.0f*DEG2RAD);
 		}
 		else
-		if (orientation == Point(0,0,1)) {
+		if (dir == Point::South()) {
 			r = MatrixIdentity();
 		}
 		else {
-			Point axis = Point(0,0,1).cross(orientation);
-			float angle = std::acos(Point(0,0,1).dot(orientation));
+			Point axis = Point::South().cross(dir);
+			float angle = std::acos(Point::South().dot(dir));
 			r = MatrixRotate(axis, angle);
 		}
-	}
-	else {
-		r = MatrixRotateY(Directions::degrees(dir)*DEG2RAD);
 	}
 
 	Matrix t = MatrixTranslate(pos.x, pos.y, pos.z);
@@ -58,17 +52,12 @@ Matrix GuiEntity::transform() {
 GuiFakeEntity::GuiFakeEntity(Spec* spec) : GuiEntity() {
 	id = 0;
 	this->spec = spec;
-	dir = South;
+	dir = Point::South();
 	ghost = true;
 	move((Point){0,0,0});
 }
 
 GuiFakeEntity::~GuiFakeEntity() {
-}
-
-GuiFakeEntity* GuiFakeEntity::face(enum Direction d) {
-	dir = (spec->rotate || (ghost && spec->rotateGhost)) ? d: South;
-	return this;
 }
 
 GuiFakeEntity* GuiFakeEntity::move(Point p) {
@@ -81,15 +70,13 @@ GuiFakeEntity* GuiFakeEntity::move(float x, float y, float z) {
 }
 
 GuiFakeEntity* GuiFakeEntity::floor(float level) {
-	auto animation = &spec->animations[dir];
-	pos.y = level + animation->h/2.0f;
+	pos.y = level + spec->h/2.0f;
 	return this;
 }
 
 GuiFakeEntity* GuiFakeEntity::rotate() {
-	if (spec->rotate || (ghost && spec->rotateGhost)) {
-		dir = Directions::rotate(dir);
-		pos = spec->aligned(pos, dir);
+	if (spec->align) {
+		pos = spec->aligned(pos, dir.rotateHorizontal());
 	}
 	return this;
 }

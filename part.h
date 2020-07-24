@@ -33,7 +33,7 @@ struct Part: Thing {
 	Color color;
 
 	Part* paint(int colour);
-	Part* rotate(Vector3 axis, float degrees);
+	Part* rotate(Point axis, float degrees);
 	Part* translate(float x, float y, float z);
 	virtual void update();
 

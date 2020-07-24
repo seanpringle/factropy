@@ -42,8 +42,7 @@ Spec::Spec(std::string name) {
 	all[name] = this;
 
 	align = false;
-	rotate = false;
-	rotateGhost = false;
+	pivot = false;
 	vehicle = false;
 	drone = false;
 	store = false;
@@ -54,36 +53,23 @@ Spec* Spec::byName(std::string name) {
 	return all[name];
 }
 
-Point Spec::aligned(Point p, enum Direction dir) {
+Point Spec::aligned(Point p, Point axis) {
 	if (align) {
-		Spec::Animation* animation = &animations[dir];
 
 		p.x = std::floor(p.x);
-		if ((int)ceil(animation->w)%2 != 0) {
+		if ((int)ceil(w)%2 != 0) {
 			p.x += 0.5;
 		}
 
 		//p.y = std::floor(p.y);
-		//if ((int)ceil(animation->h)%2 != 0) {
+		//if ((int)ceil(h)%2 != 0) {
 		//	p.y += 0.5;
 		//}
 
 		p.z = std::floor(p.z);
-		if ((int)ceil(animation->d)%2 != 0) {
+		if ((int)ceil(d)%2 != 0) {
 			p.z += 0.5;
 		}
 	}
 	return p;
-}
-
-bool Spec::hasDirection() {
-	return rotate || rotateGhost;
-}
-
-bool Spec::hasOrientation() {
-	return vehicle;
-}
-
-bool Spec::hasStore() {
-	return store;
 }

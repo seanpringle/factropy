@@ -1,6 +1,34 @@
 #include "common.h"
 #include "box.h"
 
+Point Point::Zero() {
+	return Point( 0, 0, 0);
+}
+
+Point Point::North() {
+	return Point( 0, 0,-1);
+}
+
+Point Point::South() {
+	return Point( 0, 0, 1);
+}
+
+Point Point::East() {
+	return Point( 1, 0, 0);
+}
+
+Point Point::West() {
+	return Point(-1, 0, 0);
+}
+
+Point Point::Up() {
+	return Point( 0, 1, 0);
+}
+
+Point Point::Down() {
+	return Point( 0,-1, 0);
+}
+
 Point::Point() {
 	x = 0;
 	y = 0;
@@ -33,6 +61,10 @@ bool Point::operator==(const Point& o) const {
 	return xeq && yeq && zeq;
 }
 
+bool Point::operator!=(const Point& o) const {
+	return !(*this == o);
+}
+
 bool Point::operator<(const Point& o) const {
 	bool xeq = std::abs(x-o.x) < 0.001;
 	bool zeq = std::abs(z-o.z) < 0.001;
@@ -49,8 +81,36 @@ Point Point::operator+(const Point& o) const {
 	return {x+o.x, y+o.y, z+o.z};
 }
 
+Point Point::operator+(float n) const {
+	return {x+n, y+n, z+n};
+}
+
 Point Point::operator-(const Point& o) const {
 	return {x-o.x, y-o.y, z-o.z};
+}
+
+Point Point::operator-(float n) const {
+	return {x-n, y-n, z-n};
+}
+
+Point Point::operator-() const {
+	return {-x, -y, -z};
+}
+
+Point Point::operator*(const Point& o) const {
+	return {x*o.x, y*o.y, z*o.z};
+}
+
+Point Point::operator*(float s) const {
+	return {x*s, y*s, z*s};
+}
+
+void Point::operator+=(const Point& o) {
+	*this = *this+o;
+}
+
+void Point::operator-=(const Point& o) {
+	*this = *this-o;
 }
 
 Box Point::box() {
@@ -102,6 +162,10 @@ float Point::dot(Point b) {
 	return Vector3DotProduct(*this, b);
 }
 
+Point Point::scale(float s) {
+	return Point(Vector3Scale(*this, s));
+}
+
 Point Point::pivot(Point target, float speed) {
 	Matrix r;
 	target = target.normalize();
@@ -125,4 +189,50 @@ Point Point::pivot(Point target, float speed) {
 		r = MatrixRotate(axis, delta);
 	}
 	return Point(Vector3Transform(*this, r));
+}
+
+Point Point::roundCardinal() {
+	Point p = normalize();
+
+	Point c = North();
+	float d = p.distance(North());
+
+	float ds = p.distance(South());
+	if (ds < d) {
+		c = South();
+		d = ds;
+	}
+
+	float de = p.distance(East());
+	if (de < d) {
+		c = East();
+		d = de;
+	}
+
+	float dw = p.distance(West());
+	if (dw < d) {
+		c = West();
+		d = dw;
+	}
+
+	return c;
+}
+
+Point Point::rotateHorizontal() {
+	Point p = roundCardinal();
+
+	if (p == North()) return East();
+	if (p == East()) return South();
+	if (p == South()) return West();
+	if (p == West()) return North();
+
+	return p;
+}
+
+Point Point::transform(Matrix m) {
+	return Point(Vector3Transform(*this, m));
+}
+
+float Point::length() {
+	return Vector3Length(*this);
 }
