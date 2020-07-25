@@ -47,6 +47,7 @@ struct Point : Vector3 {
 	Point pivot(Point target, float speed);
 	Point roundCardinal();
 	Point rotateHorizontal();
+	Point randomHorizontal();
 	Point transform(Matrix);
 	float length();
 };

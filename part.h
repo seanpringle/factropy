@@ -16,6 +16,7 @@ struct Thing {
 	Thing();
 	Thing(std::string);
 
+	Thing& smooth();
 	void drawBatch(Color color, int count, Matrix *trx);
 	void drawGhostBatch(Color color, int count, Matrix *trx);
 };
@@ -40,11 +41,6 @@ struct Part: Thing {
 	void drawInstanced(int count, Matrix* trx);
 	void drawGhost(Matrix trx);
 
-	virtual Matrix instance(GuiEntity *ge);
-};
-
-struct PartFacer : Part {
-	PartFacer(Thing thing);
 	virtual Matrix instance(GuiEntity *ge);
 };
 

@@ -49,27 +49,35 @@ int main(int argc, char const *argv[]) {
 		{-1,-1,-1}
 	);
 
-	float ambientCol[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
+  float fogDensity = 0.004f;
+	Vector4 fogColor = ColorNormalize(SKYBLUE);
+	Vector4 ambient = { 0.2f, 0.2f, 0.2f, 1.0f };
 
 	Shader shader = LoadShader(
 		FormatText("shaders/glsl%i/base_lighting.vs", GLSL_VERSION),
-		FormatText("shaders/glsl%i/lighting.fs", GLSL_VERSION)
+		FormatText("shaders/glsl%i/fog.fs", GLSL_VERSION)
 	);
 
 	shader.locs[LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
 	shader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
+	shader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
 
-	SetShaderValue(shader, GetShaderLocation(shader, "ambient"), &ambientCol, UNIFORM_VEC4);
+  SetShaderValue(shader, GetShaderLocation(shader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
+  SetShaderValue(shader, GetShaderLocation(shader, "fogColor"), &fogColor, UNIFORM_VEC4);
+	SetShaderValue(shader, GetShaderLocation(shader, "ambient"), &ambient, UNIFORM_VEC4);
 
 	Shader pshader = LoadShader(
 		FormatText("shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
-		FormatText("shaders/glsl%i/lighting.fs", GLSL_VERSION)
+		FormatText("shaders/glsl%i/fog.fs", GLSL_VERSION)
 	);
 
 	pshader.locs[LOC_MATRIX_MVP] = GetShaderLocation(pshader, "mvp");
 	pshader.locs[LOC_MATRIX_MODEL] = GetShaderAttribLocation(pshader, "instance");
+	pshader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(pshader, "viewPos");
 
-	SetShaderValue(pshader, GetShaderLocation(pshader, "ambient"), &ambientCol, UNIFORM_VEC4);
+  SetShaderValue(pshader, GetShaderLocation(pshader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
+  SetShaderValue(pshader, GetShaderLocation(pshader, "fogColor"), &fogColor, UNIFORM_VEC4);
+	SetShaderValue(pshader, GetShaderLocation(pshader, "ambient"), &ambient, UNIFORM_VEC4);
 
 	Part::shader = pshader;
 	Part::material = LoadMaterialDefault();
@@ -178,7 +186,7 @@ int main(int argc, char const *argv[]) {
 		spec->h = 1;
 		spec->d = 2;
 		spec->parts = {
-			(new PartFacer(Thing(part)))->paint(0x666666ff),
+			(new Part(Thing(part)))->paint(0x666666ff),
 		};
 		spec->align = true;
 		spec->vehicle = false;
@@ -196,6 +204,7 @@ int main(int argc, char const *argv[]) {
 						Spec *spec = rocks[Sim::choose(rocks.size())];
 						Entity::create(Entity::next(), spec)
 							.setGhost(true)
+							.look(Point::South().randomHorizontal())
 							.move((Point){
 								(float)(chunk->x*Chunk::size+x),
 								spec->h/2.0f,
@@ -217,7 +226,7 @@ int main(int argc, char const *argv[]) {
 	spec->h = 5;
 	spec->d = 2;
 	spec->parts = {
-		(new PartFacer(Thing("models/tree1.stl")))->paint(0x224400ff)->translate(0,-2.5,0),
+		(new Part(Thing("models/tree1.stl").smooth()))->paint(0x224400ff)->translate(0,-2.5,0),
 	};
 	spec->align = true;
 	spec->vehicle = false;
@@ -230,7 +239,7 @@ int main(int argc, char const *argv[]) {
 	spec->h = 6;
 	spec->d = 2;
 	spec->parts = {
-		(new PartFacer(Thing("models/tree2.stl")))->paint(0x006600ff)->translate(-5,-3,0),
+		(new Part(Thing("models/tree2.stl").smooth()))->paint(0x006600ff)->translate(-5,-3,0),
 	};
 	spec->align = true;
 	spec->vehicle = false;
@@ -247,6 +256,7 @@ int main(int argc, char const *argv[]) {
 						Spec *spec = trees[Sim::choose(trees.size())];
 						Entity::create(Entity::next(), spec)
 							.setGhost(true)
+							.look(Point::South().randomHorizontal())
 							.move((Point){
 								(float)(chunk->x*Chunk::size+x),
 								(e*100.0f) + spec->h/2.0f,
@@ -339,13 +349,14 @@ int main(int argc, char const *argv[]) {
 
 	Chunk::material = LoadMaterialDefault();
 	Chunk::material.shader = shader;
+	Chunk::material.maps[MAP_DIFFUSE].color = GetColor(0xffffffff);
 
 	if (loadSave) {
 		Sim::load("autosave");
 	}
 
 	if (!loadSave) {
-		int horizon = 15;
+		int horizon = 4;
 		for (int cy = -horizon; cy < horizon; cy++) {
 			for (int cx = -horizon; cx < horizon; cx++) {
 				Chunk::get(cx,cy);
@@ -377,12 +388,6 @@ int main(int argc, char const *argv[]) {
 
 		camera->update();
 		camSec->update();
-
-		UpdateLightValues(shader, lightA);
-		UpdateLightValues(pshader, lightB);
-
-		float cameraPos[3] = { camera->position.x, camera->position.y, camera->position.z };
-		SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], cameraPos, UNIFORM_VEC3);
 
 		if (camera->worldFocused) {
 
@@ -425,11 +430,13 @@ int main(int argc, char const *argv[]) {
 
 			if (camera->mouse.left.clicked && camera->placing) {
 				Sim::locked([&]() {
-					Entity::create(Entity::next(), camera->placing->spec)
-						.setGhost(true)
-						.look(camera->placing->dir)
-						.move(camera->placing->pos)
-						.setGhost(false);
+					if (Entity::fits(camera->placing->spec, camera->placing->pos, camera->placing->dir)) {
+						Entity::create(Entity::next(), camera->placing->spec)
+							.setGhost(true)
+							.look(camera->placing->dir)
+							.move(camera->placing->pos)
+							.setGhost(false);
+					}
 				});
 			}
 
@@ -478,7 +485,18 @@ int main(int argc, char const *argv[]) {
 
 		BeginDrawing();
 
+			UpdateLightValues(shader, lightA);
+			UpdateLightValues(pshader, lightB);
+
+			Point cameraTarget = camSec->groundTarget(0);
+			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
+			SetShaderValue(pshader, pshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
+
 			camSec->draw(secondary);
+
+			cameraTarget = camera->groundTarget(0);
+			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
+			SetShaderValue(pshader, pshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 
 			camera->draw();
 

@@ -119,6 +119,11 @@ Thing::Thing(std::string stl) {
 	transform = MatrixRotateX(90.0f*DEG2RAD);
 }
 
+Thing& Thing::smooth() {
+	Part::terrainNormals(&mesh);
+	return *this;
+}
+
 void Thing::drawBatch(Color color, int count, Matrix *trx) {
 	Part::material.shader = Part::shader;
 	Part::material.maps[MAP_DIFFUSE].color = color;
@@ -236,32 +241,6 @@ void Part::drawInstanced(int count, Matrix* trx) {
 
 void Part::drawGhost(Matrix trx) {
 	drawGhostBatch(color, 1, &trx);
-}
-
-PartFacer::PartFacer(Thing thing) : Part(thing) {
-}
-
-Matrix PartFacer::instance(GuiEntity* ge) {
-	Matrix trx = ge->transform();
-	float noise = 0.0f;
-	noise += trx.m0;
-	noise += trx.m4;
-	noise += trx.m8;
-	noise += trx.m12;
-	noise += trx.m1;
-	noise += trx.m5;
-	noise += trx.m9;
-	noise += trx.m13;
-	noise += trx.m2;
-	noise += trx.m6;
-	noise += trx.m10;
-	noise += trx.m14;
-	noise += trx.m3;
-	noise += trx.m7;
-	noise += trx.m11;
-	noise += trx.m15;
-	Matrix r = MatrixRotateY(noise);
-	return MatrixMultiply(MatrixMultiply(transform, r), trx);
 }
 
 PartSpinner::PartSpinner(Thing thing) : Part(thing) {

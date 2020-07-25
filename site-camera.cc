@@ -39,7 +39,7 @@ void SiteCamera::draw(RenderTexture canvas) {
 
 	BeginTextureMode(canvas);
 
-		ClearBackground(SKYBLUE);
+		ClearBackground(GRAY);
 
 		BeginMode3D(camera);
 
@@ -81,4 +81,9 @@ void SiteCamera::draw(RenderTexture canvas) {
 		EndMode3D();
 
 	EndTextureMode();
+}
+
+Point SiteCamera::groundTarget(float ground) {
+	RayHitInfo spot = GetCollisionRayGround((Ray){pos, dir}, ground);
+	return Point(spot.position);
 }

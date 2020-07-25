@@ -1,5 +1,6 @@
 #include "common.h"
 #include "box.h"
+#include "sim.h"
 
 Point Point::Zero() {
 	return Point( 0, 0, 0);
@@ -235,7 +236,6 @@ Point Point::roundCardinal() {
 
 Point Point::rotateHorizontal() {
 	Point p = roundCardinal();
-	notef("%f %f %f", p.x, p.y, p.z);
 
 	if (p == North()) return East();
 	if (p == East()) return South();
@@ -243,6 +243,11 @@ Point Point::rotateHorizontal() {
 	if (p == West()) return North();
 
 	return p;
+}
+
+Point Point::randomHorizontal() {
+	float angle = Sim::random()*360.0f*DEG2RAD;
+	return transform(MatrixRotateY(angle));
 }
 
 Point Point::transform(Matrix m) {

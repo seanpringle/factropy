@@ -10,7 +10,7 @@
 #include <functional>
 
 struct Chunk {
-	static const int size = 32;
+	static const int size = 128;
 
 	struct Tile {
 		float elevation;

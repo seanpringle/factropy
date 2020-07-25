@@ -32,6 +32,7 @@ struct SiteCamera : View {
 	SiteCamera(Point, Point);
 	virtual void update();
 	virtual void draw(RenderTexture canvas);
+	Point groundTarget(float ground);
 };
 
 struct MainCamera : View {

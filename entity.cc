@@ -56,7 +56,7 @@ Entity& Entity::get(int id) {
 }
 
 bool Entity::fits(Spec *spec, Point pos, Point dir) {
-	Box bounds = spec->box(pos, dir);
+	Box bounds = spec->box(pos, dir).shrink(0.1);
 	if (!Chunk::flatSurface(bounds)) {
 		return false;
 	}
@@ -78,6 +78,7 @@ void Entity::saveAll(const char* name) {
 		state["spec"] = en.spec->name;
 		state["flags"] = en.flags;
 		state["pos"] = { en.pos.x, en.pos.y, en.pos.z };
+		state["dir"] = { en.dir.x, en.dir.y, en.dir.z };
 
 		out << state << "\n";
 	}
@@ -95,6 +96,7 @@ void Entity::loadAll(const char* name) {
 		en.unindex();
 
 		en.pos = (Point){state["pos"][0], state["pos"][1], state["pos"][2]};
+		en.dir = (Point){state["dir"][0], state["dir"][1], state["dir"][2]};
 		en.flags = state["flags"];
 
 		en.index();
