@@ -5,13 +5,17 @@ void Store::reset() {
 	all.clear();
 }
 
-Store& Store::create(int id) {
+void Store::tick() {
+
+}
+
+Store& Store::create(uint id) {
 	Store& store = all.ref(id);
 	store.id = id;
 	return store;
 }
 
-Store& Store::get(int id) {
+Store& Store::get(uint id) {
 	ensuref(all.has(id), "invalid store access %d", id);
 	return all.ref(id);
 }
@@ -50,4 +54,13 @@ Stack Store::remove(Stack rstack) {
 	}
 	rstack.size = 0;
 	return rstack;
+}
+
+size_t Store::count(uint iid) {
+	for (auto it = stacks.begin(); it != stacks.end(); it++) {
+		if (it->iid == iid) {
+			return it->size;
+		}
+	}
+	return 0;
 }

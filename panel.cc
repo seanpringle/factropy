@@ -3,6 +3,7 @@
 #include "panel.h"
 #include "spec.h"
 #include "chunk.h"
+#include "sim.h"
 #include <cmath>
 
 extern "C" {
@@ -113,6 +114,8 @@ Panel::Panel(MainCamera *cam, int w, int h) {
 	mx = 0;
 	my = 0;
 	center();
+	ZERO(buttons);
+	ZERO(keys);
 }
 
 Panel::~Panel() {
@@ -152,7 +155,7 @@ void Panel::update() {
 	if (refresh > 0) {
 		refresh--;
 	}
-	
+
 	input();
 	center();
 
@@ -264,35 +267,85 @@ void BuildPopup::build() {
 }
 
 EntityPopup::EntityPopup(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
-	ge = NULL;
+	eid = 0;
 }
 
-void EntityPopup::useEntity(GuiEntity *uge) {
-	if (ge) {
-		delete ge;
-	}
-	ge = uge;
+void EntityPopup::useEntity(uint ueid) {
+	eid = ueid;
 }
 
 void EntityPopup::build() {
-	if (!ge) {
-		camera->popup = NULL;
-		return;
-	}
-
-	nk_begin(&nuklear->ctx, ge->spec->name.c_str(), nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
-
-	nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
-	for (auto [x,y]: Chunk::walk(ge->box())) {
-		auto sx = std::to_string(x);
-		auto sy = std::to_string(y);
-		nk_label(&nuklear->ctx, (sx + "," + sy).c_str(), NK_TEXT_LEFT);
-
-		for (int id: Entity::grid[(Chunk::XY){x,y}]) {
-			auto sid = std::to_string(id);
-			nk_label(&nuklear->ctx, sid.c_str(), NK_TEXT_LEFT);
+	Sim::locked([&]() {
+		if (!eid || !Entity::exists(eid)) {
+			eid = 0;
+			camera->popup = NULL;
+			return;
 		}
-	}
 
-	nk_end(&nuklear->ctx);
+		Entity &en = Entity::get(eid);
+
+		nk_begin(&nuklear->ctx, en.spec->name.c_str(), nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
+
+		if (en.spec->crafter) {
+			Crafter& crafter = en.crafter();
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			if (nk_button_label(&nuklear->ctx, crafter.recipe ? crafter.recipe->name.c_str(): "(no recipe)")) {
+				camera->popup = camera->recipePopup;
+				camera->recipePopup->useEntity(eid);
+			}
+			nk_prog(&nuklear->ctx, (int)(crafter.progress*100), 100, NK_FIXED);
+		}
+
+		if (en.spec->store) {
+			Store& store = en.store();
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			for (Stack stack: store.stacks) {
+				nk_labelf(&nuklear->ctx, NK_TEXT_LEFT, "%s %lu", Item::get(stack.iid)->name.c_str(), stack.size);
+			}
+		}
+
+		nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+		for (auto [x,y]: Chunk::walk(en.box())) {
+			auto sx = std::to_string(x);
+			auto sy = std::to_string(y);
+			nk_label(&nuklear->ctx, (sx + "," + sy).c_str(), NK_TEXT_LEFT);
+
+			for (int id: Entity::grid[(Chunk::XY){x,y}]) {
+				auto sid = std::to_string(id);
+				nk_label(&nuklear->ctx, sid.c_str(), NK_TEXT_LEFT);
+			}
+		}
+
+		nk_end(&nuklear->ctx);
+	});
 }
+
+RecipePopup::RecipePopup(MainCamera *cam, int w, int h) : EntityPopup(cam, w, h) {
+}
+
+void RecipePopup::build() {
+	Sim::locked([&](){
+		if (!eid || !Entity::exists(eid)) {
+			eid = 0;
+			camera->popup = NULL;
+			return;
+		}
+
+		Entity &en = Entity::get(eid);
+
+		nk_begin(&nuklear->ctx, "Recipe", nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
+		nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+
+		for (auto pair: Recipe::names) {
+			if (nk_button_label(&nuklear->ctx, pair.first.c_str())) {
+				en.crafter().recipe = pair.second;
+				camera->popup = camera->entityPopup;
+			}
+		}
+
+		nk_end(&nuklear->ctx);
+	});
+}
+
+
+

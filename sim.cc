@@ -69,6 +69,8 @@ namespace Sim {
 
 	void update() {
 		tick++;
+		Entity::preTick();
+		Crafter::tick();
 		Path::tick();
 		Vehicle::tick();
 	}

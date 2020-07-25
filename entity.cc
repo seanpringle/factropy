@@ -19,13 +19,20 @@ void Entity::reset() {
 	Store::reset();
 }
 
-int Entity::next() {
-	int i = all.next(false);
+void Entity::preTick() {
+	for (int id: removing) {
+		Entity::get(id).destroy();
+	}
+	removing.clear();
+}
+
+uint Entity::next() {
+	uint i = all.next(false);
 	ensuref(i > 0, "max entities reached");
 	return i;
 }
 
-Entity& Entity::create(int id, Spec *spec) {
+Entity& Entity::create(uint id, Spec *spec) {
 	Entity& en = all.ref(id);
 	en.id = id;
 	en.spec = spec;
@@ -34,6 +41,10 @@ Entity& Entity::create(int id, Spec *spec) {
 
 	if (spec->store) {
 		Store::create(id);
+	}
+
+	if (spec->crafter) {
+		Crafter::create(id);
 	}
 
 	if (spec->vehicle) {
@@ -46,19 +57,36 @@ Entity& Entity::create(int id, Spec *spec) {
 	return en;
 }
 
-bool Entity::exists(int id) {
+bool Entity::exists(uint id) {
 	return all.has(id);
 }
 
-Entity& Entity::get(int id) {
+Entity& Entity::get(uint id) {
 	ensuref(all.has(id), "invalid id %d", id);
 	return all.ref(id);
 }
 
 bool Entity::fits(Spec *spec, Point pos, Point dir) {
 	Box bounds = spec->box(pos, dir).shrink(0.1);
-	if (!Chunk::flatSurface(bounds)) {
-		return false;
+	switch (spec->place) {
+		case Spec::Land: {
+			if (!Chunk::isLand(bounds)) {
+				return false;
+			}
+			break;
+		}
+		case Spec::Water: {
+			if (!Chunk::isWater(bounds)) {
+				return false;
+			}
+			break;
+		}
+		case Spec::Hill: {
+			if (!Chunk::isHill(bounds)) {
+				return false;
+			}
+			break;
+		}
 	}
 	if (intersecting(bounds).size() > 0) {
 		return false;
@@ -105,10 +133,10 @@ void Entity::loadAll(const char* name) {
 	in.close();
 }
 
-std::unordered_set<int> Entity::intersecting(Box box) {
-	std::unordered_set<int> hits;
+std::unordered_set<uint> Entity::intersecting(Box box) {
+	std::unordered_set<uint> hits;
 	for (auto xy: Chunk::walk(box)) {
-		for (int id: grid[xy]) {
+		for (uint id: grid[xy]) {
 			if (get(id).box().intersects(box)) {
 				hits.insert(id);
 			}
@@ -119,13 +147,23 @@ std::unordered_set<int> Entity::intersecting(Box box) {
 
 void Entity::destroy() {
 	unindex();
+
 	if (spec->store) {
 		store().destroy();
 	}
+
+	if (spec->crafter) {
+		crafter().destroy();
+	}
+
 	if (spec->vehicle) {
 		vehicle().destroy();
 	}
 	all.drop(id);
+}
+
+void Entity::remove() {
+	removing.insert(id);
 }
 
 bool Entity::isGhost() {
@@ -193,14 +231,21 @@ Entity& Entity::floor(float level) {
 }
 
 Entity& Entity::rotate() {
-	unindex();
-	pos = spec->aligned(pos, dir.rotateHorizontal());
-	index();
+	if (spec->rotate) {
+		unindex();
+		dir = dir.rotateHorizontal();
+		pos = spec->aligned(pos, dir);
+		index();
+	}
 	return *this;
 }
 
 Store& Entity::store() {
 	return Store::get(id);
+}
+
+Crafter& Entity::crafter() {
+	return Crafter::get(id);
 }
 
 Vehicle& Entity::vehicle() {

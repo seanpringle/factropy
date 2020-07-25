@@ -4,14 +4,20 @@
 struct Part;
 
 #include <string>
+#include <vector>
 #include <map>
 #include "raylib.h"
 #include "raymath.h"
 #include "entity.h"
 
 struct Thing {
+	static inline std::vector<Mesh> meshes;
+
 	Mesh mesh;
 	Matrix transform;
+	Matrix s;
+	Matrix r;
+	Matrix t;
 
 	Thing();
 	Thing(std::string);
@@ -22,6 +28,8 @@ struct Thing {
 };
 
 struct Part: Thing {
+	static inline std::set<Part*> all;
+
 	static void reset();
 	static void terrainNormals(Mesh *mesh);
 
@@ -35,6 +43,7 @@ struct Part: Thing {
 
 	Part* paint(int colour);
 	Part* rotate(Point axis, float degrees);
+	Part* scale(float x, float y, float z);
 	Part* translate(float x, float y, float z);
 	virtual void update();
 
@@ -45,27 +54,11 @@ struct Part: Thing {
 };
 
 struct PartSpinner : Part {
-	PartSpinner(Thing thing);
+	float speed;
+
+	PartSpinner(Thing thing, float speed);
 	virtual Matrix instance(GuiEntity *ge);
 };
 
-struct PartRoller : Part {
-	Matrix r;
-	Matrix t;
-	PartRoller(Thing thing);
-	virtual void update();
-	virtual Matrix instance(GuiEntity *ge);
-};
-
-struct PartWheel : Part {
-	float s;
-	float o;
-	Matrix m;
-	PartWheel(Thing thing);
-	PartWheel* speed(float ss);
-	PartWheel* steer(float ss);
-	virtual void update();
-	virtual Matrix instance(GuiEntity *ge);
-};
 
 #endif

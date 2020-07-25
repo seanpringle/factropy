@@ -1,18 +1,24 @@
 charts
-fog
-placing collision
 template
-ore
-	patches?
-	seams?
-	hill removal?
-entity popup ui
 port
-	path finder
 	belts
 	depot/drone
-	assembler
+	crafter
+		limit outputs
 	inserter
 	electricity
 		generic network class?
+ore
+	hill removal
+	miner screw
+water
+	waves
+trees
+	wind/normals
+entity popup ui
 move popup out of main camera
+night
+	light
+shadows
+specular
+roughness

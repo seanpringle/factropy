@@ -4,9 +4,11 @@
 class Panel;
 class BuildPopup;
 class EntityPopup;
+class RecipePopup;
 
 #include "view.h"
 #include "entity.h"
+#include <set>
 
 struct Nuklear;
 
@@ -53,9 +55,15 @@ public:
 
 class EntityPopup : public Panel {
 public:
-	GuiEntity *ge;
+	uint eid;
 	EntityPopup(MainCamera *cam, int w, int h);
-	void useEntity(GuiEntity *ge);
+	void useEntity(uint eid);
+	void build() override;
+};
+
+class RecipePopup : public EntityPopup {
+public:
+	RecipePopup(MainCamera *cam, int w, int h);
 	void build() override;
 };
 

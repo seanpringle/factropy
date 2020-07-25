@@ -24,13 +24,12 @@ Vehicle& Vehicle::get(int id) {
 }
 
 void Vehicle::destroy() {
-	all.drop(id);
-
 	if (pathRequest) {
 		Path::jobs.remove(pathRequest);
 		delete pathRequest;
 		pathRequest = NULL;
 	}
+	all.drop(id);
 }
 
 void Vehicle::update() {
@@ -40,7 +39,7 @@ void Vehicle::update() {
 
 	// check an existing pathfinding request for completion
 	if (pathRequest && pathRequest->done) {
-		
+
 		if (pathRequest->success) {
 			notef("path success");
 			for (Point point: pathRequest->result) {
@@ -49,7 +48,7 @@ void Vehicle::update() {
 		} else {
 			notef("path failure");
 		}
-		
+
 		delete pathRequest;
 		pathRequest = NULL;
 	}
@@ -140,7 +139,7 @@ std::vector<Point> Vehicle::Route::getNeighbours(Point p) {
 	float range = origin.distance(target);
 
 	for (auto it = points.begin(); it != points.end(); ) {
-		if (!Chunk::flatSurface(it->box().grow(clearance))) {
+		if (!Chunk::isLand(it->box().grow(clearance))) {
 			points.erase(it);
 			continue;
 		}
@@ -169,7 +168,7 @@ double Vehicle::Route::calcCost(Point a, Point b) {
 	float clearance = Entity::get(vehicle->id).spec->clearance;
 	float cost = a.distance(b);
 
-	if (!Chunk::flatSurface(b.box().grow(clearance))) {
+	if (!Chunk::isLand(b.box().grow(clearance))) {
 		cost *= 1000.0f;
 	}
 
@@ -197,7 +196,7 @@ bool Vehicle::Route::rayCast(Point a, Point b) {
 	Point n = (b-a).normalize();
 
 	for (Point c = a; c.distance(b) > 1.0f; c += n) {
-		if (!Chunk::flatSurface(c.box().grow(clearance))) {
+		if (!Chunk::isLand(c.box().grow(clearance))) {
 			return false;
 		}
 		for (int eid: Entity::intersecting(c.box().grow(1))) {

@@ -84,6 +84,7 @@ Thing::Thing(std::string stl) {
 
 	in.close();
 
+
 	Mesh mesh; ZERO(mesh);
 	mesh.vertexCount = (int)triangles.size()*3;
 	mesh.triangleCount = (int)triangles.size();
@@ -116,6 +117,7 @@ Thing::Thing(std::string stl) {
   rlLoadMesh(&mesh, false);
 
 	this->mesh = mesh;
+	meshes.push_back(mesh);
 	transform = MatrixRotateX(90.0f*DEG2RAD);
 }
 
@@ -144,6 +146,13 @@ void Thing::drawGhostBatch(Color color, int count, Matrix *trx) {
 }
 
 void Part::reset() {
+	for (auto part: all) {
+		delete part;
+	}
+	for (auto mesh: Thing::meshes) {
+		UnloadMesh(mesh);
+	}
+	all.clear();
 }
 
 struct Vertex {
@@ -207,7 +216,11 @@ void Part::terrainNormals(Mesh *mesh) {
 Part::Part(Thing thing) {
 	mesh = thing.mesh;
 	transform = thing.transform;
+	s = MatrixIdentity();
+	r = MatrixIdentity();
+	t = MatrixIdentity();
 	color = WHITE;
+	all.insert(this);
 }
 
 Part::~Part() {
@@ -219,12 +232,17 @@ Part* Part::paint(int hexcolor) {
 }
 
 Part* Part::rotate(Point axis, float degrees) {
-	transform = MatrixMultiply(transform, MatrixRotate(axis, degrees*DEG2RAD));
+	r = MatrixRotate(axis, degrees*DEG2RAD);
+	return this;
+}
+
+Part* Part::scale(float x, float y, float z) {
+	s = MatrixScale(x, y, z);
 	return this;
 }
 
 Part* Part::translate(float x, float y, float z) {
-	transform = MatrixMultiply(transform, MatrixTranslate(x, y, z));
+	t = MatrixTranslate(x, y, z);
 	return this;
 }
 
@@ -232,7 +250,8 @@ void Part::update() {
 }
 
 Matrix Part::instance(GuiEntity* ge) {
-	return MatrixMultiply(transform, ge->transform());
+	Matrix m = MatrixMultiply(MatrixMultiply(MatrixMultiply(transform, s), r), t);
+	return MatrixMultiply(m, ge->transform());
 }
 
 void Part::drawInstanced(int count, Matrix* trx) {
@@ -243,7 +262,8 @@ void Part::drawGhost(Matrix trx) {
 	drawGhostBatch(color, 1, &trx);
 }
 
-PartSpinner::PartSpinner(Thing thing) : Part(thing) {
+PartSpinner::PartSpinner(Thing thing, float sspeed) : Part(thing) {
+	speed = sspeed;
 }
 
 Matrix PartSpinner::instance(GuiEntity* ge) {
@@ -265,47 +285,7 @@ Matrix PartSpinner::instance(GuiEntity* ge) {
 	noise += trx.m7;
 	noise += trx.m11;
 	noise += trx.m15;
-	Matrix r = MatrixRotateY((Sim::tick%360*4)*DEG2RAD + noise);
-	return MatrixMultiply(MatrixMultiply(transform, r), trx);
-}
-
-PartRoller::PartRoller(Thing thing) : Part(thing) {
-	r = MatrixIdentity();
-	t = MatrixIdentity();
-}
-
-void PartRoller::update() {
-	r = MatrixRotateX(-(float)(Sim::tick%360)*DEG2RAD);
-	t = MatrixMultiply(r, transform);
-}
-
-Matrix PartRoller::instance(GuiEntity* ge) {
-	return MatrixMultiply(t, ge->transform());
-}
-
-PartWheel::PartWheel(Thing thing) : Part(thing) {
-	s = 0.0f;
-	o = 0.0f;
-}
-
-PartWheel* PartWheel::speed(float ss) {
-	s = ss;
-	return this;
-}
-
-PartWheel* PartWheel::steer(float ss) {
-	o = ss;
-	return this;
-}
-
-void PartWheel::update() {
-	m = MatrixRotateX(-(float)(Sim::tick%360)*DEG2RAD*s);
-	m = MatrixMultiply(m, MatrixRotateZ(o*DEG2RAD));
-}
-
-Matrix PartWheel::instance(GuiEntity* ge) {
-	return (ge->spec->vehicle)
-		? MatrixMultiply(MatrixMultiply(m, transform), ge->transform())
-		: MatrixMultiply(transform, ge->transform())
-	;
+	Matrix spin = MatrixMultiply(transform, MatrixRotateY((Sim::tick%360*speed)*DEG2RAD + noise));
+	Matrix m = MatrixMultiply(MatrixMultiply(MatrixMultiply(spin, s), r), t);
+	return MatrixMultiply(m, trx);
 }

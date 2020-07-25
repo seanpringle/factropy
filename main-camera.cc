@@ -55,8 +55,16 @@ MainCamera::MainCamera(Point pos, Point dir) {
 	popup = NULL;
 	buildPopup = NULL;
 	entityPopup = NULL;
+	recipePopup = NULL;
 	popupFocused = false;
 	worldFocused = true;
+}
+
+MainCamera::~MainCamera() {
+	while (entities.size() > 0) {
+		delete entities.back();
+		entities.pop_back();
+	}
 }
 
 void MainCamera::lookAt(Point p) {
@@ -189,11 +197,11 @@ void MainCamera::updateCamera() {
 	}
 
 	if (position != nextPosition) {
-		position += (nextPosition - position) * 0.01f;
+		position += (nextPosition - position) * 0.025f;
 	}
 
 	if (direction != nextDirection) {
-		direction += (nextDirection - direction) * 0.1f;
+		direction += (nextDirection - direction) * 0.25f;
 		direction = direction.normalize();
 	}
 
@@ -461,8 +469,8 @@ void MainCamera::draw() {
 		}
 
 		for (auto ge: entities) {
-			Entity& en = Entity::get(ge->id);
-			if (en.spec->vehicle) {
+			if (ge->spec->vehicle) {
+				Entity& en = Entity::get(ge->id);
 				Vehicle& vehicle = en.vehicle();
 				Point p = en.pos;
 				for (auto n: vehicle.path) {

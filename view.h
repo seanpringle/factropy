@@ -30,6 +30,7 @@ struct SiteCamera : View {
 	uint64_t refresh;
 
 	SiteCamera(Point, Point);
+	~SiteCamera();
 	virtual void update();
 	virtual void draw(RenderTexture canvas);
 	Point groundTarget(float ground);
@@ -87,9 +88,11 @@ struct MainCamera : View {
 	Panel *popup;
 	BuildPopup *buildPopup;
 	EntityPopup *entityPopup;
+	RecipePopup *recipePopup;
 	bool popupFocused;
 
 	MainCamera(Point, Point);
+	~MainCamera();
 	virtual void update();
 	virtual void draw();
 

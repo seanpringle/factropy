@@ -79,14 +79,46 @@ Chunk::Tile* Chunk::tileTryGet(Point p) {
 	return tileTryGet(x, y);
 }
 
-bool Chunk::flatSurface(Box b) {
+bool Chunk::isLand(Box b) {
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
-		if (!tile || tile->elevation > 0.001 || tile->elevation < -0.001) {
+		if (!tile || tile->elevation > 0.001f || tile->elevation < -0.001f) {
 			return false;
 		}
 	}
 	return true;
+}
+
+bool Chunk::isWater(Box b) {
+	for (auto [x,y]: walkTiles(b)) {
+		Tile *tile = tileTryGet(x, y);
+		if (!tile || tile->elevation > 0.0f) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool Chunk::isHill(Box b) {
+	for (auto [x,y]: walkTiles(b)) {
+		Tile *tile = tileTryGet(x, y);
+		if (tile && tile->elevation > 0.001f) {
+			return true;
+		}
+	}
+	return false;
+}
+
+Stack Chunk::mine(Box b) {
+	for (auto [x,y]: walkTiles(b)) {
+		Tile *tile = tileTryGet(x, y);
+		if (tile && tile->elevation > 0.001f) {
+			auto it = Item::mining.begin();
+			std::advance(it, Sim::choose((int)Item::mining.size()));
+			return {(*it)->id,1};
+		}
+	}
+	return {0,0};
 }
 
 using json = nlohmann::json;

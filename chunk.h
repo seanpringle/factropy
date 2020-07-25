@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include "item.h"
 #include "box.h"
 #include <map>
 #include <set>
@@ -100,7 +101,10 @@ struct Chunk {
 	static Chunk* get(int x, int y);
 	static Chunk::Tile* tileTryGet(int x, int y);
 	static Chunk::Tile* tileTryGet(Point p);
-	static bool flatSurface(Box b);
+	static bool isLand(Box b);
+	static bool isWater(Box b);
+	static bool isHill(Box b);
+	static Stack mine(Box b);
 
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);

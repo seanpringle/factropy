@@ -8,7 +8,7 @@ GuiEntity::GuiEntity() {
 	dir = Point::South();
 }
 
-GuiEntity::GuiEntity(int id) {
+GuiEntity::GuiEntity(uint id) {
 	Entity& en = Entity::get(id);
 	this->id = id;
 	spec = en.spec;
@@ -73,7 +73,7 @@ GuiFakeEntity* GuiFakeEntity::floor(float level) {
 }
 
 GuiFakeEntity* GuiFakeEntity::rotate() {
-	if (spec->align) {
+	if (spec->rotate) {
 		dir = dir.rotateHorizontal();
 		pos = spec->aligned(pos, dir);
 	}

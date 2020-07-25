@@ -8,6 +8,13 @@ SiteCamera::SiteCamera(Point ppos, Point ddir) {
 	refresh = 60;
 }
 
+SiteCamera::~SiteCamera() {
+	while (entities.size() > 0) {
+		delete entities.back();
+		entities.pop_back();
+	}
+}
+
 void SiteCamera::update() {
 	if (Sim::tick%refresh != 0) return;
 

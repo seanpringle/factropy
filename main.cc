@@ -15,6 +15,8 @@
 #include "spec.h"
 #include "entity.h"
 #include "view.h"
+#include "item.h"
+#include "recipe.h"
 
 int main(int argc, char const *argv[]) {
 	//nvidia-settings --query=fsaa --verbose
@@ -91,9 +93,21 @@ int main(int argc, char const *argv[]) {
 	Item* item = new Item(Item::next(), "log");
 	item->image = LoadImage("icons/none.png");
 
+	item = new Item(Item::next(), "iron-ore");
+	item->image = LoadImage("icons/none.png");
+	Item::mining.insert(item);
+
+	Recipe* recipe = new Recipe(Recipe::next(), "mining1");
+	recipe->image = LoadImage("icons/none.png");
+	recipe->tags = {"mining"};
+	recipe->mining = true;
+
 	auto thingContainer = Thing("models/container.stl");
 	auto thingFan = Thing("models/fan.stl");
+	auto thingGear = Thing("models/gear.stl");
 	auto thingAssembler = Thing("models/assembler.stl");
+	auto thingFurnace = Thing("models/furnace.stl");
+	auto thingMiner = Thing("models/miner.stl");
 	auto thingBeltBase = Thing("models/belt-base.stl");
 	auto thingBeltChevron = Thing("models/belt-chevron.stl");
 	auto thingBeltRoller = Thing("models/belt-roller.stl");
@@ -108,11 +122,10 @@ int main(int argc, char const *argv[]) {
 	spec->d = 5;
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x990000ff),
-		(new PartSpinner(thingFan))->paint(0xccccccff)->translate(0,1.1,0),
+		(new PartSpinner(thingFan, 4))->paint(0xccccccff)->translate(0,1.1,0),
 	};
-	spec->align = true;
-	spec->vehicle = false;
 	spec->store = true;
+	spec->rotate = true;
 
 	spec = new Spec("requester-container");
 	spec->image = LoadImage("icons/requester-container.png");
@@ -122,9 +135,8 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x0044ccff),
 	};
-	spec->align = true;
-	spec->vehicle = false;
 	spec->store = true;
+	spec->rotate = true;
 
 	spec = new Spec("buffer-container");
 	spec->image = LoadImage("icons/buffer-container.png");
@@ -134,9 +146,8 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x006600ff),
 	};
-	spec->align = true;
-	spec->vehicle = false;
 	spec->store = true;
+	spec->rotate = true;
 
 	spec = new Spec("assembler");
 	spec->image = LoadImage("icons/none.png");
@@ -146,33 +157,57 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new Part(thingAssembler))->paint(0x009900ff),
 	};
-	spec->align = true;
-	spec->vehicle = false;
 	spec->store = true;
+	spec->rotate = true;
+
+	spec = new Spec("furnace");
+	spec->image = LoadImage("icons/none.png");
+	spec->w = 4;
+	spec->h = 4;
+	spec->d = 4;
+	spec->parts = {
+		(new Part(thingFurnace))->paint(0xcc6600ff),
+	};
+	spec->store = true;
+	spec->rotate = true;
+
+	spec = new Spec("miner");
+	spec->image = LoadImage("icons/none.png");
+	spec->w = 5;
+	spec->h = 5;
+	spec->d = 5;
+	spec->parts = {
+		(new Part(thingMiner))->paint(0xB7410Eff),
+		(new PartSpinner(thingGear, 1))->paint(0xccccccff)->scale(3,3,3)->rotate(Point::East(), 90)->translate(0,0,1.5),
+	};
+	spec->store = true;
+	spec->rotate = true;
+	spec->place = Spec::Hill;
+
+	spec->crafter = true;
+	spec->recipeTags = {"mining"};
 
 	spec = new Spec("belt");
 	spec->image = LoadImage("icons/none.png");
 	spec->w = 1;
 	spec->h = 0.5;
 	spec->d = 1;
+	spec->rotate = true;
 
 	spec->parts = {
 		(new Part(thingBeltBase))->paint(0xcccc00ff),
 		(new Part(thingBeltChevron))->paint(0x0000ccff)->translate(0,0.23,0),
-		(new PartRoller(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0),
+		(new Part(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0),
 	};
 
 	for (int i = 1; i < 4; i++) {
 		spec->parts.push_back(
-			(new PartRoller(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0.14f*i)
+			(new Part(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0.14f*i)
 		);
 		spec->parts.push_back(
-			(new PartRoller(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0.14f*-i)
+			(new Part(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0.14f*-i)
 		);
 	}
-
-	spec->align = true;
-	spec->vehicle = false;
 
 	std::vector<Spec*> rocks;
 
@@ -185,11 +220,10 @@ int main(int argc, char const *argv[]) {
 		spec->w = 2;
 		spec->h = 1;
 		spec->d = 2;
+		spec->pivot = true;
 		spec->parts = {
 			(new Part(Thing(part)))->paint(0x666666ff),
 		};
-		spec->align = true;
-		spec->vehicle = false;
 
 		rocks.push_back(spec);
 	}
@@ -198,7 +232,7 @@ int main(int argc, char const *argv[]) {
 		for (int y = 0; y < Chunk::size; y++) {
 			for (int x = 0; x < Chunk::size; x++) {
 				Box bounds = {(float)chunk->x*Chunk::size+x, 0.0f, (float)chunk->y*Chunk::size+y, 2.0f, 1.0f, 2.0f};
-				if (Chunk::flatSurface(bounds.grow(1.0f))) {
+				if (Chunk::isLand(bounds.grow(1.0f))) {
 					double n = Sim::noise2D(chunk->x*Chunk::size+x + 1000000, chunk->y*Chunk::size+y + 1000000, 8, 0.6, 0.015);
 					if (n < 0.4 && Sim::random() < 0.04) {
 						Spec *spec = rocks[Sim::choose(rocks.size())];
@@ -225,11 +259,10 @@ int main(int argc, char const *argv[]) {
 	spec->w = 2;
 	spec->h = 5;
 	spec->d = 2;
+	spec->pivot = true;
 	spec->parts = {
 		(new Part(Thing("models/tree1.stl").smooth()))->paint(0x224400ff)->translate(0,-2.5,0),
 	};
-	spec->align = true;
-	spec->vehicle = false;
 
 	trees.push_back(spec);
 
@@ -238,11 +271,10 @@ int main(int argc, char const *argv[]) {
 	spec->w = 2;
 	spec->h = 6;
 	spec->d = 2;
+	spec->pivot = true;
 	spec->parts = {
 		(new Part(Thing("models/tree2.stl").smooth()))->paint(0x006600ff)->translate(-5,-3,0),
 	};
-	spec->align = true;
-	spec->vehicle = false;
 
 	trees.push_back(spec);
 
@@ -277,12 +309,12 @@ int main(int argc, char const *argv[]) {
 	spec->d = 3;
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xff6600ff)->translate(0,0.3,0),
-		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,-1),
-		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,0),
-		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,1),
-		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,-1),
-		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,0),
-		(new PartWheel(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,1),
+		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,-1),
+		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,0),
+		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,1),
+		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,-1),
+		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,0),
+		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,1),
 	};
 	spec->align = false;
 	spec->pivot = true;
@@ -318,7 +350,6 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new Part(Thing("models/truck-stop.stl")))->paint(0x662222ff),
 	};
-	spec->align = true;
 	spec->pivot = true;
 
 	spec = new Spec("camera-drone");
@@ -376,6 +407,7 @@ int main(int argc, char const *argv[]) {
 	Panels::init();
 	camera->buildPopup = new BuildPopup(camera, 800, 800);
 	camera->entityPopup = new EntityPopup(camera, 800, 800);
+	camera->recipePopup = new RecipePopup(camera, 800, 800);
 
 	Mod* mod = new Mod("base");
 	mod->load();
@@ -443,8 +475,7 @@ int main(int argc, char const *argv[]) {
 			if (camera->mouse.left.clicked && !camera->placing && camera->hovering) {
 				camera->popup = camera->entityPopup;
 				Sim::locked([&]() {
-					GuiEntity *ge = new GuiEntity(camera->hovering->id);
-					camera->entityPopup->useEntity(ge);
+					camera->entityPopup->useEntity(camera->hovering->id);
 				});
 			}
 
@@ -452,7 +483,7 @@ int main(int argc, char const *argv[]) {
 				Sim::locked([&]() {
 					int id = camera->hovering->id;
 					if (Entity::exists(id)) {
-						Entity::get(id).destroy();
+						Entity::get(id).remove();
 					};
 				});
 			}
@@ -510,7 +541,6 @@ int main(int argc, char const *argv[]) {
 		EndDrawing();
 	}
 
-	delete camSec;
 
 	UnloadRenderTexture(secondary);
 
@@ -527,11 +557,16 @@ int main(int argc, char const *argv[]) {
 
 	delete mod;
 	delete camera->buildPopup;
+	delete camera->entityPopup;
+	delete camera->recipePopup;
+	delete camera;
+	delete camSec;
 
 	Entity::reset();
 	Chunk::reset();
 	Spec::reset();
 	Part::reset();
+	Recipe::reset();
 	Item::reset();
 
 	CloseWindow();

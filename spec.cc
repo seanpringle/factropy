@@ -27,9 +27,6 @@ void Spec::loadAll(const char* name) {
 
 void Spec::reset() {
 	for (auto pair: all) {
-		for (auto part: pair.second->parts) {
-			delete part;
-		}
 		delete pair.second;
 	}
 	all.clear();
@@ -41,16 +38,23 @@ Spec::Spec(std::string name) {
 	this->name = name;
 	all[name] = this;
 
-	align = false;
+	align = true;
 	pivot = false;
 	vehicle = false;
 	drone = false;
 	store = false;
+	crafter = false;
+
+	place = Land;
 
 	w = 1.0;
 	d = 1.0;
 	h = 1.0;
 	costGreedy = 1.0;
+}
+
+Spec::~Spec() {
+	UnloadImage(image);
 }
 
 Spec* Spec::byName(std::string name) {
