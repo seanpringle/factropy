@@ -44,6 +44,7 @@ Spec::Spec(std::string name) {
 	drone = false;
 	store = false;
 	crafter = false;
+	arm = false;
 
 	place = Land;
 

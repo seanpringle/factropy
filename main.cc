@@ -151,9 +151,9 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("assembler");
 	spec->image = LoadImage("icons/none.png");
-	spec->w = 5;
+	spec->w = 6;
 	spec->h = 3;
-	spec->d = 5;
+	spec->d = 6;
 	spec->parts = {
 		(new Part(thingAssembler))->paint(0x009900ff),
 	};
@@ -362,6 +362,64 @@ int main(int argc, char const *argv[]) {
 	};
 	spec->align = false;
 	spec->drone = true;
+
+	spec = new Spec("arm");
+	spec->image = LoadImage("icons/none.png");
+	spec->w = 2;
+	spec->h = 3;
+	spec->d = 2;
+	spec->arm = true;
+	spec->rotate = true;
+	spec->parts = {
+		(new Part(Thing("models/arm-base.stl")))->translate(0,-1.5,0)->paint(0x660000ff),
+		(new Part(Thing("models/arm-pillar.stl")))->translate(0,-1.5,0)->paint(0x006600ff),
+		(new Part(Thing("models/arm-telescope1.stl")))->translate(0,-1.5,0)->paint(0x666666ff),
+		(new Part(Thing("models/arm-telescope2.stl")))->translate(0,-1.5,0)->paint(0x666666ff),
+		(new Part(Thing("models/arm-telescope3.stl")))->translate(0,-1.5,0)->paint(0x666666ff),
+		(new Part(Thing("models/arm-grip.stl")))->translate(0,-1.5,0)->paint(0x000066ff),
+	};
+
+	{
+		Matrix state0 = MatrixIdentity();
+
+		//x(theta) = rx cos(theta)
+		//y(theta) = ry sin(theta)
+
+		for (uint i = 0; i < 360; i++) {
+			Matrix state = MatrixRotateY((float)i*DEG2RAD);
+
+			float theta = (float)i;
+
+			float a3 = sin(theta*DEG2RAD)*1.0;
+			float b3 = cos(theta*DEG2RAD)*0.60;
+			float r3 = 1.0*0.60 / std::sqrt(a3*a3 + b3*b3);
+
+			float a4 = sin(theta*DEG2RAD)*1.0;
+			float b4 = cos(theta*DEG2RAD)*0.25;
+			float r4 = 1.0*0.25 / std::sqrt(a4*a4 + b4*b4);
+
+			float a5 = sin(theta*DEG2RAD)*1.0;
+			float b5 = cos(theta*DEG2RAD)*0.25;
+			float r5 = 1.0*0.25 / std::sqrt(a5*a5 + b5*b5);
+
+			Point t3 = Point::South() * (1.0f-r3);
+			Point t4 = Point::South() * (1.0f-r4);
+			Point t5 = Point::South() * (1.0f-r5);
+
+			Matrix extend3 = MatrixMultiply(MatrixTranslate(t3.x, t3.y, t3.z), state);
+			Matrix extend4 = MatrixMultiply(MatrixTranslate(t4.x, t4.y, t4.z), state);
+			Matrix extend5 = MatrixMultiply(MatrixTranslate(t5.x, t5.y, t5.z), state);
+
+			spec->states.push_back({
+				state0,
+				state,
+				state,
+				extend3,
+				extend4,
+				extend5,
+			});
+		}
+	}
 
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;

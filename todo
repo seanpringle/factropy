@@ -22,3 +22,8 @@ night
 shadows
 specular
 roughness
+smoke
+wind power
+	wind noise
+power
+	pylons/lines

@@ -15,18 +15,18 @@ namespace {
 
 		rlBegin(RL_LINES);
 			for (int i = -halfSlices; i <= halfSlices; i++) {
-				if (i == 0) {
-					rlColor3f(0.5f, 0.5f, 0.5f);
-					rlColor3f(0.5f, 0.5f, 0.5f);
-					rlColor3f(0.5f, 0.5f, 0.5f);
-					rlColor3f(0.5f, 0.5f, 0.5f);
-				}
-				else {
+				//if (i == 0) {
+				//	rlColor3f(0.5f, 0.5f, 0.5f);
+				//	rlColor3f(0.5f, 0.5f, 0.5f);
+				//	rlColor3f(0.5f, 0.5f, 0.5f);
+				//	rlColor3f(0.5f, 0.5f, 0.5f);
+				//}
+				//else {
 					rlColor3f(0.75f, 0.75f, 0.75f);
 					rlColor3f(0.75f, 0.75f, 0.75f);
 					rlColor3f(0.75f, 0.75f, 0.75f);
 					rlColor3f(0.75f, 0.75f, 0.75f);
-				}
+				//}
 
 				rlVertex3f(p.x+(float)i*spacing, p.y, p.z+(float)-halfSlices*spacing);
 				rlVertex3f(p.x+(float)i*spacing, p.y, p.z+(float)halfSlices*spacing);
@@ -409,8 +409,9 @@ void MainCamera::draw() {
 		std::map<Part*,std::vector<Matrix>> batches;
 
 		for (auto ge: entities) {
-			for (auto part: ge->spec->parts) {
-				batches[part].push_back(part->instance(ge));
+			for (uint i = 0; i < ge->spec->parts.size(); i++) {
+				Part *part = ge->spec->parts[i];
+				batches[part].push_back(part->instance(ge->spec, i, ge->state, ge->transform));
 			}
 		}
 
@@ -434,8 +435,9 @@ void MainCamera::draw() {
 		}
 
 		if (placing) {
-			for (auto part: placing->spec->parts) {
-				part->drawGhost(part->instance(placing));
+			for (uint i = 0; i < placing->spec->parts.size(); i++) {
+				Part *part = placing->spec->parts[i];
+				part->drawGhost(part->instance(placing->spec, i, placing->state, placing->transform));
 			}
 
 			if (!placingFits) {

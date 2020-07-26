@@ -14,6 +14,7 @@ struct GuiFakeEntity;
 #include "point.h"
 #include "box.h"
 #include "store.h"
+#include "arm.h"
 #include "crafter.h"
 #include "vehicle.h"
 #include <unordered_set>
@@ -48,6 +49,7 @@ struct Entity {
 	Spec* spec;
 	Point pos;
 	Point dir;
+	uint state;
 
 	bool isGhost();
 	Entity& setGhost(bool state);
@@ -69,6 +71,7 @@ struct Entity {
 	Store& store();
 	Crafter& crafter();
 	Vehicle& vehicle();
+	Arm& arm();
 };
 
 struct GuiEntity {
@@ -76,14 +79,16 @@ struct GuiEntity {
 	Spec* spec;
 	Point pos;
 	Point dir;
+	uint state;
 	bool ghost;
+	Matrix transform;
 
 	GuiEntity();
 	GuiEntity(uint id);
 	~GuiEntity();
 
 	Box box();
-	Matrix transform();
+	void updateTransform();
 };
 
 struct GuiFakeEntity : GuiEntity {

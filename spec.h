@@ -30,8 +30,10 @@ struct Spec {
 
 	std::string name;
 	std::vector<Part*> parts;
+	std::vector<std::vector<Matrix>> states;
 	bool align;
 	bool pivot;
+	bool arm;
 	bool vehicle;
 	bool drone;
 	bool store;

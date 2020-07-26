@@ -247,11 +247,26 @@ Part* Part::translate(float x, float y, float z) {
 }
 
 void Part::update() {
+	srt = MatrixMultiply(MatrixMultiply(s, r), t);
 }
 
-Matrix Part::instance(GuiEntity* ge) {
-	Matrix m = MatrixMultiply(MatrixMultiply(MatrixMultiply(transform, s), r), t);
-	return MatrixMultiply(m, ge->transform());
+Matrix Part::instanceState(Spec* spec, uint slot, uint state) {
+	if (spec->states.size() == 0) {
+		ensure(state == 0);
+	}
+
+	if (spec->states.size() > 0) {
+		ensure(spec->states.size() > state);
+		return spec->states[state][slot];
+	}
+
+	return MatrixIdentity();
+}
+
+Matrix Part::instance(Spec* spec, uint slot, uint state, Matrix trx) {
+	Matrix i = instanceState(spec, slot, state);
+	Matrix m = MatrixMultiply(MatrixMultiply(transform, i), srt);
+	return MatrixMultiply(m, trx);
 }
 
 void Part::drawInstanced(int count, Matrix* trx) {
@@ -266,8 +281,8 @@ PartSpinner::PartSpinner(Thing thing, float sspeed) : Part(thing) {
 	speed = sspeed;
 }
 
-Matrix PartSpinner::instance(GuiEntity* ge) {
-	Matrix trx = ge->transform();
+Matrix PartSpinner::instance(Spec* spec, uint slot, uint state, Matrix trx) {
+	Matrix i = instanceState(spec, slot, state);
 	float noise = 0.0f;
 	noise += trx.m0;
 	noise += trx.m4;
@@ -286,6 +301,6 @@ Matrix PartSpinner::instance(GuiEntity* ge) {
 	noise += trx.m11;
 	noise += trx.m15;
 	Matrix spin = MatrixMultiply(transform, MatrixRotateY((Sim::tick%360*speed)*DEG2RAD + noise));
-	Matrix m = MatrixMultiply(MatrixMultiply(MatrixMultiply(spin, s), r), t);
+	Matrix m = MatrixMultiply(MatrixMultiply(spin, i), srt);
 	return MatrixMultiply(m, trx);
 }

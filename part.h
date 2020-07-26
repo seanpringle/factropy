@@ -40,6 +40,7 @@ struct Part: Thing {
 	virtual ~Part();
 
 	Color color;
+	Matrix srt;
 
 	Part* paint(int colour);
 	Part* rotate(Point axis, float degrees);
@@ -50,15 +51,15 @@ struct Part: Thing {
 	void drawInstanced(int count, Matrix* trx);
 	void drawGhost(Matrix trx);
 
-	virtual Matrix instance(GuiEntity *ge);
+	Matrix instanceState(Spec* spec, uint slot, uint state);
+	virtual Matrix instance(Spec* spec, uint slot, uint state, Matrix trx);
 };
 
 struct PartSpinner : Part {
 	float speed;
 
 	PartSpinner(Thing thing, float speed);
-	virtual Matrix instance(GuiEntity *ge);
+	virtual Matrix instance(Spec* spec, uint slot, uint state, Matrix trx);
 };
-
 
 #endif

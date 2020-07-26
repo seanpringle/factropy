@@ -38,6 +38,7 @@ Entity& Entity::create(uint id, Spec *spec) {
 	en.spec = spec;
 	en.flags = 0;
 	en.dir = Point::South();
+	en.state = 0;
 
 	if (spec->store) {
 		Store::create(id);
@@ -49,6 +50,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 
 	if (spec->vehicle) {
 		Vehicle::create(id);
+	}
+
+	if (spec->arm) {
+		Arm::create(id);
 	}
 
 	en.pos = {0,0,0};
@@ -159,6 +164,10 @@ void Entity::destroy() {
 	if (spec->vehicle) {
 		vehicle().destroy();
 	}
+
+	if (spec->arm) {
+		arm().destroy();
+	}
 	all.drop(id);
 }
 
@@ -250,4 +259,8 @@ Crafter& Entity::crafter() {
 
 Vehicle& Entity::vehicle() {
 	return Vehicle::get(id);
+}
+
+Arm& Entity::arm() {
+	return Arm::get(id);
 }

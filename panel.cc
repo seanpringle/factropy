@@ -264,6 +264,7 @@ void BuildPopup::build() {
 		}
 	}
 	nk_end(&nuklear->ctx);
+
 }
 
 EntityPopup::EntityPopup(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
@@ -304,6 +305,12 @@ void EntityPopup::build() {
 			}
 		}
 
+		if (en.spec->arm) {
+			Arm& arm = en.arm();
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_prog(&nuklear->ctx, (int)(arm.orientation*100), 100, NK_FIXED);
+		}
+
 		nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
 		for (auto [x,y]: Chunk::walk(en.box())) {
 			auto sx = std::to_string(x);
@@ -317,6 +324,7 @@ void EntityPopup::build() {
 		}
 
 		nk_end(&nuklear->ctx);
+		refresh = 1;
 	});
 }
 

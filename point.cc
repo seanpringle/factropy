@@ -74,7 +74,7 @@ bool Point::operator<(const Point& o) const {
 	}
 	if (!zeq) {
 		return z < o.z;
-	}   
+	}
 	return y < o.y;
 }
 
