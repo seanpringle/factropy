@@ -1,7 +1,12 @@
 #ifndef _H_item
 #define _H_item
 
+struct Item;
+struct Stack;
+
 #include "raylib.h"
+#include "part.h"
+#include "mass.h"
 #include <map>
 #include <set>
 
@@ -21,6 +26,9 @@ struct Item {
 	uint id;
 	std::string name;
 	Image image;
+	Mass mass;
+	Part *part;
+	RenderTexture texture;
 
 	Item(uint id, std::string name);
 	~Item();

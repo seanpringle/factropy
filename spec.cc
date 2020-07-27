@@ -38,6 +38,9 @@ Spec::Spec(std::string name) {
 	this->name = name;
 	all[name] = this;
 
+	ZERO(image);
+	ZERO(texture);
+
 	align = true;
 	pivot = false;
 	vehicle = false;
@@ -45,6 +48,19 @@ Spec::Spec(std::string name) {
 	store = false;
 	crafter = false;
 	arm = false;
+	belt = false;
+
+	magic = false;
+	enableSetLower = false;
+	enableSetUpper = false;
+	// loaders
+	loadAnything = false;
+	unloadAnything = false;
+	// drones
+	logistic = false;
+	loadPriority = false;
+	supplyPriority = false;
+	defaultOverflow = false;
 
 	place = Land;
 
@@ -52,6 +68,7 @@ Spec::Spec(std::string name) {
 	d = 1.0;
 	h = 1.0;
 	costGreedy = 1.0;
+	clearance = 1.0;
 }
 
 Spec::~Spec() {

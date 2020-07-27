@@ -7,38 +7,38 @@ module base() {
 }
 
 module pillar() {
-	difference() {
-		translate([0,-0.35,1.625]) box([0.4, 1.3, 2.75]);
-		translate([0,-0.95,0.5]) rotate([30,0,0]) box([0.5, 1.0, 2.75]);
-		translate([0,0.4,0.1]) scale([1.1,1,1]) difference() {
-			translate([0,-0.4,1.625]) box([0.4, 1.2, 3]);
+	fillet(0.05) translate([0,0.1,0]) difference() {
+		translate([0,-0.25,1.425]) box([0.5, 1.3, 2.5]);
+		translate([0,-0.9,0.5]) rotate([30,0,0]) box([0.6, 1.0, 2.75]);
+		translate([0,0.5,0]) scale([1.1,1,1]) difference() {
+			translate([0,-0.4,1.625]) box([0.5, 1.2, 3]);
 			translate([0,-0.95,0.5]) rotate([30,0,0]) box([0.5, 1.0, 2.75]);
 		}
 	}
 }
 
 module telescope1() {
-	translate([0,-0.5,2.7]) rotate([90,0,0]) cyl(0.2, 0.2, 0.75, $fn=24);
+	translate([0,-0.5,2.4]) rotate([90,0,0]) cyl(0.2, 0.2, 0.75, $fn=24);
 }
 
 module telescope2() {
-	translate([0, 0.1,2.7]) rotate([90,0,0]) cyl(0.18, 0.18, 0.75, $fn=24);
+	translate([0, 0.1,2.4]) rotate([90,0,0]) cyl(0.18, 0.18, 0.75, $fn=24);
 }
 
 module telescope3() {
-	translate([0, 0.7,2.7]) rotate([90,0,0]) cyl(0.16, 0.16, 0.75, $fn=24);
+	translate([0, 0.7,2.4]) rotate([90,0,0]) cyl(0.16, 0.16, 0.75, $fn=24);
 }
 
 module grip() {
 	union() {
-		translate([0,	1.2,2.7]) sphere(0.25, $fn=24);
-		translate([0,	1.2,2.45]) cyl(0.25, 0.25, 0.1, $fn=24);
+		translate([0,	1.2,2.4]) sphere(0.25, $fn=24);
+		translate([0,	1.2,2.15]) cyl(0.25, 0.25, 0.1, $fn=24);
 	}
 }
 
-base();
+//base();
 pillar();
-telescope1();
-telescope2();
-telescope3();
-grip();
+//telescope1();
+//telescope2();
+//telescope3();
+//grip();

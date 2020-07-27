@@ -219,6 +219,7 @@ Part::Part(Thing thing) {
 	s = MatrixIdentity();
 	r = MatrixIdentity();
 	t = MatrixIdentity();
+	srt = MatrixIdentity();
 	color = WHITE;
 	all.insert(this);
 }
@@ -233,21 +234,29 @@ Part* Part::paint(int hexcolor) {
 
 Part* Part::rotate(Point axis, float degrees) {
 	r = MatrixRotate(axis, degrees*DEG2RAD);
+	srt = MatrixMultiply(MatrixMultiply(s, r), t);
 	return this;
 }
 
 Part* Part::scale(float x, float y, float z) {
 	s = MatrixScale(x, y, z);
+	srt = MatrixMultiply(MatrixMultiply(s, r), t);
 	return this;
 }
 
 Part* Part::translate(float x, float y, float z) {
 	t = MatrixTranslate(x, y, z);
+	srt = MatrixMultiply(MatrixMultiply(s, r), t);
 	return this;
 }
 
 void Part::update() {
 	srt = MatrixMultiply(MatrixMultiply(s, r), t);
+}
+
+void Part::draw(Matrix trx) {
+	Matrix m = MatrixMultiply(MatrixMultiply(transform, srt), trx);
+	drawBatch(color, 1, &m);
 }
 
 Matrix Part::instanceState(Spec* spec, uint slot, uint state) {
@@ -263,6 +272,7 @@ Matrix Part::instanceState(Spec* spec, uint slot, uint state) {
 	return MatrixIdentity();
 }
 
+
 Matrix Part::instance(Spec* spec, uint slot, uint state, Matrix trx) {
 	Matrix i = instanceState(spec, slot, state);
 	Matrix m = MatrixMultiply(MatrixMultiply(transform, i), srt);
@@ -273,8 +283,8 @@ void Part::drawInstanced(int count, Matrix* trx) {
 	drawBatch(color, count, trx);
 }
 
-void Part::drawGhost(Matrix trx) {
-	drawGhostBatch(color, 1, &trx);
+void Part::drawGhostInstanced(int count, Matrix* trx) {
+	drawGhostBatch(color, count, trx);
 }
 
 PartSpinner::PartSpinner(Thing thing, float sspeed) : Part(thing) {
@@ -302,5 +312,22 @@ Matrix PartSpinner::instance(Spec* spec, uint slot, uint state, Matrix trx) {
 	noise += trx.m15;
 	Matrix spin = MatrixMultiply(transform, MatrixRotateY((Sim::tick%360*speed)*DEG2RAD + noise));
 	Matrix m = MatrixMultiply(MatrixMultiply(spin, i), srt);
+	return MatrixMultiply(m, trx);
+}
+
+PartCycle::PartCycle(Thing thing, uint sstep) : Part(thing) {
+	step = sstep;
+}
+
+void PartCycle::update() {
+	Part::update();
+	float inc = 0.01 * (float)step;
+	uint mod = 100/step;
+	shunt = MatrixMultiply(transform, MatrixTranslate(0, 0, (float)(Sim::tick%mod)*inc));
+}
+
+Matrix PartCycle::instance(Spec* spec, uint slot, uint state, Matrix trx) {
+	Matrix i = instanceState(spec, slot, state);
+	Matrix m = MatrixMultiply(MatrixMultiply(shunt, i), srt);
 	return MatrixMultiply(m, trx);
 }

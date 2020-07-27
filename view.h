@@ -89,6 +89,7 @@ struct MainCamera : View {
 	BuildPopup *buildPopup;
 	EntityPopup *entityPopup;
 	RecipePopup *recipePopup;
+	ItemPopup *itemPopup;
 	bool popupFocused;
 
 	MainCamera(Point, Point);

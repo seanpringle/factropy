@@ -19,10 +19,16 @@ Item::Item(uint id, std::string name) {
 	this->id = id;
 	names[name] = this;
 	ids[id] = this;
+	mass = 1;
+	part = NULL;
+
+	ZERO(image);
+	ZERO(texture);
 }
 
 Item::~Item() {
 	UnloadImage(image);
+	UnloadRenderTexture(texture);
 }
 
 Item* Item::byName(std::string name) {

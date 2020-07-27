@@ -56,6 +56,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Arm::create(id);
 	}
 
+	if (spec->belt) {
+		Belt::create(id);
+	}
+
 	en.pos = {0,0,0};
 	en.move((Point){0,0,0});
 
@@ -168,6 +172,10 @@ void Entity::destroy() {
 	if (spec->arm) {
 		arm().destroy();
 	}
+
+	if (spec->belt) {
+		belt().destroy();
+	}
 	all.drop(id);
 }
 
@@ -181,6 +189,24 @@ bool Entity::isGhost() {
 
 Entity& Entity::setGhost(bool state) {
 	flags = state ? (flags | GHOST) : (flags & ~GHOST);
+	return *this;
+}
+
+bool Entity::isConstruction() {
+	return (flags & CONSTRUCTION) != 0;
+}
+
+Entity& Entity::setConstruction(bool state) {
+	flags = state ? (flags | CONSTRUCTION) : (flags & ~CONSTRUCTION);
+	return *this;
+}
+
+bool Entity::isDeconstruction() {
+	return (flags & DECONSTRUCTION) != 0;
+}
+
+Entity& Entity::setDeconstruction(bool state) {
+	flags = state ? (flags | DECONSTRUCTION) : (flags & ~DECONSTRUCTION);
 	return *this;
 }
 
@@ -218,6 +244,37 @@ Entity& Entity::unindex() {
 	for (auto xy: Chunk::walk(box())) {
 		grid[xy].erase(id);
 	}
+	return *this;
+}
+
+Entity& Entity::construct() {
+	setGhost(true);
+	setConstruction(true);
+	setDeconstruction(false);
+	return *this;
+}
+
+Entity& Entity::deconstruct() {
+	setGhost(true);
+	setConstruction(false);
+	setDeconstruction(true);
+
+	if (spec->belt) {
+		belt().unmanage();
+	}
+
+	return *this;
+}
+
+Entity& Entity::materialize() {
+	setGhost(false);
+	setConstruction(false);
+	setDeconstruction(false);
+
+	if (spec->belt) {
+		belt().manage();
+	}
+
 	return *this;
 }
 
@@ -263,4 +320,8 @@ Vehicle& Entity::vehicle() {
 
 Arm& Entity::arm() {
 	return Arm::get(id);
+}
+
+Belt& Entity::belt() {
+	return Belt::get(id);
 }

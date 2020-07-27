@@ -1,10 +1,13 @@
 #ifndef _H_recipe
 #define _H_recipe
 
+struct Recipe;
+
 #include "raylib.h"
 #include "item.h"
 #include <map>
 #include <set>
+#include <vector>
 
 struct Recipe {
 	static void reset();
@@ -20,6 +23,9 @@ struct Recipe {
 	uint id;
 	std::string name;
 	Image image;
+	RenderTexture texture;
+	std::vector<Part*> parts;
+
 	std::set<std::string> tags;
 
 	float mining;

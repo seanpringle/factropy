@@ -406,18 +406,25 @@ void MainCamera::draw() {
 		rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());
 		rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
-		std::map<Part*,std::vector<Matrix>> batches;
+		std::map<Part*,std::vector<Matrix>> extant;
+		std::map<Part*,std::vector<Matrix>> ghosts;
 
 		for (auto ge: entities) {
 			for (uint i = 0; i < ge->spec->parts.size(); i++) {
 				Part *part = ge->spec->parts[i];
-				batches[part].push_back(part->instance(ge->spec, i, ge->state, ge->transform));
+				Matrix instance = part->instance(ge->spec, i, ge->state, ge->transform);
+				(ge->ghost ? ghosts: extant)[part].push_back(instance);
 			}
 		}
 
-		for (auto pair: batches) {
+		for (auto pair: extant) {
 			Part *part = pair.first;
 			part->drawInstanced(pair.second.size(), pair.second.data());
+		}
+
+		for (auto pair: ghosts) {
+			Part *part = pair.first;
+			part->drawGhostInstanced(pair.second.size(), pair.second.data());
 		}
 
 		if (hovering) {
@@ -437,7 +444,8 @@ void MainCamera::draw() {
 		if (placing) {
 			for (uint i = 0; i < placing->spec->parts.size(); i++) {
 				Part *part = placing->spec->parts[i];
-				part->drawGhost(part->instance(placing->spec, i, placing->state, placing->transform));
+				Matrix instance = part->instance(placing->spec, i, placing->state, placing->transform);
+				part->drawGhostInstanced(1, &instance);
 			}
 
 			if (!placingFits) {

@@ -31,14 +31,16 @@ struct Spec {
 	std::string name;
 	std::vector<Part*> parts;
 	std::vector<std::vector<Matrix>> states;
+	Image image;
+	RenderTexture texture;
 	bool align;
 	bool pivot;
 	bool arm;
+	bool belt;
 	bool vehicle;
 	bool drone;
 	bool store;
 	bool rotate;
-	Image image;
 
 	float w;
 	float h;
@@ -48,6 +50,19 @@ struct Spec {
 
 	float costGreedy;
 	float clearance;
+
+	// store
+	bool magic;
+	bool enableSetLower;
+	bool enableSetUpper;
+	// loaders
+	bool loadAnything;
+	bool unloadAnything;
+	// drones
+	bool logistic;
+	bool loadPriority;
+	bool supplyPriority;
+	bool defaultOverflow;
 
 	bool crafter;
 	std::set<std::string> recipeTags;

@@ -5,6 +5,7 @@ class Panel;
 class BuildPopup;
 class EntityPopup;
 class RecipePopup;
+class ItemPopup;
 
 #include "view.h"
 #include "entity.h"
@@ -47,6 +48,13 @@ namespace Panels {
 	void init();
 }
 
+class MessagePopup : public Panel {
+public:
+	std::string text;
+	MessagePopup(int w, int h);
+	void build() override;
+};
+
 class BuildPopup : public Panel {
 public:
 	BuildPopup(MainCamera *cam, int w, int h);
@@ -56,6 +64,7 @@ public:
 class EntityPopup : public Panel {
 public:
 	uint eid;
+	uint iidSelected;
 	EntityPopup(MainCamera *cam, int w, int h);
 	void useEntity(uint eid);
 	void build() override;
@@ -64,6 +73,15 @@ public:
 class RecipePopup : public EntityPopup {
 public:
 	RecipePopup(MainCamera *cam, int w, int h);
+	void build() override;
+};
+
+class ItemPopup : public Panel {
+public:
+	Panel *revert;
+	std::function<void(uint)> callback;
+
+	ItemPopup(MainCamera *cam, int w, int h);
 	void build() override;
 };
 

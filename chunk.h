@@ -1,6 +1,8 @@
 #ifndef _H_chunk
 #define _H_chunk
 
+struct Chunk;
+
 #include "raylib.h"
 #include "raymath.h"
 #include "item.h"

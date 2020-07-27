@@ -1,28 +1,23 @@
 use <lib.scad>
 
-bounds = [1,1,1];
-body = [0.99, 0.99, 0.99];
-
 module base() {
 	difference() {
 		union() {
-			box([x(body)/2, y(body)/2, 0.5]);
-			translate([0,0,z(body)/4]) box([x(body), y(body), 0.1]);
+			translate([0,0,0.5]) box([0.5, 0.5, 1.0]);
+			translate([0,0,1.0-0.05]) box([1.0, 1.0, 0.1]);
 		}
-		#translate([0,0,z(body)/4+0.05]) box([x(body)-0.1, y(body)+0.1, 0.1]);
+		translate([0,0,1.0]) box([0.9, 1.1, 0.1]);
 	}
 }
 
-module roller() {
-	translate([0,0,z(body)/4])
-		rotate([0,90,0]) cyl(0.05, 0.05, x(body)-0.11, $fn=24);
+module belt() {
+	translate([0,0,0.995]) box([0.85, 1.0, 0.01]);
 }
 
-module chevron() {
-	//translate([0,0,z(body)/4-0.02])
-		rotate([0,0,-90]) cyl(0.35, 0.35, 0.05, $fn=3);
+module ridge() {
+	translate([0,0.5,1.005]) box([0.8, 0.01, 0.01]);
 }
 
-//base();
-//roller();
-chevron();
+//fillet(0.01) base();
+//belt();
+ridge();

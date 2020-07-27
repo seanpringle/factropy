@@ -2,13 +2,14 @@
 #define _H_part
 
 struct Part;
+struct Thing;
 
 #include <string>
 #include <vector>
 #include <map>
 #include "raylib.h"
 #include "raymath.h"
-#include "entity.h"
+#include "spec.h"
 
 struct Thing {
 	static inline std::vector<Mesh> meshes;
@@ -48,8 +49,9 @@ struct Part: Thing {
 	Part* translate(float x, float y, float z);
 	virtual void update();
 
+	void draw(Matrix trx);
 	void drawInstanced(int count, Matrix* trx);
-	void drawGhost(Matrix trx);
+	void drawGhostInstanced(int count, Matrix* trx);
 
 	Matrix instanceState(Spec* spec, uint slot, uint state);
 	virtual Matrix instance(Spec* spec, uint slot, uint state, Matrix trx);
@@ -59,6 +61,15 @@ struct PartSpinner : Part {
 	float speed;
 
 	PartSpinner(Thing thing, float speed);
+	virtual Matrix instance(Spec* spec, uint slot, uint state, Matrix trx);
+};
+
+struct PartCycle : Part {
+	uint step;
+	Matrix shunt;
+
+	PartCycle(Thing thing, uint step);
+	virtual void update();
 	virtual Matrix instance(Spec* spec, uint slot, uint state, Matrix trx);
 };
 

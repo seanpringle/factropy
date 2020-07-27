@@ -24,10 +24,25 @@ struct Nuklear {
 	struct nk_user_font *font;
 };
 
-static enum nk_buttons buttonsRaylibNuklear[3];
-static int keysRaylibNuklear[512];
+namespace {
 
-static std::map<std::string,struct nk_image> images;
+	static enum nk_buttons buttonsRaylibNuklear[3];
+	static int keysRaylibNuklear[512];
+
+	static std::map<std::string,struct nk_image> images;
+
+	struct nk_image nk_img(std::string name, Image image) {
+		if (images.count(name) == 0) {
+			struct nk_image img = nk_image_ptr(image.data);
+			img.w = image.width;
+			img.h = image.height;
+			img.region[2] = image.width;
+			img.region[3] = image.height;
+			images[name] = img;
+		}
+		return images[name];
+	}
+}
 
 namespace Panels {
 	void init() {
@@ -233,6 +248,21 @@ void Panel::input() {
 	nk_input_end(&nuklear->ctx);
 }
 
+MessagePopup::MessagePopup(int w, int h) : Panel(NULL, w, h) {
+	text = "hello world";
+}
+
+void MessagePopup::build() {
+	nk_begin(&nuklear->ctx, "message", nk_rect(0, 0, w, h), NK_WINDOW_BORDER);
+
+	struct nk_vec2 content = nk_window_get_content_region_size(&nuklear->ctx);
+	struct nk_vec2 spacing = nuklear->ctx.style.window.spacing;
+
+	nk_layout_row_dynamic(&nuklear->ctx, content.y-spacing.y*2, 1);
+	nk_label(&nuklear->ctx, text.c_str(), NK_TEXT_CENTERED);
+	nk_end(&nuklear->ctx);
+}
+
 BuildPopup::BuildPopup(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
 }
 
@@ -248,23 +278,12 @@ void BuildPopup::build() {
 
 	for (auto pair: Spec::all) {
 		Spec* spec = pair.second;
-
-		if (images.count(spec->name) == 0) {
-			struct nk_image img = nk_image_ptr(spec->image.data);
-			img.w = spec->image.width;
-			img.h = spec->image.height;
-			img.region[2] = spec->image.width;
-			img.region[3] = spec->image.height;
-			images[spec->name] = img;
-		}
-
-		if (nk_button_image_label(&nuklear->ctx, images[spec->name], spec->name.c_str(), NK_TEXT_CENTERED)) {
+		if (nk_button_image(&nuklear->ctx, nk_img("spec"+spec->name, spec->image))) {
 			camera->build(spec);
 			camera->popup = NULL;
 		}
 	}
 	nk_end(&nuklear->ctx);
-
 }
 
 EntityPopup::EntityPopup(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
@@ -283,6 +302,7 @@ void EntityPopup::build() {
 			return;
 		}
 
+		float tilePix = 64.0f;
 		Entity &en = Entity::get(eid);
 
 		nk_begin(&nuklear->ctx, en.spec->name.c_str(), nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
@@ -311,16 +331,389 @@ void EntityPopup::build() {
 			nk_prog(&nuklear->ctx, (int)(arm.orientation*100), 100, NK_FIXED);
 		}
 
-		nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
-		for (auto [x,y]: Chunk::walk(en.box())) {
-			auto sx = std::to_string(x);
-			auto sy = std::to_string(y);
-			nk_label(&nuklear->ctx, (sx + "," + sy).c_str(), NK_TEXT_LEFT);
+		if (en.spec->store) {
+			Store& store = en.store();
 
-			for (int id: Entity::grid[(Chunk::XY){x,y}]) {
-				auto sid = std::to_string(id);
-				nk_label(&nuklear->ctx, sid.c_str(), NK_TEXT_LEFT);
+			Mass usage = store.usage();
+			Mass limit = store.limit();
+
+			if (limit > 0) {
+				nk_layout_row_dynamic(&nuklear->ctx, 0, 2);
+				nk_label(&nuklear->ctx, fmtc("Storage Capacity %s", limit.format()), NK_TEXT_LEFT);
+				nk_prog(&nuklear->ctx, std::max(0.0f, std::min(1.0f, (usage/limit))) * 100, 100, NK_FIXED);
 			}
+
+			// requester/provider
+			if (en.spec->enableSetLower && en.spec->enableSetUpper) {
+
+				if (store.levels.size() > 0 || !store.isEmpty()) {
+
+					nk_layout_row_template_begin(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_variable(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_variable(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+					nk_layout_row_template_end(&nuklear->ctx);
+
+					uint clear = 0;
+					uint down = 0;
+
+					for (Store::Level level: store.levels) {
+						Item *item = Item::get(level.iid);
+
+						uint limit = std::max(level.upper, (uint)std::ceil(store.limit()/item->mass));
+						uint step  = std::max(1U, (uint)limit/100);
+
+						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
+						nk_label(&nuklear->ctx, fmtc("%d", store.count(level.iid)), NK_TEXT_CENTERED);
+
+						int lower = (int)level.lower;
+						nk_slider_int(&nuklear->ctx, 0, &lower, limit, step);
+						nk_label(&nuklear->ctx, fmtc("%d", lower), NK_TEXT_LEFT);
+
+						int upper = (int)level.upper;
+						nk_slider_int(&nuklear->ctx, 0, &upper, limit, step);
+						nk_label(&nuklear->ctx, fmtc("%d", upper), NK_TEXT_LEFT);
+
+						store.levelSet(level.iid, (uint)lower, (uint)upper);
+
+						//nk_style_push_font(&nuklear->ctx, p->fontSymbol);
+
+						struct nk_style_button style = nuklear->ctx.style.button;
+						struct nk_color color = nk_rgb(0,128,0);
+						if (store.isRequesting(level.iid) && store.count(level.iid) == 0) color = nk_rgb(128,0,0);
+						if (store.isRequesting(level.iid) && store.count(level.iid)  > 0) color = nk_rgb(128,64,0);
+						if (store.isActiveProviding(level.iid)) color = nk_rgb(128,128,0);
+						style.text_normal = color;
+						style.text_hover = color;
+						nk_button_label_styled(&nuklear->ctx, &style, "●");
+
+						if (nk_button_label(&nuklear->ctx, "↓")) {
+							down = level.iid;
+						}
+						if (nk_button_label(&nuklear->ctx, "×")) {
+							clear = level.iid;
+						}
+						//nk_style_pop_font(&nuklear->ctx);
+					}
+
+					for (Stack stack: store.stacks) {
+						if (store.level(stack.iid) != NULL) continue;
+						Item *item = Item::get(stack.iid);
+
+						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
+						nk_label(&nuklear->ctx, fmtc("%d", store.count(stack.iid)), NK_TEXT_CENTERED);
+
+						nk_label(&nuklear->ctx, "(not limited)", NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+
+						nk_label(&nuklear->ctx, "(not limited)", NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+
+						if (nk_button_label(&nuklear->ctx, "+")) {
+							store.levelSet(stack.iid, 0, (uint)ceil(store.limit()/item->mass));
+						}
+
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+					}
+
+					if (clear) {
+						store.levelClear(clear);
+					}
+
+					if (down) {
+						auto level = store.level(down);
+						uint lower = level->lower;
+						uint upper = level->upper;
+						store.levelClear(down);
+						store.levelSet(down, lower, upper);
+					}
+				}
+
+				nk_layout_row_static(&nuklear->ctx, tilePix, tilePix, 1);
+				if (nk_button_label(&nuklear->ctx, "+")) {
+					camera->itemPopup->revert = camera->popup;
+					camera->popup = camera->itemPopup;
+
+					camera->itemPopup->callback = [&](uint iid) {
+						Sim::locked([&]() {
+							if (eid && Entity::exists(eid)) {
+								Entity& en = Entity::get(eid);
+								Store& store = en.store();
+								uint lower = store.count(iid);
+								uint upper = ceil(store.limit()/Item::get(iid)->mass);
+								lower += (lower%10 != 0) ? 10-(lower%10): 0;
+								lower = std::min(lower, upper);
+								store.levelSet(iid, lower, upper);
+							}
+						});
+					};
+				}
+			}
+
+			// requester
+			if (en.spec->enableSetLower && !en.spec->enableSetUpper) {
+
+				if (store.levels.size() > 0 || !store.isEmpty()) {
+
+					nk_layout_row_template_begin(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_variable(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+					nk_layout_row_template_end(&nuklear->ctx);
+
+					uint clear = 0;
+					uint down = 0;
+
+					for (Store::Level level: store.levels) {
+						Item *item = Item::get(level.iid);
+
+						uint limit = std::max(level.upper, (uint)std::ceil(store.limit()/item->mass));
+						uint step  = std::max(1U, (uint)limit/100);
+
+						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
+						nk_label(&nuklear->ctx, fmtc("%d", store.count(level.iid)), NK_TEXT_CENTERED);
+
+						int lower = (int)level.lower;
+						nk_slider_int(&nuklear->ctx, 0, &lower, limit, step);
+						nk_label(&nuklear->ctx, fmtc("%d", lower), NK_TEXT_LEFT);
+
+						store.levelSet(level.iid, lower, lower);
+
+						//nk_style_push_font(&nuklear->ctx, p->fontSymbol);
+
+						struct nk_style_button style = nuklear->ctx.style.button;
+						struct nk_color color = nk_rgb(0,128,0);
+						if (store.isRequesting(level.iid) && store.count(level.iid) == 0) color = nk_rgb(128,0,0);
+						if (store.isRequesting(level.iid) && store.count(level.iid)  > 0) color = nk_rgb(128,64,0);
+						if (store.isActiveProviding(level.iid)) color = nk_rgb(128,128,0);
+						style.text_normal = color;
+						style.text_hover = color;
+						nk_button_label_styled(&nuklear->ctx, &style, "●");
+
+						if (nk_button_label(&nuklear->ctx, "↓")) {
+							down = level.iid;
+						}
+						if (nk_button_label(&nuklear->ctx, "×")) {
+							clear = level.iid;
+						}
+
+						//nk_style_pop_font(&nuklear->ctx);
+					}
+
+					for (Stack stack: store.stacks) {
+						if (store.level(stack.iid) != NULL) continue;
+						Item *item = Item::get(stack.iid);
+
+						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
+						nk_label(&nuklear->ctx, fmtc("%d", store.count(stack.iid)), NK_TEXT_CENTERED);
+
+						nk_label(&nuklear->ctx, "(not limited)", NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+
+						if (nk_button_label(&nuklear->ctx, "+")) {
+							store.levelSet(stack.iid, 0, (uint)ceil(store.limit()/item->mass));
+						}
+
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+					}
+
+					if (clear) {
+						store.levelClear(clear);
+					}
+
+					if (down) {
+						auto level = store.level(down);
+						uint lower = level->lower;
+						uint upper = level->upper;
+						store.levelClear(down);
+						store.levelSet(down, lower, upper);
+					}
+				}
+
+				nk_layout_row_static(&nuklear->ctx, tilePix, tilePix, 1);
+				if (nk_button_label(&nuklear->ctx, "+")) {
+					camera->itemPopup->revert = camera->popup;
+					camera->popup = camera->itemPopup;
+
+					camera->itemPopup->callback = [&](uint iid) {
+						Sim::locked([&]() {
+							if (eid && Entity::exists(eid)) {
+								Entity& en = Entity::get(eid);
+								Store& store = en.store();
+								uint lower = store.count(iid);
+								uint cap = ceil(store.limit()/Item::get(iid)->mass);
+								lower += (lower%10 != 0) ? 10-(lower%10): 0;
+								lower = std::min(lower, cap);
+								store.levelSet(iid, lower, lower);
+							}
+						});
+					};
+				}
+			}
+
+			// provider
+			if (!en.spec->enableSetLower && en.spec->enableSetUpper) {
+
+				if (store.levels.size() > 0 || !store.isEmpty()) {
+
+					nk_layout_row_template_begin(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_variable(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+					nk_layout_row_template_end(&nuklear->ctx);
+
+					uint clear = 0;
+					uint down = 0;
+
+					for (Store::Level level: store.levels) {
+						Item *item = Item::get(level.iid);
+
+						uint limit = std::max(level.upper, (uint)std::ceil(store.limit()/item->mass));
+						uint step  = std::max(1U, (uint)limit/100);
+
+						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
+						nk_label(&nuklear->ctx, fmtc("%d", store.count(level.iid)), NK_TEXT_CENTERED);
+
+						int upper = (int)level.upper;
+						nk_slider_int(&nuklear->ctx, 0, &upper, limit, step);
+						nk_label(&nuklear->ctx, fmtc("%d", upper), NK_TEXT_LEFT);
+
+						store.levelSet(level.iid, 0, upper);
+
+						//nk_style_push_font(&nuklear->ctx, p->fontSymbol);
+
+						struct nk_style_button style = nuklear->ctx.style.button;
+						struct nk_color color = nk_rgb(0,128,0);
+						if (store.isAccepting(level.iid) && store.count(level.iid) == 0) color = nk_rgb(128,0,0);
+						if (store.isAccepting(level.iid) && store.count(level.iid) < level.upper) color = nk_rgb(128,64,0);
+						if (store.isActiveProviding(level.iid)) color = nk_rgb(128,128,0);
+						style.text_normal = color;
+						style.text_hover = color;
+						nk_button_label_styled(&nuklear->ctx, &style, "●");
+
+						if (nk_button_label(&nuklear->ctx, "↓")) {
+							down = level.iid;
+						}
+						if (nk_button_label(&nuklear->ctx, "×")) {
+							clear = level.iid;
+						}
+
+						//nk_style_pop_font(&nuklear->ctx);
+					}
+
+					for (Stack stack: store.stacks) {
+						if (store.level(stack.iid) != NULL) continue;
+						Item *item = Item::get(stack.iid);
+
+						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
+						nk_label(&nuklear->ctx, fmtc("%d", store.count(stack.iid)), NK_TEXT_CENTERED);
+
+						nk_label(&nuklear->ctx, "(not limited)", NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+
+						if (nk_button_label(&nuklear->ctx, "+")) {
+							store.levelSet(stack.iid, 0, (uint)ceil(store.limit()/item->mass));
+						}
+
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+					}
+
+					if (clear) {
+						store.levelClear(clear);
+					}
+
+					if (down) {
+						auto level = store.level(down);
+						uint lower = level->lower;
+						uint upper = level->upper;
+						store.levelClear(down);
+						store.levelSet(down, lower, upper);
+					}
+				}
+
+				nk_layout_row_static(&nuklear->ctx, tilePix, tilePix, 1);
+				if (nk_button_label(&nuklear->ctx, "+")) {
+					camera->itemPopup->revert = camera->popup;
+					camera->popup = camera->itemPopup;
+
+					camera->itemPopup->callback = [&](uint iid) {
+						Sim::locked([&]() {
+							if (eid && Entity::exists(eid)) {
+								Entity& en = Entity::get(eid);
+								Store& store = en.store();
+								uint lower = 0;
+								uint upper = ceil(store.limit()/Item::get(iid)->mass);
+								store.levelSet(iid, lower, upper);
+							}
+						});
+					};
+				}
+			}
+
+			// generic
+			if (!en.spec->enableSetLower && !en.spec->enableSetUpper) {
+
+				if (store.levels.size() > 0 || !store.isEmpty()) {
+
+					nk_layout_row_template_begin(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+					nk_layout_row_template_end(&nuklear->ctx);
+
+					for (Store::Level level: store.levels) {
+						Item *item = Item::get(level.iid);
+
+						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
+						nk_label(&nuklear->ctx, fmtc("%d", store.count(level.iid)), NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, fmtc("%d", level.lower), NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, fmtc("%d", level.upper), NK_TEXT_CENTERED);
+					}
+
+					for (Stack stack: store.stacks) {
+						if (store.level(stack.iid) != NULL) continue;
+						Item *item = Item::get(stack.iid);
+
+						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, fmtc("%d", store.count(stack.iid)), NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+					}
+				}
+			}
+
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_label(&nuklear->ctx, fmtc("logistic %d", en.spec->logistic), NK_TEXT_LEFT);
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_label(&nuklear->ctx, fmtc("supplyPriority %d", en.spec->supplyPriority), NK_TEXT_LEFT);
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_label(&nuklear->ctx, fmtc("loadPriority %d", en.spec->loadPriority), NK_TEXT_LEFT);
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_label(&nuklear->ctx, fmtc("defaultOverflow %d", en.spec->defaultOverflow), NK_TEXT_LEFT);
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_label(&nuklear->ctx, fmtc("loadAnything %d", en.spec->loadAnything), NK_TEXT_LEFT);
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_label(&nuklear->ctx, fmtc("unloadAnything %d", en.spec->unloadAnything), NK_TEXT_LEFT);
 		}
 
 		nk_end(&nuklear->ctx);
@@ -342,11 +735,16 @@ void RecipePopup::build() {
 		Entity &en = Entity::get(eid);
 
 		nk_begin(&nuklear->ctx, "Recipe", nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
-		nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
 
-		for (auto pair: Recipe::names) {
-			if (nk_button_label(&nuklear->ctx, pair.first.c_str())) {
-				en.crafter().recipe = pair.second;
+		float tilePix = 128.0f;
+		struct nk_vec2 content = nk_window_get_content_region_size(&nuklear->ctx);
+		struct nk_vec2 spacing = nuklear->ctx.style.window.spacing;
+
+		nk_layout_row_static(&nuklear->ctx, tilePix, tilePix, std::floor(content.x/(tilePix+spacing.x)));
+
+		for (auto [name,recipe]: Recipe::names) {
+			if (nk_button_image(&nuklear->ctx, nk_img("recipe"+name, recipe->image))) {
+				en.crafter().recipe = recipe;
 				camera->popup = camera->entityPopup;
 			}
 		}
@@ -354,6 +752,32 @@ void RecipePopup::build() {
 		nk_end(&nuklear->ctx);
 	});
 }
+
+ItemPopup::ItemPopup(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
+	revert = NULL;
+	callback = NULL;
+}
+
+void ItemPopup::build() {
+	nk_begin(&nuklear->ctx, "Item", nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
+
+	float tilePix = 64.0f;
+	struct nk_vec2 content = nk_window_get_content_region_size(&nuklear->ctx);
+	struct nk_vec2 spacing = nuklear->ctx.style.window.spacing;
+
+	nk_layout_row_static(&nuklear->ctx, tilePix, tilePix, std::floor(content.x/(tilePix+spacing.x)));
+
+	for (auto [name,item]: Item::names) {
+		if (nk_button_image(&nuklear->ctx, nk_img("item"+name, item->image))) {
+			camera->popup = revert;
+			callback(item->id);
+		}
+	}
+
+	nk_end(&nuklear->ctx);
+}
+
+
 
 
 

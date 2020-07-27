@@ -9,12 +9,13 @@ struct GuiFakeEntity;
 
 #include "sparse.h"
 #include "spec.h"
-#include "part.h"
 #include "chunk.h"
+#include "part.h"
 #include "point.h"
 #include "box.h"
 #include "store.h"
 #include "arm.h"
+#include "belt.h"
 #include "crafter.h"
 #include "vehicle.h"
 #include <unordered_set>
@@ -25,6 +26,9 @@ struct Store;
 struct Entity {
 
 	static const uint32_t GHOST = 1<<0;
+	static const uint32_t CONSTRUCTION = 1<<1;
+	static const uint32_t DECONSTRUCTION = 1<<2;
+
 	static inline std::map<Chunk::XY,std::set<uint>> grid;
 	static inline std::unordered_set<uint> removing;
 
@@ -53,6 +57,10 @@ struct Entity {
 
 	bool isGhost();
 	Entity& setGhost(bool state);
+	bool isConstruction();
+	Entity& setConstruction(bool state);
+	bool isDeconstruction();
+	Entity& setDeconstruction(bool state);
 
 	Box box();
 	Entity& look(Point); // rel
@@ -68,10 +76,15 @@ struct Entity {
 	Entity& index();
 	Entity& unindex();
 
+	Entity& construct();
+	Entity& deconstruct();
+	Entity& materialize();
+
 	Store& store();
 	Crafter& crafter();
 	Vehicle& vehicle();
 	Arm& arm();
+	Belt& belt();
 };
 
 struct GuiEntity {

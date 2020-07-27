@@ -21,6 +21,8 @@ Recipe::Recipe(uint id, std::string name) {
 	ids[id] = this;
 
 	mining = false;
+	ZERO(image);
+	ZERO(texture);
 }
 
 Recipe::~Recipe() {

@@ -17,6 +17,19 @@
 #include "view.h"
 #include "item.h"
 #include "recipe.h"
+#include <ctime>
+
+const char* quotes[] = {
+	"Yeah, but she's our witch. So cut her the hell down!",
+	"Gotta say, Doctor, your talent for alienating folk is near miraculous.",
+	"We came here in peace, we expect to go in one... piece.",
+	"Doors and corners.",
+	"Indeed.",
+	"That man is playing Galaga! Thought we wouldn't notice. But we did.",
+	"Oh, that's a crown. I thought it was a big eyebrow.",
+	"I make grave mistakes all the time. Everything seems to work out.",
+	"Though a candle burns in my house... there's nobody home.",
+};
 
 int main(int argc, char const *argv[]) {
 	//nvidia-settings --query=fsaa --verbose
@@ -53,7 +66,7 @@ int main(int argc, char const *argv[]) {
 
   float fogDensity = 0.004f;
 	Vector4 fogColor = ColorNormalize(SKYBLUE);
-	Vector4 ambient = { 0.2f, 0.2f, 0.2f, 1.0f };
+	Vector4 ambient = { 0.3f, 0.3f, 0.3f, 1.0f };
 
 	Shader shader = LoadShader(
 		FormatText("shaders/glsl%i/base_lighting.vs", GLSL_VERSION),
@@ -91,16 +104,31 @@ int main(int argc, char const *argv[]) {
 	//Sim::seed(4);
 
 	Item* item = new Item(Item::next(), "log");
-	item->image = LoadImage("icons/none.png");
+	item->part = (new Part(Thing("models/wood.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0xCD853Fff);
 
 	item = new Item(Item::next(), "iron-ore");
-	item->image = LoadImage("icons/none.png");
+	item->part = (new Part(Thing("models/iron-ore.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0xB7410Eff);
 	Item::mining.insert(item);
 
-	Recipe* recipe = new Recipe(Recipe::next(), "mining1");
-	recipe->image = LoadImage("icons/none.png");
-	recipe->tags = {"mining"};
-	recipe->mining = true;
+	item = new Item(Item::next(), "copper-ore");
+	item->part = (new Part(Thing("models/copper-ore.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x529f88ff);
+	Item::mining.insert(item);
+
+	item = new Item(Item::next(), "coal");
+	item->part = (new Part(Thing("models/coal.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x444444ff);
+	Item::mining.insert(item);
+
+	item = new Item(Item::next(), "stone");
+	item->part = (new Part(Thing("models/stone.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x999999ff);
+	Item::mining.insert(item);
+
+	auto thingIngot = Thing("models/ingot.stl");
+
+	item = new Item(Item::next(), "iron-ingot");
+	item->part = (new Part(thingIngot))->paint(0x686969ff);
+
+	item = new Item(Item::next(), "copper-ingot");
+	item->part = (new Part(thingIngot))->paint(0xDC7F64ff);
 
 	auto thingContainer = Thing("models/container.stl");
 	auto thingFan = Thing("models/fan.stl");
@@ -108,15 +136,19 @@ int main(int argc, char const *argv[]) {
 	auto thingAssembler = Thing("models/assembler.stl");
 	auto thingFurnace = Thing("models/furnace.stl");
 	auto thingMiner = Thing("models/miner.stl");
-	auto thingBeltBase = Thing("models/belt-base.stl");
-	auto thingBeltChevron = Thing("models/belt-chevron.stl");
-	auto thingBeltRoller = Thing("models/belt-roller.stl");
 	auto thingTruckChassisEngineer = Thing("models/truck-chassis-engineer.stl");
 	auto thingTruckChassisHauler = Thing("models/truck-chassis-hauler.stl");
 	auto thingTruckWheel = Thing("models/truck-wheel.stl");
 
+	Recipe* recipe = new Recipe(Recipe::next(), "mining1");
+	recipe->tags = {"mining"};
+	recipe->mining = true;
+	recipe->parts = {
+		(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
+		(new Part(thingGear))->paint(0xccccccff)->scale(0.3f,0.3f,0.3f)->rotate(Point::East(), 90)->translate(0,0,0.15),
+	};
+
 	Spec* spec = new Spec("provider-container");
-	spec->image = LoadImage("icons/provider-container.png");
 	spec->w = 2;
 	spec->h = 2;
 	spec->d = 5;
@@ -125,10 +157,10 @@ int main(int argc, char const *argv[]) {
 		(new PartSpinner(thingFan, 4))->paint(0xccccccff)->translate(0,1.1,0),
 	};
 	spec->store = true;
+	spec->enableSetLower = true;
 	spec->rotate = true;
 
 	spec = new Spec("requester-container");
-	spec->image = LoadImage("icons/requester-container.png");
 	spec->w = 2;
 	spec->h = 2;
 	spec->d = 5;
@@ -136,10 +168,11 @@ int main(int argc, char const *argv[]) {
 		(new Part(thingContainer))->paint(0x0044ccff),
 	};
 	spec->store = true;
+	spec->enableSetLower = true;
+	spec->enableSetUpper = true;
 	spec->rotate = true;
 
 	spec = new Spec("buffer-container");
-	spec->image = LoadImage("icons/buffer-container.png");
 	spec->w = 2;
 	spec->h = 2;
 	spec->d = 5;
@@ -150,7 +183,6 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = true;
 
 	spec = new Spec("assembler");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 6;
 	spec->h = 3;
 	spec->d = 6;
@@ -161,7 +193,6 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = true;
 
 	spec = new Spec("furnace");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 4;
 	spec->h = 4;
 	spec->d = 4;
@@ -172,7 +203,6 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = true;
 
 	spec = new Spec("miner");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 5;
 	spec->h = 5;
 	spec->d = 5;
@@ -188,26 +218,17 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"mining"};
 
 	spec = new Spec("belt");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 1;
-	spec->h = 0.5;
+	spec->h = 1;
 	spec->d = 1;
 	spec->rotate = true;
+	spec->belt = true;
 
 	spec->parts = {
-		(new Part(thingBeltBase))->paint(0xcccc00ff),
-		(new Part(thingBeltChevron))->paint(0x0000ccff)->translate(0,0.23,0),
-		(new Part(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0),
+		(new Part(Thing("models/belt-base.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0),
+		(new Part(Thing("models/belt-surface.stl")))->paint(0x000000ff)->translate(0,-0.5,0),
+		(new PartCycle(Thing("models/belt-ridge.stl"), 2))->paint(0xcccc00ff)->translate(0,-0.5,0),
 	};
-
-	for (int i = 1; i < 4; i++) {
-		spec->parts.push_back(
-			(new Part(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0.14f*i)
-		);
-		spec->parts.push_back(
-			(new Part(thingBeltRoller))->paint(0xccccccff)->translate(0,0.25,0.14f*-i)
-		);
-	}
 
 	std::vector<Spec*> rocks;
 
@@ -216,7 +237,6 @@ int main(int argc, char const *argv[]) {
 		auto part = "models/" + name + ".stl";
 
 		spec = new Spec(name);
-		spec->image = LoadImage("icons/none.png");
 		spec->w = 2;
 		spec->h = 1;
 		spec->d = 2;
@@ -255,7 +275,6 @@ int main(int argc, char const *argv[]) {
 	std::vector<Spec*> trees;
 
 	spec = new Spec("tree1");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 2;
 	spec->h = 5;
 	spec->d = 2;
@@ -267,7 +286,6 @@ int main(int argc, char const *argv[]) {
 	trees.push_back(spec);
 
 	spec = new Spec("tree2");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 2;
 	spec->h = 6;
 	spec->d = 2;
@@ -303,7 +321,6 @@ int main(int argc, char const *argv[]) {
 	});
 
 	spec = new Spec("truck-engineer");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 2;
 	spec->h = 2;
 	spec->d = 3;
@@ -325,7 +342,6 @@ int main(int argc, char const *argv[]) {
 	spec->clearance = 1.5;
 
 	spec = new Spec("truck-hauler");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 2;
 	spec->h = 2;
 	spec->d = 3;
@@ -343,7 +359,6 @@ int main(int argc, char const *argv[]) {
 	spec->store = true;
 
 	spec = new Spec("truck-stop");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 3;
 	spec->h = 0.1;
 	spec->d = 3;
@@ -353,7 +368,6 @@ int main(int argc, char const *argv[]) {
 	spec->pivot = true;
 
 	spec = new Spec("camera-drone");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 1;
 	spec->h = 1;
 	spec->d = 1;
@@ -364,7 +378,6 @@ int main(int argc, char const *argv[]) {
 	spec->drone = true;
 
 	spec = new Spec("arm");
-	spec->image = LoadImage("icons/none.png");
 	spec->w = 2;
 	spec->h = 3;
 	spec->d = 2;
@@ -452,23 +465,163 @@ int main(int argc, char const *argv[]) {
 			}
 		}
 
-		Entity::create(Entity::next(), Spec::byName("truck-engineer")).floor(0)
-			.store()
-				.insert((Stack){Item::byName("log")->id, 10})
-		;
-
-		Entity::create(Entity::next(), Spec::byName("camera-drone"))
-			.move((Point){0,20,0})
-		;
+		Entity& en = Entity::create(Entity::next(), Spec::byName("truck-engineer")).floor(0);
+		en.store().insert({Item::byName("log")->id, 10});
 	}
 
 	Panels::init();
-	camera->buildPopup = new BuildPopup(camera, 800, 800);
+	camera->buildPopup = new BuildPopup(camera, 814, 800);
 	camera->entityPopup = new EntityPopup(camera, 800, 800);
 	camera->recipePopup = new RecipePopup(camera, 800, 800);
+	camera->itemPopup = new ItemPopup(camera, 800, 800);
 
 	Mod* mod = new Mod("base");
 	mod->load();
+
+	MessagePopup *status = new MessagePopup(800, 150);
+	status->text = std::string(quotes[(uint)std::time(NULL)%(sizeof(quotes)/sizeof(char*))]);
+
+	std::function<void(void)> loadingScreen = [&]() {
+		ensure(!WindowShouldClose());
+
+		BeginDrawing();
+
+			ClearBackground(BLACK);
+
+			int x = 0, y = 0;
+
+			std::function<void(void)> advance = [&]() {
+				x += 128;
+				if (x > GetScreenWidth()-128) {
+					y += 128;
+					x = 0;
+				}
+				if (y > GetScreenHeight()-128) {
+					y = 0;
+				}
+			};
+
+			for ([[maybe_unused]] auto [name,item]: Item::names) {
+				if (!item->texture.id) break;
+				DrawTextureEx(item->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 1.0, WHITE);
+				advance();
+			}
+
+			for ([[maybe_unused]] auto [name,recipe]: Recipe::names) {
+				if (!recipe->texture.id) break;
+				DrawTextureEx(recipe->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 0.5, WHITE);
+				advance();
+			}
+
+			for ([[maybe_unused]] auto [name,spec]: Spec::all) {
+				if (!spec->texture.id) break;
+				DrawTextureEx(spec->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 0.5, WHITE);
+				advance();
+			}
+
+			status->update();
+			status->draw();
+
+		EndDrawing();
+	};
+
+	loadingScreen();
+
+	for (auto [name,item]: Item::names) {
+
+		item->texture = LoadRenderTexture(128, 128);
+
+		BeginTextureMode(item->texture);
+
+			ClearBackground(GetColor(0x0));
+
+			BeginMode3D((Camera3D){
+				position: (Vector3){0.9,1,0.9},
+				target:   (Vector3){0,0.1,0},
+				up:       -Point::Up(),
+				fovy:     45.0f,
+				type:     CAMERA_PERSPECTIVE,
+			});
+
+			item->part->draw(MatrixIdentity());
+
+			EndMode3D();
+
+		EndTextureMode();
+
+		item->image = GetTextureData(item->texture.texture);
+		loadingScreen();
+	}
+
+	loadingScreen();
+
+	for (auto [name,recipe]: Recipe::names) {
+		notef("rendering recipe %s", name);
+		recipe->texture = LoadRenderTexture(256, 256);
+
+		BeginTextureMode(recipe->texture);
+
+			ClearBackground(GetColor(0x0));
+
+			BeginMode3D((Camera3D){
+				position: (Vector3){0.9,1,0.9},
+				target:   (Vector3){0,0.1,0},
+				up:       -Point::Up(),
+				fovy:     45.0f,
+				type:     CAMERA_PERSPECTIVE,
+			});
+
+			for (Part* part: recipe->parts) {
+				part->draw(MatrixIdentity());
+			}
+
+			EndMode3D();
+
+		EndTextureMode();
+
+		recipe->image = GetTextureData(recipe->texture.texture);
+		loadingScreen();
+	}
+
+	loadingScreen();
+
+	for (auto [name,spec]: Spec::all) {
+		notef("rendering spec %s", name);
+		spec->texture = LoadRenderTexture(256, 256);
+
+		BeginTextureMode(spec->texture);
+
+			ClearBackground(GetColor(0x0));
+
+			BeginMode3D((Camera3D){
+				position: Point(1.0f, 1.0f, 1.0f) * Point(spec->w, spec->h, spec->d).length(),
+				target:   Point(0.0f, 0.0f, 0.0f),
+				up:       -Point::Up(),
+				fovy:     45.0f,
+				type:     CAMERA_PERSPECTIVE,
+			});
+
+			for (Part* part: spec->parts) {
+				part->draw(MatrixIdentity());
+			}
+
+			EndMode3D();
+
+		EndTextureMode();
+
+		spec->image = GetTextureData(spec->texture.texture);
+		loadingScreen();
+	}
+
+	loadingScreen();
+
+	for (auto pair: Chunk::all) {
+		Chunk *chunk = pair.second;
+		if (!chunk->generated) {
+			chunk->genHeightMap();
+			chunk->generated = true;
+		}
+	}
 
 	RenderTexture secondary = LoadRenderTexture(GetScreenWidth()/4, GetScreenHeight()/4);
 
@@ -522,10 +675,10 @@ int main(int argc, char const *argv[]) {
 				Sim::locked([&]() {
 					if (Entity::fits(camera->placing->spec, camera->placing->pos, camera->placing->dir)) {
 						Entity::create(Entity::next(), camera->placing->spec)
-							.setGhost(true)
+							.construct()
 							.look(camera->placing->dir)
 							.move(camera->placing->pos)
-							.setGhost(false);
+							.materialize();
 					}
 				});
 			}
@@ -542,7 +695,7 @@ int main(int argc, char const *argv[]) {
 					int id = camera->hovering->id;
 					if (Entity::exists(id)) {
 						Entity::get(id).remove();
-					};
+					}
 				});
 			}
 
@@ -617,6 +770,7 @@ int main(int argc, char const *argv[]) {
 	delete camera->buildPopup;
 	delete camera->entityPopup;
 	delete camera->recipePopup;
+	delete camera->itemPopup;
 	delete camera;
 	delete camSec;
 
