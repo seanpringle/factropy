@@ -2,12 +2,21 @@
 #define _H_sim
 
 #include "opensimplex.h"
+#include "time-series.h"
 #include <mutex>
 #include <functional>
 
 namespace Sim {
 	extern OpenSimplex* opensimplex;
 	extern uint64_t tick;
+
+	extern TimeSeries statsEntity;
+	extern TimeSeries statsArm;
+	extern TimeSeries statsCrafter;
+	extern TimeSeries statsPath;
+	extern TimeSeries statsVehicle;
+
+	void reset();
 
 	typedef std::function<void(void)> lockCallback;
 	void locked(lockCallback cb);

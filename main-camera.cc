@@ -58,6 +58,12 @@ MainCamera::MainCamera(Point pos, Point dir) {
 	recipePopup = NULL;
 	popupFocused = false;
 	worldFocused = true;
+
+	resource = 0;
+
+	statsUpdate.clear();
+	statsDraw.clear();
+	statsFrame.clear();
 }
 
 MainCamera::~MainCamera() {
@@ -283,227 +289,252 @@ void MainCamera::updateCamera() {
 }
 
 void MainCamera::update() {
-	hovering = NULL;
-	hovered.clear();
-	selected.clear();
+	statsUpdate.track(frame, [&]() {
+		hovering = NULL;
+		hovered.clear();
+		selected.clear();
 
-	while (entities.size() > 0) {
-		delete entities.back();
-		entities.pop_back();
-	}
-
-	updateMouseState();
-	updateCamera();
-
-	if (IsKeyReleased(KEY_ESCAPE)) {
-		if (popup) {
-			popup = NULL;
-		}
-		else
-		if (placing) {
-			delete placing;
-			placing = NULL;
-		}
-		else
-		if (selecting) {
-			selection = {0,0,0,0};
-			selecting = false;
-		}
-	}
-
-	if (worldFocused) {
-		if (placing) {
-			RayHitInfo hit = GetCollisionRayGround(mouse.ray, 0);
-			placing->move(Point(hit.position))->floor(placing->pos.y);
-		}
-	}
-
-	Point target = groundTarget(0);
-	Box view = (Box){target.x, target.y, target.z, 500, 500, 500};
-
-	Sim::locked([&]() {
-		for (int id: Entity::intersecting(view)) {
-			entities.push_back(new GuiEntity(id));
+		while (entities.size() > 0) {
+			delete entities.back();
+			entities.pop_back();
 		}
 
-		placingFits = !placing || Entity::fits(placing->spec, placing->pos, placing->dir);
-	});
+		updateMouseState();
+		updateCamera();
 
-	if (worldFocused) {
-
-		for (auto ge: entities) {
-			if (CheckCollisionRayBox(mouse.ray, ge->box().bounds())) {
-				hovered.push_back(ge);
+		if (IsKeyReleased(KEY_ESCAPE)) {
+			if (popup) {
+				popup = NULL;
+			}
+			else
+			if (placing) {
+				delete placing;
+				placing = NULL;
+			}
+			else
+			if (selecting) {
+				selection = {0,0,0,0};
+				selecting = false;
 			}
 		}
 
-		if (hovered.size() > 0) {
-			float distance = 0.0f;
-			for (auto ge: hovered) {
-				float d = ge->pos.distance(position);
-				if (hovering == NULL || d < distance) {
-					hovering = ge;
-					distance = d;
-				}
+		if (worldFocused) {
+			if (placing) {
+				RayHitInfo hit = GetCollisionRayGround(mouse.ray, 0);
+				placing->move(Point(hit.position))->floor(placing->pos.y);
 			}
 		}
 
-		if (selecting) {
-			Camera3D rcam = raylibCamera();
+		Point target = groundTarget(0);
+		Box view = (Box){target.x, target.y, target.z, 500, 500, 500};
+
+		Sim::locked([&]() {
+			for (int id: Entity::intersecting(view)) {
+				entities.push_back(new GuiEntity(id));
+			}
+
+			placingFits = !placing || Entity::fits(placing->spec, placing->pos, placing->dir);
+		});
+
+		if (worldFocused) {
+
 			for (auto ge: entities) {
-				Vector2 at = GetWorldToScreen(ge->pos, rcam);
-				if (at.x > selection.x && at.x < selection.x+selection.width && at.y > selection.y && at.y < selection.y+selection.height) {
-					selected.push_back(ge);
+				if (CheckCollisionRayBox(mouse.ray, ge->box().bounds())) {
+					hovered.push_back(ge);
+				}
+			}
+
+			if (hovered.size() > 0) {
+				float distance = 0.0f;
+				for (auto ge: hovered) {
+					float d = ge->pos.distance(position);
+					if (hovering == NULL || d < distance) {
+						hovering = ge;
+						distance = d;
+					}
+				}
+			}
+
+			if (selecting) {
+				Camera3D rcam = raylibCamera();
+				for (auto ge: entities) {
+					Vector2 at = GetWorldToScreen(ge->pos, rcam);
+					if (at.x > selection.x && at.x < selection.x+selection.width && at.y > selection.y && at.y < selection.y+selection.height) {
+						selected.push_back(ge);
+					}
 				}
 			}
 		}
-	}
+	});
 }
 
 void MainCamera::draw() {
+	statsDraw.track(frame, [&]() {
 
-	Camera3D camera = {
-		position : position,
-		target   : groundTarget(0),
-		up       : up,
-		fovy     : fovy,
-		type     : CAMERA_PERSPECTIVE,
-	};
+		Camera3D camera = {
+			position : position,
+			target   : groundTarget(0),
+			up       : up,
+			fovy     : fovy,
+			type     : CAMERA_PERSPECTIVE,
+		};
 
-	ClearBackground(SKYBLUE);
+		ClearBackground(SKYBLUE);
 
-	BeginMode3D(camera);
-		if (showGrid) {
+		BeginMode3D(camera);
 			Point groundZero = groundTarget(0);
-			groundZero.x = std::floor(groundZero.x);
-			groundZero.z = std::floor(groundZero.z);
-			drawGrid(groundZero, 64, 1);
-		}
 
-		std::vector<Matrix> water;
-		std::vector<Mesh> chunk_meshes;
-		std::vector<Matrix> chunk_transforms;
-
-		float size = (float)Chunk::size;
-		for (auto pair: Chunk::all) {
-			Chunk *chunk = pair.second;
-			float x = chunk->x;
-			float y = chunk->y;
-			if (!chunk->generated) {
-				chunk->genHeightMap();
-				chunk->generated = true;
+			if (showGrid) {
+				groundZero.x = std::floor(groundZero.x);
+				groundZero.z = std::floor(groundZero.z);
+				drawGrid(groundZero, 64, 1);
 			}
-			chunk_meshes.push_back(chunk->heightmap);
-			chunk_transforms.push_back(chunk->transform);
-			water.push_back(
-				MatrixMultiply(
-					MatrixTranslate(x+0.5f, -0.52f, y+0.5f),
-					MatrixScale(size,size,size)
-				)
-			);
-		}
 
-		rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());
-		rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
+			std::vector<Matrix> water;
+			std::vector<Mesh> chunk_meshes;
+			std::vector<Matrix> chunk_transforms;
 
-		std::map<Part*,std::vector<Matrix>> extant;
-		std::map<Part*,std::vector<Matrix>> ghosts;
+			std::map<uint,std::vector<Matrix>> resource_transforms;
 
-		for (auto ge: entities) {
-			for (uint i = 0; i < ge->spec->parts.size(); i++) {
-				Part *part = ge->spec->parts[i];
-				Matrix instance = part->instance(ge->spec, i, ge->state, ge->transform);
-				(ge->ghost ? ghosts: extant)[part].push_back(instance);
+			float size = (float)Chunk::size;
+			for (auto pair: Chunk::all) {
+				Chunk *chunk = pair.second;
+				float x = chunk->x;
+				float y = chunk->y;
+				if (!chunk->generated) {
+					chunk->genHeightMap();
+					chunk->generated = true;
+				}
+				chunk_meshes.push_back(chunk->heightmap);
+				chunk_transforms.push_back(chunk->transform);
+				water.push_back(
+					MatrixMultiply(
+						MatrixTranslate(x+0.5f, -0.52f, y+0.5f),
+						MatrixScale(size,size,size)
+					)
+				);
+
+				int cx = chunk->x*Chunk::size;
+				int cz = chunk->y*Chunk::size;
+				int halt = Chunk::size/2;
+
+				if (groundZero.distance(Point(cx+halt, 0.0f, cz+halt)) < 1000) {
+					for (auto [tx,ty]: chunk->minerals) {
+						Chunk::Tile* tile = &chunk->tiles[ty][tx];
+						float h = tile->elevation*(49.82*2)-0.25;
+						Matrix r = MatrixRotate(Point(cx+tx, h, cz+ty), tx);
+						Matrix m = MatrixTranslate(cx+tx, h, cz+ty);
+						resource_transforms[tile->mineral].push_back(MatrixMultiply(r, m));
+					}
+				}
 			}
-		}
 
-		for (auto pair: extant) {
-			Part *part = pair.first;
-			part->drawInstanced(pair.second.size(), pair.second.data());
-		}
+			rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());
+			rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
-		for (auto pair: ghosts) {
-			Part *part = pair.first;
-			part->drawGhostInstanced(pair.second.size(), pair.second.data());
-		}
+			for (auto [iid,transforms]: resource_transforms) {
+				Item::get(iid)->part->drawInstanced(transforms.size(), transforms.data());
+			}
 
-		if (hovering) {
-			Box box = hovering->box();
-			Point bounds = {box.w, box.h, box.d};
-			DrawCubeWiresV(hovering->pos, bounds + 0.01f, SKYBLUE);
-		}
+			std::map<Part*,std::vector<Matrix>> extant;
+			std::map<Part*,std::vector<Matrix>> ghosts;
+
+			for (auto ge: entities) {
+				for (uint i = 0; i < ge->spec->parts.size(); i++) {
+					Part *part = ge->spec->parts[i];
+					Matrix instance = part->instance(ge->spec, i, ge->state, ge->transform);
+					(ge->ghost ? ghosts: extant)[part].push_back(instance);
+				}
+			}
+
+			for (auto pair: extant) {
+				Part *part = pair.first;
+				part->drawInstanced(pair.second.size(), pair.second.data());
+			}
+
+			for (auto pair: ghosts) {
+				Part *part = pair.first;
+				part->drawGhostInstanced(pair.second.size(), pair.second.data());
+			}
+
+			if (hovering) {
+				Box box = hovering->box();
+				Point bounds = {box.w, box.h, box.d};
+				DrawCubeWiresV(hovering->pos, bounds + 0.01f, SKYBLUE);
+			}
+
+			if (selecting) {
+				for (auto ge: selected) {
+					Box box = ge->box();
+					Point bounds = {box.w, box.h, box.d};
+					DrawCubeWiresV(ge->pos, bounds + 0.01f, SKYBLUE);
+				}
+			}
+
+			if (placing) {
+				for (uint i = 0; i < placing->spec->parts.size(); i++) {
+					Part *part = placing->spec->parts[i];
+					Matrix instance = part->instance(placing->spec, i, placing->state, placing->transform);
+					part->drawGhostInstanced(1, &instance);
+				}
+
+				if (!placingFits) {
+					Box box = placing->box();
+					Point bounds = {box.w, box.h, box.d};
+					DrawCubeWiresV(placing->pos, bounds + 0.01f, RED);
+				}
+			}
+
+			if (Path::jobs.size() > 0) {
+				Path* job = Path::jobs.front();
+				DrawCube(job->target, 0.5f, 0.5f, 0.5f, GOLD);
+
+				std::vector<Matrix> reds;
+				std::vector<Matrix> greens;
+
+				for (auto pair: job->nodes) {
+					Path::Node* node = pair.second;
+					if (job->inOpenSet(node)) {
+						greens.push_back(MatrixTranslate(node->point.x, node->point.y, node->point.z));
+					} else {
+						reds.push_back(MatrixTranslate(node->point.x, node->point.y, node->point.z));
+					}
+				}
+
+				if (reds.size() > 0)
+					rlDrawMeshInstanced(redCube.meshes[0], redCube.materials[0], reds.size(), reds.data());
+
+				if (greens.size() > 0)
+					rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
+			}
+
+			for (auto ge: entities) {
+				if (ge->spec->vehicle) {
+					Entity& en = Entity::get(ge->id);
+					Vehicle& vehicle = en.vehicle();
+					Point p = en.pos;
+					for (auto n: vehicle.path) {
+						DrawSphere(n, 0.25f, RED);
+						DrawLine3D(p, n, RED);
+						p = n;
+					}
+
+					//DrawRay((Ray){en.pos, en.dir}, BLUE);
+				}
+			}
+
+			DrawCube(Point(0,0,2.5), 0.5f, 0.5f, 5.0f, BLUE);
+			DrawCube(Point(2.5,0,0), 5.0f, 0.5f, 0.5f, RED);
+			DrawCube(Point(0,2.5,0), 0.5f, 5.0f, 0.5f, GREEN);
+
+		EndMode3D();
 
 		if (selecting) {
-			for (auto ge: selected) {
-				Box box = ge->box();
-				Point bounds = {box.w, box.h, box.d};
-				DrawCubeWiresV(ge->pos, bounds + 0.01f, SKYBLUE);
-			}
+			DrawRectangleRec(selection, GetColor(0x0000ff99));
 		}
 
-		if (placing) {
-			for (uint i = 0; i < placing->spec->parts.size(); i++) {
-				Part *part = placing->spec->parts[i];
-				Matrix instance = part->instance(placing->spec, i, placing->state, placing->transform);
-				part->drawGhostInstanced(1, &instance);
-			}
-
-			if (!placingFits) {
-				Box box = placing->box();
-				Point bounds = {box.w, box.h, box.d};
-				DrawCubeWiresV(placing->pos, bounds + 0.01f, RED);
-			}
+		if (popup) {
+			popup->draw();
 		}
-
-		if (Path::jobs.size() > 0) {
-			Path* job = Path::jobs.front();
-			DrawCube(job->target, 0.5f, 0.5f, 0.5f, GOLD);
-
-			std::vector<Matrix> reds;
-			std::vector<Matrix> greens;
-
-			for (auto pair: job->nodes) {
-				Path::Node* node = pair.second;
-				if (job->inOpenSet(node)) {
-					greens.push_back(MatrixTranslate(node->point.x, node->point.y, node->point.z));
-				} else {
-					reds.push_back(MatrixTranslate(node->point.x, node->point.y, node->point.z));
-				}
-			}
-
-			if (reds.size() > 0)
-				rlDrawMeshInstanced(redCube.meshes[0], redCube.materials[0], reds.size(), reds.data());
-
-			if (greens.size() > 0)
-				rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
-		}
-
-		for (auto ge: entities) {
-			if (ge->spec->vehicle) {
-				Entity& en = Entity::get(ge->id);
-				Vehicle& vehicle = en.vehicle();
-				Point p = en.pos;
-				for (auto n: vehicle.path) {
-					DrawSphere(n, 0.25f, RED);
-					DrawLine3D(p, n, RED);
-					p = n;
-				}
-
-				//DrawRay((Ray){en.pos, en.dir}, BLUE);
-			}
-		}
-
-		DrawCube(Point(0,0,2.5), 0.5f, 0.5f, 5.0f, BLUE);
-		DrawCube(Point(2.5,0,0), 5.0f, 0.5f, 0.5f, RED);
-		DrawCube(Point(0,2.5,0), 0.5f, 5.0f, 0.5f, GREEN);
-
-	EndMode3D();
-
-	if (selecting) {
-		DrawRectangleRec(selection, GetColor(0x0000ff99));
-	}
-
-	if (popup) {
-		popup->draw();
-	}
+	});
 }

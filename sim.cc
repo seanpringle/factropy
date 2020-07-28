@@ -3,6 +3,7 @@
 #include "entity.h"
 #include "chunk.h"
 #include "sim.h"
+#include "time-series.h"
 #include <filesystem>
 #include <cstdlib>
 
@@ -10,6 +11,20 @@ namespace Sim {
 	OpenSimplex* opensimplex;
 	std::mutex mutex;
 	uint64_t tick;
+
+	TimeSeries statsEntity;
+	TimeSeries statsArm;
+	TimeSeries statsCrafter;
+	TimeSeries statsPath;
+	TimeSeries statsVehicle;
+
+	void reset() {
+		statsEntity.clear();
+		statsArm.clear();
+		statsCrafter.clear();
+		statsPath.clear();
+		statsVehicle.clear();
+	}
 
 	void locked(lockCallback cb) {
 		mutex.lock();
@@ -70,9 +85,9 @@ namespace Sim {
 	void update() {
 		tick++;
 		Entity::preTick();
-		Arm::tick();
-		Crafter::tick();
-		Path::tick();
-		Vehicle::tick();
+		statsArm.track(tick, Arm::tick);
+		statsCrafter.track(tick, Crafter::tick);
+		statsPath.track(tick, Path::tick);
+		statsVehicle.track(tick, Vehicle::tick);
 	}
 }

@@ -114,6 +114,8 @@ Thing::Thing(std::string stl) {
 		}
 	}
 
+	notef("%s %u", stl, triangles.size());
+
   rlLoadMesh(&mesh, false);
 
 	this->mesh = mesh;

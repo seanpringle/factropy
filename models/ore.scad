@@ -9,6 +9,8 @@ module randomRock(radius,corner_size,number_of_corners){
       // random position in 'sphere'
       y = rands(0,360,1)[0];
       z = rands(0,360,1)[0];
+      r = rands(corner_size*0.5,corner_size,1)[0];
+
       rotate([0,y,z])
 
       // translate radius (minus half of corner size)
@@ -16,22 +18,23 @@ module randomRock(radius,corner_size,number_of_corners){
 
       // draw cube as corner
       rotate([rands(0,360,1)[0],rands(0,360,1)[0],rands(0,360,1)[0]]) // random rotation
-      cube(rands(corner_size*0.5,corner_size,1)[0],center = true);
+      //cube(rands(corner_size*0.5,corner_size,1)[0],center = true);
+      cylinder(r1=r, r2=0, h=r, $fn=3);
     }
   }
 }
 
 // : More corners --> More 'spheric' central stone
-number_of_corners = rands(15,25,1)[0]; // [5:30]
+number_of_corners = rands(15,20,1)[0]; // [5:30]
 
 // : Deforms central stone in vertical
 stone_scale = 0.6; // [0.2:0.1:3]
 
 // Number of medium size stones
-medium_stones = rands(8,16,1)[0]; // [5:30]
+medium_stones = 5; //rands(5,10,1)[0]; // [5:30]
 
 // Number of small stones
-small_stones = rands(8,16,1)[0]; // [5:30]
+small_stones = 0; //rands(8,16,1)[0]; // [5:30]
 
 /* [Hidden] */
 radius = 20;
@@ -56,7 +59,7 @@ translate([0,0,0.5]) scale([0.05,0.05,0.05])
 
 	        // translate radius
 	        translate([rands(radius*0.4,radius*0.7,1)[0],0,0])
-	        	randomRock(rands(radius*0.3,radius*0.5,1)[0],corner_size*0.5,15);
+	        	randomRock(rands(radius*0.3,radius*0.5,1)[0],corner_size*0.5,10);
 	      }
 	    }
 

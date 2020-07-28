@@ -100,6 +100,7 @@ int main(int argc, char const *argv[]) {
 	Light lightA = CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero(), WHITE, shader);
 	Light lightB = CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero(), WHITE, pshader);
 
+	Sim::reset();
 	Sim::seed(879600773);
 	//Sim::seed(4);
 
@@ -108,19 +109,19 @@ int main(int argc, char const *argv[]) {
 
 	item = new Item(Item::next(), "iron-ore");
 	item->part = (new Part(Thing("models/iron-ore.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0xB7410Eff);
-	Item::mining.insert(item);
+	Item::mining.insert(item->id);
 
 	item = new Item(Item::next(), "copper-ore");
 	item->part = (new Part(Thing("models/copper-ore.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x529f88ff);
-	Item::mining.insert(item);
+	Item::mining.insert(item->id);
 
 	item = new Item(Item::next(), "coal");
-	item->part = (new Part(Thing("models/coal.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x444444ff);
-	Item::mining.insert(item);
+	item->part = (new Part(Thing("models/coal.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x222222ff);
+	Item::mining.insert(item->id);
 
 	item = new Item(Item::next(), "stone");
 	item->part = (new Part(Thing("models/stone.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x999999ff);
-	Item::mining.insert(item);
+	Item::mining.insert(item->id);
 
 	auto thingIngot = Thing("models/ingot.stl");
 
@@ -205,10 +206,10 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("miner");
 	spec->w = 5;
 	spec->h = 5;
-	spec->d = 5;
+	spec->d = 10;
 	spec->parts = {
 		(new Part(thingMiner))->paint(0xB7410Eff),
-		(new PartSpinner(thingGear, 1))->paint(0xccccccff)->scale(3,3,3)->rotate(Point::East(), 90)->translate(0,0,1.5),
+		(new PartSpinner(thingGear, 1))->paint(0xccccccff)->scale(3,3,3)->rotate(Point::East(), 90)->translate(0,0,3.75),
 	};
 	spec->store = true;
 	spec->rotate = true;
@@ -451,7 +452,7 @@ int main(int argc, char const *argv[]) {
 
 	Chunk::material = LoadMaterialDefault();
 	Chunk::material.shader = shader;
-	Chunk::material.maps[MAP_DIFFUSE].color = GetColor(0xffffffff);
+	Chunk::material.maps[MAP_DIFFUSE].color = WHITE;
 
 	if (loadSave) {
 		Sim::load("autosave");
@@ -474,6 +475,7 @@ int main(int argc, char const *argv[]) {
 	camera->entityPopup = new EntityPopup(camera, 800, 800);
 	camera->recipePopup = new RecipePopup(camera, 800, 800);
 	camera->itemPopup = new ItemPopup(camera, 800, 800);
+	camera->statsPopup = new StatsPopup(camera, 800, 800);
 
 	Mod* mod = new Mod("base");
 	mod->load();
@@ -634,6 +636,23 @@ int main(int argc, char const *argv[]) {
 
 		if (camera->worldFocused) {
 
+			if (IsKeyReleased(KEY_ONE)) {
+				camera->resource = 0;
+			}
+			if (IsKeyReleased(KEY_TWO)) {
+				camera->resource = 1;
+			}
+			if (IsKeyReleased(KEY_THREE)) {
+				camera->resource = 2;
+			}
+			if (IsKeyReleased(KEY_FOUR)) {
+				camera->resource = 3;
+			}
+
+			if (IsKeyReleased(KEY_F1)) {
+				camera->popup = camera->statsPopup;
+			}
+
 			if (IsKeyReleased(KEY_Q)) {
 				camera->build(camera->hovering ? camera->hovering->spec: NULL);
 			}
@@ -750,8 +769,11 @@ int main(int argc, char const *argv[]) {
 
 			DrawFPS(10,10);
 		EndDrawing();
-	}
 
+		camera->statsFrame.set(camera->frame, GetFrameTime());
+		camera->statsFrame.update(camera->frame);
+		camera->frame++;
+	}
 
 	UnloadRenderTexture(secondary);
 

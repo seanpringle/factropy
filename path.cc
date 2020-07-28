@@ -3,7 +3,7 @@
 #include <limits>
 
 void Path::tick() {
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 10; i++) {
 		if (jobs.size() > 0) {
 			Path* job = jobs.front();
 

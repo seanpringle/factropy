@@ -54,9 +54,32 @@ Chunk* Chunk::get(int x, int y) {
 					}
 				}
 
-				chunk->tiles[ty][tx] = (Chunk::Tile){
+				double offset = 1000000;
+
+				uint mineral = 0;
+				float resource = 0.0f;
+
+				float hint = Sim::random(); //(float)Sim::noise2D(x*Chunk::size+tx+offset, y*Chunk::size+ty+offset, 8, 0.6, 0.3);
+				offset += 1000000;
+
+				for (auto iid: Item::mining) {
+					float density = (float)Sim::noise2D(x*Chunk::size+tx+offset, y*Chunk::size+ty+offset, 8, 0.5, 0.007);
+					if (density > resource) {
+						mineral = iid;
+						resource = density;
+					}
+					offset += 1000000;
+				}
+
+				chunk->tiles[ty][tx] = {
 					elevation : elevation,
+					resource : resource,
+					mineral : mineral,
 				};
+
+				if (elevation > 0.01f && mineral != 0 && hint > 0.99) {
+					chunk->minerals.push_back({tx,ty});
+				}
 			}
 		}
 
@@ -113,9 +136,7 @@ Stack Chunk::mine(Box b) {
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
 		if (tile && tile->elevation > 0.001f) {
-			auto it = Item::mining.begin();
-			std::advance(it, Sim::choose((int)Item::mining.size()));
-			return {(*it)->id,1};
+			return {tile->mineral,1};
 		}
 	}
 	return {0,0};
@@ -132,9 +153,15 @@ void Chunk::saveAll(const char* name) {
 		json state;
 		state["x"] = chunk->x;
 		state["y"] = chunk->y;
+		json minerals;
+		for (auto [tx,ty]: chunk->minerals) {
+			minerals.push_back({tx,ty});
+		}
+		state["minerals"] = minerals;
 		for (int ty = 0; ty < size; ty++) {
 			for (int tx = 0; tx < size; tx++) {
-				state["elevations"][ty][tx] = chunk->tiles[ty][tx].elevation;
+				Tile* tile = &chunk->tiles[ty][tx];
+				state["tiles"][ty][tx] = { tile->elevation, tile->resource, tile->mineral };
 			}
 		}
 		out << state << "\n";
@@ -150,9 +177,15 @@ void Chunk::loadAll(const char* name) {
 	for (std::string line; std::getline(in, line);) {
 		auto state = json::parse(line);
 		Chunk *chunk = new Chunk(state["x"], state["y"]);
+		for (auto xy: state["minerals"]) {
+			chunk->minerals.push_back({xy[0], xy[1]});
+		}
 		for (int ty = 0; ty < size; ty++) {
 			for (int tx = 0; tx < size; tx++) {
-				chunk->tiles[ty][tx].elevation = state["elevations"][ty][tx];
+				Tile* tile = &chunk->tiles[ty][tx];
+				tile->elevation = state["tiles"][ty][tx][0];
+				tile->resource = state["tiles"][ty][tx][1];
+				tile->mineral = state["tiles"][ty][tx][2];
 			}
 		}
 	}

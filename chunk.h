@@ -17,6 +17,8 @@ struct Chunk {
 
 	struct Tile {
 		float elevation;
+		float resource;
+		uint mineral;
 	};
 
 	struct XY {
@@ -118,6 +120,7 @@ struct Chunk {
 	Mesh heightmap;
 	Matrix transform;
 	static inline Material material;
+	std::vector<XY> minerals;
 
 	Chunk(int cx, int cy);
 

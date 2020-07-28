@@ -8,6 +8,7 @@ struct MainCamera;
 #include "raylib.h"
 #include "entity.h"
 #include "panel.h"
+#include "time-series.h"
 #include <vector>
 
 struct View {
@@ -37,13 +38,6 @@ struct SiteCamera : View {
 };
 
 struct MainCamera : View {
-	Point position;
-	Point direction;
-	Point up;
-
-	Point nextPosition;
-	Point nextDirection;
-	bool moving;
 
 	struct MouseXY {
 		int x, y;
@@ -70,6 +64,16 @@ struct MainCamera : View {
 		MouseButton middle;
 	};
 
+	uint64_t frame;
+
+	Point position;
+	Point direction;
+	Point up;
+
+	Point nextPosition;
+	Point nextDirection;
+	bool moving;
+
 	MouseState mouse;
 	bool showGrid;
 
@@ -90,7 +94,14 @@ struct MainCamera : View {
 	EntityPopup *entityPopup;
 	RecipePopup *recipePopup;
 	ItemPopup *itemPopup;
+	StatsPopup *statsPopup;
 	bool popupFocused;
+
+	uint resource;
+
+	TimeSeries statsUpdate;
+	TimeSeries statsDraw;
+	TimeSeries statsFrame;
 
 	MainCamera(Point, Point);
 	~MainCamera();

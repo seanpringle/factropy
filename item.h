@@ -21,7 +21,7 @@ struct Item {
 	static Item* byName(std::string name);
 	static Item* get(uint id);
 
-	static inline std::set<Item*> mining;
+	static inline std::set<uint> mining;
 
 	uint id;
 	std::string name;

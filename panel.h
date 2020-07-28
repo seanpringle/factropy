@@ -6,6 +6,7 @@ class BuildPopup;
 class EntityPopup;
 class RecipePopup;
 class ItemPopup;
+class StatsPopup;
 
 #include "view.h"
 #include "entity.h"
@@ -82,6 +83,12 @@ public:
 	std::function<void(uint)> callback;
 
 	ItemPopup(MainCamera *cam, int w, int h);
+	void build() override;
+};
+
+class StatsPopup : public Panel {
+public:
+	StatsPopup(MainCamera *cam, int w, int h);
 	void build() override;
 };
 

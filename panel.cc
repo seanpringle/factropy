@@ -181,7 +181,7 @@ void Panel::update() {
 }
 
 void Panel::input() {
-	nk_clear(&nuklear->ctx);
+	//nk_clear(&nuklear->ctx);
 	nk_input_begin(&nuklear->ctx);
 
 	if (contains(GetMouseX(), GetMouseY())) {
@@ -196,7 +196,7 @@ void Panel::input() {
 	}
 
 	if (GetMouseWheelMove() != 0) {
-		wy = GetMouseWheelMove();
+		wy += GetMouseWheelMove();
 		nk_input_scroll(&nuklear->ctx, (struct nk_vec2){0, (float)wy});
 		changed = true;
 	}
@@ -777,7 +777,37 @@ void ItemPopup::build() {
 	nk_end(&nuklear->ctx);
 }
 
+StatsPopup::StatsPopup(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
+}
 
+void StatsPopup::build() {
 
+	std::function<void(TimeSeries*, std::string)> chart = [&](TimeSeries *ts, std::string title) {
+		nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+		nk_label(&nuklear->ctx, fmtc("%s : %fms", title, ts->secondMax), NK_TEXT_LEFT);
+		nk_layout_row_dynamic(&nuklear->ctx, 100, 1);
+		if (nk_chart_begin(&nuklear->ctx, NK_CHART_LINES, 59, 0, ts->secondMax)) {
+			for (uint i = 59; i >= 1; i--) {
+				nk_chart_push(&nuklear->ctx, i > camera->frame ? 0: ts->seconds[ts->second(camera->frame-i)]);
+			}
+			nk_chart_end(&nuklear->ctx);
+		}
+	};
+
+	Sim::locked([&]() {
+		nk_begin(&nuklear->ctx, "Stats", nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
+
+		chart(&camera->statsFrame, "frame");
+		chart(&camera->statsUpdate, "MainCamera::update");
+		chart(&camera->statsDraw, "MainCamera::draw");
+		chart(&Sim::statsArm, "Arm::tick");
+		chart(&Sim::statsCrafter, "Crafter::tick");
+		chart(&Sim::statsPath, "Path::tick");
+		chart(&Sim::statsVehicle, "Vehicle::tick");
+
+		nk_end(&nuklear->ctx);
+		refresh = 1;
+	});
+}
 
 
