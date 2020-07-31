@@ -24,6 +24,7 @@ struct Crafter {
 
 	void destroy();
 	void update();
+	Point output();
 };
 
 #endif

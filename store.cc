@@ -58,6 +58,13 @@ Stack Store::remove(Stack rstack) {
 	return rstack;
 }
 
+Stack Store::removeAny(uint size) {
+	for (auto it = stacks.begin(); it != stacks.end(); it++) {
+		return remove({it->iid, size});
+	}
+	return {0,0};
+}
+
 void Store::promise(Stack stack) {
 	activity = Sim::tick;
 	Level *lvl = level(stack.iid);

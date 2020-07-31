@@ -38,6 +38,7 @@ public:
 	Panel(MainCamera *cam, int w, int h);
 	virtual ~Panel();
 	void center();
+	void render();
 	void draw();
 	virtual void build();
 	void update();

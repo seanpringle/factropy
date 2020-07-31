@@ -97,8 +97,6 @@ struct MainCamera : View {
 	StatsPopup *statsPopup;
 	bool popupFocused;
 
-	uint resource;
-
 	TimeSeries statsUpdate;
 	TimeSeries statsDraw;
 	TimeSeries statsFrame;

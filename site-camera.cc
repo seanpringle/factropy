@@ -83,7 +83,7 @@ void SiteCamera::draw(RenderTexture canvas) {
 
 			for (auto pair: batches) {
 				Part *part = pair.first;
-				part->drawInstanced(pair.second.size(), pair.second.data());
+				part->drawInstanced(false, pair.second.size(), pair.second.data());
 			}
 
 		EndMode3D();

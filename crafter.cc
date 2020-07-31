@@ -29,6 +29,11 @@ void Crafter::destroy() {
 	all.erase(id);
 }
 
+Point Crafter::output() {
+	Entity& en = Entity::get(id);
+	return en.pos.floor(0.5f) + (en.dir * (en.spec->d/2.0f+0.5f));
+}
+
 void Crafter::update() {
 	Entity& en = Entity::get(id);
 	if (en.isGhost()) return;
@@ -73,5 +78,26 @@ void Crafter::update() {
 
 		working = false;
 		progress = 0.0f;
+	}
+
+	if (!store.isEmpty()) {
+		uint iid = store.stacks.begin()->iid;
+		uint outputId = Entity::at(output());
+
+		if (outputId) {
+			Entity& eo = Entity::get(outputId);
+
+			if (eo.spec->store) {
+				if (eo.store().insert({iid,1}).size == 0) {
+					store.remove({iid,1});
+				}
+			}
+
+			if (eo.spec->belt) {
+				if (eo.belt().insert(iid)) {
+					store.remove({iid,1});
+				}
+			}
+		}
 	}
 }

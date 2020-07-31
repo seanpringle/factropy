@@ -33,6 +33,7 @@ struct Entity {
 	static inline std::unordered_set<uint> removing;
 
 	static inline SparseArray<Entity> all = (MaxEntity);
+	static inline uint sequence = 0;
 	static uint next();
 
 	static Entity& create(uint id, Spec* spec);
@@ -47,6 +48,7 @@ struct Entity {
 	static bool fits(Spec *spec, Point pos, Point dir);
 
 	static std::unordered_set<uint> intersecting(Box box);
+	static uint at(Point p);
 
 	uint id;
 	uint32_t flags;

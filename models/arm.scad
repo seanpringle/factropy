@@ -1,44 +1,37 @@
 use <lib.scad>
 
-bounds = [1.99, 1.99, 3];
-
 module base() {
-	translate([0,0,0.125]) cyl(0.75, 0.75, 0.25, $fn=24);
+	translate([0,0,0.35]) cyl(0.45, 0.45, 0.7);
 }
 
 module pillar() {
-	fillet(0.05) translate([0,0.1,0]) difference() {
-		translate([0,-0.25,1.425]) box([0.5, 1.3, 2.5]);
-		translate([0,-0.9,0.5]) rotate([30,0,0]) box([0.6, 1.0, 2.75]);
-		translate([0,0.5,0]) scale([1.1,1,1]) difference() {
-			translate([0,-0.4,1.625]) box([0.5, 1.2, 3]);
-			translate([0,-0.95,0.5]) rotate([30,0,0]) box([0.5, 1.0, 2.75]);
-		}
-	}
+	translate([0,-0.30,1.5]) rbox([0.32,0.2,2.0],0.01,$fn=$fn/4);
 }
 
 module telescope1() {
-	translate([0,-0.5,2.4]) rotate([90,0,0]) cyl(0.2, 0.2, 0.75, $fn=24);
+	#translate([0,-0.2,2.3]) rotate([90,0,0]) cyl(0.15, 0.15, 0.5);
 }
 
 module telescope2() {
-	translate([0, 0.1,2.4]) rotate([90,0,0]) cyl(0.18, 0.18, 0.75, $fn=24);
+	#translate([0, 0.19,2.3]) rotate([90,0,0]) cyl(0.125, 0.125, 0.5);
 }
 
 module telescope3() {
-	translate([0, 0.7,2.4]) rotate([90,0,0]) cyl(0.16, 0.16, 0.75, $fn=24);
+	#translate([0, 0.6,2.3]) rotate([90,0,0]) cyl(0.10, 0.10, 0.5);
 }
 
 module grip() {
 	union() {
-		translate([0,	1.2,2.4]) sphere(0.25, $fn=24);
-		translate([0,	1.2,2.15]) cyl(0.25, 0.25, 0.1, $fn=24);
+		translate([0,	1.0,2.3]) sphere(0.2);
+		translate([0,	1.0,2.15]) cyl(0.2, 0.2, 0.1);
 	}
 }
 
-//base();
-pillar();
-//telescope1();
-//telescope2();
-//telescope3();
-//grip();
+d = 12;
+
+//base($fn=d);
+//pillar($fn=d);
+//telescope1($fn=d);
+//telescope2($fn=d);
+//telescope3($fn=d);
+grip($fn=d);

@@ -31,6 +31,7 @@ struct Store {
 	void destroy();
 	Stack insert(Stack stack);
 	Stack remove(Stack stack);
+	Stack removeAny(uint size);
 	void promise(Stack stack);
 	void reserve(Stack stack);
 	void clearLevels();

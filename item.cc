@@ -10,7 +10,7 @@ void Item::reset() {
 }
 
 uint Item::next() {
-	return sequence++;
+	return ++sequence;
 }
 
 Item::Item(uint id, std::string name) {

@@ -17,6 +17,7 @@ namespace Sim {
 	TimeSeries statsCrafter;
 	TimeSeries statsPath;
 	TimeSeries statsVehicle;
+	TimeSeries statsBelt;
 
 	void reset() {
 		statsEntity.clear();
@@ -24,6 +25,7 @@ namespace Sim {
 		statsCrafter.clear();
 		statsPath.clear();
 		statsVehicle.clear();
+		statsBelt.clear();
 	}
 
 	void locked(lockCallback cb) {
@@ -89,5 +91,6 @@ namespace Sim {
 		statsCrafter.track(tick, Crafter::tick);
 		statsPath.track(tick, Path::tick);
 		statsVehicle.track(tick, Vehicle::tick);
+		statsBelt.track(tick, Belt::tick);
 	}
 }

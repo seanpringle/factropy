@@ -35,11 +35,25 @@ namespace {
 }
 
 Thing::Thing() {
-	ZERO(mesh);
+	ZERO(meshHD);
+	ZERO(meshLD);
 	ZERO(transform);
 }
 
-Thing::Thing(std::string stl) {
+Thing::Thing(std::string hd) {
+	meshHD = loadSTL(hd);
+	meshLD = meshHD;
+	transform = MatrixRotateX(90.0f*DEG2RAD);
+	notef("%s is missing a low-detail mesh!", hd);
+}
+
+Thing::Thing(std::string hd, std::string ld) {
+	meshHD = loadSTL(hd);
+	meshLD = loadSTL(ld);
+	transform = MatrixRotateX(90.0f*DEG2RAD);
+}
+
+Mesh Thing::loadSTL(std::string stl) {
 	auto in = std::ifstream(stl);
 
 	struct Triangle {
@@ -117,24 +131,30 @@ Thing::Thing(std::string stl) {
 	notef("%s %u", stl, triangles.size());
 
   rlLoadMesh(&mesh, false);
-
-	this->mesh = mesh;
 	meshes.push_back(mesh);
-	transform = MatrixRotateX(90.0f*DEG2RAD);
+
+	return mesh;
 }
 
 Thing& Thing::smooth() {
-	Part::terrainNormals(&mesh);
+	Part::terrainNormals(&meshHD);
+	Part::terrainNormals(&meshLD);
 	return *this;
 }
 
-void Thing::drawBatch(Color color, int count, Matrix *trx) {
+void Thing::drawBatch(Color color, float specular, bool hd, int count, Matrix *trx) {
 	Part::material.shader = Part::shader;
 	Part::material.maps[MAP_DIFFUSE].color = color;
-	rlDrawMeshInstanced(mesh, Part::material, count, trx);
+	uint specShine  = GetShaderLocation(Part::shader, "specShine");
+
+	SetShaderValue(Part::shader, specShine, &specular, UNIFORM_FLOAT);
+	rlDrawMeshInstanced(hd ? meshHD: meshLD, Part::material, count, trx);
+
+	specular = 0.0f;
+	SetShaderValue(Part::shader, specShine, &specular, UNIFORM_FLOAT);
 }
 
-void Thing::drawGhostBatch(Color color, int count, Matrix *trx) {
+void Thing::drawGhostBatch(Color color, bool hd, int count, Matrix *trx) {
 	Part::material.shader = GetShaderDefault();
 	Part::material.maps[MAP_DIFFUSE].color = (Color){
 		color.r,
@@ -143,7 +163,7 @@ void Thing::drawGhostBatch(Color color, int count, Matrix *trx) {
 		(unsigned char)((float)color.a*0.5),
 	};
 	for (int i = 0; i < count; i++) {
-		rlDrawMesh(mesh, Part::material, trx[i]);
+		rlDrawMesh(hd ? meshHD: meshLD, Part::material, trx[i]);
 	}
 }
 
@@ -216,21 +236,35 @@ void Part::terrainNormals(Mesh *mesh) {
 }
 
 Part::Part(Thing thing) {
-	mesh = thing.mesh;
+	drawHD = true;
+	meshHD = thing.meshHD;
+	drawLD = true;
+	meshLD = thing.meshLD;
 	transform = thing.transform;
 	s = MatrixIdentity();
 	r = MatrixIdentity();
 	t = MatrixIdentity();
 	srt = MatrixIdentity();
 	color = WHITE;
+	specular = 0.0f;
 	all.insert(this);
 }
 
 Part::~Part() {
 }
 
+Part* Part::ld(bool b) {
+	drawLD = b;
+	return this;
+}
+
 Part* Part::paint(int hexcolor) {
 	color = GetColor(hexcolor);
+	return this;
+}
+
+Part* Part::gloss(float shine) {
+	specular = shine;
 	return this;
 }
 
@@ -258,7 +292,7 @@ void Part::update() {
 
 void Part::draw(Matrix trx) {
 	Matrix m = MatrixMultiply(MatrixMultiply(transform, srt), trx);
-	drawBatch(color, 1, &m);
+	drawBatch(color, specular, true, 1, &m);
 }
 
 Matrix Part::instanceState(Spec* spec, uint slot, uint state) {
@@ -274,19 +308,20 @@ Matrix Part::instanceState(Spec* spec, uint slot, uint state) {
 	return MatrixIdentity();
 }
 
-
 Matrix Part::instance(Spec* spec, uint slot, uint state, Matrix trx) {
 	Matrix i = instanceState(spec, slot, state);
 	Matrix m = MatrixMultiply(MatrixMultiply(transform, i), srt);
 	return MatrixMultiply(m, trx);
 }
 
-void Part::drawInstanced(int count, Matrix* trx) {
-	drawBatch(color, count, trx);
+void Part::drawInstanced(bool hd, int count, Matrix* trx) {
+	if (!hd && !drawLD) return;
+	drawBatch(color, specular, hd, count, trx);
 }
 
-void Part::drawGhostInstanced(int count, Matrix* trx) {
-	drawGhostBatch(color, count, trx);
+void Part::drawGhostInstanced(bool hd, int count, Matrix* trx) {
+	if (!hd && !drawLD) return;
+	drawGhostBatch(color, hd, count, trx);
 }
 
 PartSpinner::PartSpinner(Thing thing, float sspeed) : Part(thing) {

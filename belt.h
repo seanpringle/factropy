@@ -5,15 +5,8 @@ struct Belt;
 
 #include "sparse.h"
 #include "entity.h"
+#include "belt-segment.h"
 #include <set>
-
-struct BeltSegment {
-	static inline std::set<BeltSegment*> all;
-
-	std::set<Belt*> belts;
-	BeltSegment();
-	~BeltSegment();
-};
 
 struct Belt {
 	static void reset();
@@ -25,10 +18,15 @@ struct Belt {
 
 	uint id;
 	BeltSegment *segment;
+	uint offset;
 
 	void destroy();
 	Belt& manage();
 	Belt& unmanage();
+	bool insert(uint iid);
+	bool remove(uint iid);
+	uint removeAny();
+	uint itemAt();
 };
 
 #endif

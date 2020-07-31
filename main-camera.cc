@@ -59,8 +59,6 @@ MainCamera::MainCamera(Point pos, Point dir) {
 	popupFocused = false;
 	worldFocused = true;
 
-	resource = 0;
-
 	statsUpdate.clear();
 	statsDraw.clear();
 	statsFrame.clear();
@@ -433,28 +431,41 @@ void MainCamera::draw() {
 			rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
 			for (auto [iid,transforms]: resource_transforms) {
-				Item::get(iid)->part->drawInstanced(transforms.size(), transforms.data());
+				Item::get(iid)->part->drawInstanced(false, transforms.size(), transforms.data());
 			}
 
-			std::map<Part*,std::vector<Matrix>> extant;
-			std::map<Part*,std::vector<Matrix>> ghosts;
+			std::map<Part*,std::vector<Matrix>> extant_ld;
+			std::map<Part*,std::vector<Matrix>> extant_hd;
+			std::map<Part*,std::vector<Matrix>> ghosts_ld;
+			std::map<Part*,std::vector<Matrix>> ghosts_hd;
 
 			for (auto ge: entities) {
 				for (uint i = 0; i < ge->spec->parts.size(); i++) {
 					Part *part = ge->spec->parts[i];
+					bool hd = ge->pos.distance(position) < 100;
 					Matrix instance = part->instance(ge->spec, i, ge->state, ge->transform);
-					(ge->ghost ? ghosts: extant)[part].push_back(instance);
+					(ge->ghost ? (hd ? ghosts_hd: ghosts_ld): (hd ? extant_hd: extant_ld))[part].push_back(instance);
 				}
 			}
 
-			for (auto pair: extant) {
+			for (auto pair: extant_ld) {
 				Part *part = pair.first;
-				part->drawInstanced(pair.second.size(), pair.second.data());
+				part->drawInstanced(false, pair.second.size(), pair.second.data());
 			}
 
-			for (auto pair: ghosts) {
+			for (auto pair: extant_hd) {
 				Part *part = pair.first;
-				part->drawGhostInstanced(pair.second.size(), pair.second.data());
+				part->drawInstanced(true, pair.second.size(), pair.second.data());
+			}
+
+			for (auto pair: ghosts_ld) {
+				Part *part = pair.first;
+				part->drawGhostInstanced(false, pair.second.size(), pair.second.data());
+			}
+
+			for (auto pair: ghosts_hd) {
+				Part *part = pair.first;
+				part->drawGhostInstanced(true, pair.second.size(), pair.second.data());
 			}
 
 			if (hovering) {
@@ -475,7 +486,7 @@ void MainCamera::draw() {
 				for (uint i = 0; i < placing->spec->parts.size(); i++) {
 					Part *part = placing->spec->parts[i];
 					Matrix instance = part->instance(placing->spec, i, placing->state, placing->transform);
-					part->drawGhostInstanced(1, &instance);
+					part->drawGhostInstanced(true, 1, &instance);
 				}
 
 				if (!placingFits) {
@@ -522,6 +533,57 @@ void MainCamera::draw() {
 					//DrawRay((Ray){en.pos, en.dir}, BLUE);
 				}
 			}
+
+			Sim::locked([&]() {
+
+				std::vector<Matrix> reds;
+				std::vector<Matrix> greens;
+
+				for (auto ge: entities) {
+					if (ge->spec->belt) {
+						Entity& en = Entity::get(ge->id);
+						Belt& belt = en.belt();
+						Matrix m = MatrixMultiply(MatrixScale(0.5, 0.5, 0.5), MatrixTranslate(en.pos.x, en.pos.y*2, en.pos.z));
+						if (belt.offset == 0) {
+							greens.push_back(m);
+						}
+						else
+						if (belt.offset == belt.segment->belts.size()-1) {
+							reds.push_back(m);
+						}
+					}
+				}
+
+				if (reds.size() > 0)
+					rlDrawMeshInstanced(redCube.meshes[0], redCube.materials[0], reds.size(), reds.data());
+
+				if (greens.size() > 0)
+					rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
+
+				std::map<uint,std::vector<Matrix>> belt_transforms;
+
+				for (BeltSegment* segment: BeltSegment::all) {
+					Box box = segment->box();
+					Point bounds = {box.w, box.h, box.d};
+					DrawCubeWiresV(box.centroid(), bounds + 0.01f, GREEN);
+
+					Point spot = segment->front();
+					Point step = segment->step();
+					for (auto beltItem: segment->items) {
+						spot += step * (float)beltItem.offset;
+						Point p = spot + (step * ((float)BeltSegment::slot/2.0f));
+						Part* part = Item::get(beltItem.iid)->part;
+						belt_transforms[beltItem.iid].push_back(
+							MatrixMultiply(MatrixMultiply(part->transform, part->srt), MatrixTranslate(p.x, p.y, p.z))
+						);
+						spot += step * (float)BeltSegment::slot;
+					}
+				}
+
+				for (auto [iid,transforms]: belt_transforms) {
+					Item::get(iid)->part->drawInstanced(false, transforms.size(), transforms.data());
+				}
+			});
 
 			DrawCube(Point(0,0,2.5), 0.5f, 0.5f, 5.0f, BLUE);
 			DrawCube(Point(2.5,0,0), 5.0f, 0.5f, 0.5f, RED);

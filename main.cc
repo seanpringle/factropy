@@ -48,7 +48,7 @@ int main(int argc, char const *argv[]) {
 		fatalf("unexpected argument: %s", arg.c_str());
 	}
 
-	//SetTraceLogLevel(LOG_WARNING);
+	SetTraceLogLevel(LOG_WARNING);
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_VSYNC_HINT|FLAG_MSAA_4X_HINT);
 	InitWindow(1920,1080,"test9");
 	SetTargetFPS(60);
@@ -66,7 +66,7 @@ int main(int argc, char const *argv[]) {
 
   float fogDensity = 0.004f;
 	Vector4 fogColor = ColorNormalize(SKYBLUE);
-	Vector4 ambient = { 0.3f, 0.3f, 0.3f, 1.0f };
+	Vector4 ambient = { 0.3f, 0.3f, 0.2f, 1.0f };
 
 	Shader shader = LoadShader(
 		FormatText("shaders/glsl%i/base_lighting.vs", GLSL_VERSION),
@@ -97,30 +97,30 @@ int main(int argc, char const *argv[]) {
 	Part::shader = pshader;
 	Part::material = LoadMaterialDefault();
 
-	Light lightA = CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero(), WHITE, shader);
-	Light lightB = CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero(), WHITE, pshader);
+	/*Light lightA =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero(), WHITE, shader);
+	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero(), WHITE, pshader);
 
 	Sim::reset();
 	Sim::seed(879600773);
 	//Sim::seed(4);
 
 	Item* item = new Item(Item::next(), "log");
-	item->part = (new Part(Thing("models/wood.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0xCD853Fff);
+	item->part = (new Part(Thing("models/wood.stl").smooth()))->scale(0.5f, 0.5f, 0.5f)->paint(0xCD853Fff);
 
 	item = new Item(Item::next(), "iron-ore");
-	item->part = (new Part(Thing("models/iron-ore.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0xB7410Eff);
+	item->part = (new Part(Thing("models/iron-ore.stl").smooth()))->scale(0.5f, 0.5f, 0.5f)->paint(0xB7410Eff);
 	Item::mining.insert(item->id);
 
 	item = new Item(Item::next(), "copper-ore");
-	item->part = (new Part(Thing("models/copper-ore.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x529f88ff);
+	item->part = (new Part(Thing("models/copper-ore.stl").smooth()))->scale(0.5f, 0.5f, 0.5f)->paint(0x529f88ff);
 	Item::mining.insert(item->id);
 
 	item = new Item(Item::next(), "coal");
-	item->part = (new Part(Thing("models/coal.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x222222ff);
+	item->part = (new Part(Thing("models/coal.stl").smooth()))->scale(0.5f, 0.5f, 0.5f)->paint(0x222222ff);
 	Item::mining.insert(item->id);
 
 	item = new Item(Item::next(), "stone");
-	item->part = (new Part(Thing("models/stone.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0x999999ff);
+	item->part = (new Part(Thing("models/stone.stl").smooth()))->scale(0.5f, 0.5f, 0.5f)->paint(0x999999ff);
 	Item::mining.insert(item->id);
 
 	auto thingIngot = Thing("models/ingot.stl");
@@ -131,11 +131,11 @@ int main(int argc, char const *argv[]) {
 	item = new Item(Item::next(), "copper-ingot");
 	item->part = (new Part(thingIngot))->paint(0xDC7F64ff);
 
-	auto thingContainer = Thing("models/container.stl");
-	auto thingFan = Thing("models/fan.stl");
-	auto thingGear = Thing("models/gear.stl");
+	auto thingContainer = Thing("models/container-hd.stl", "models/container-ld.stl");
+	auto thingFan = Thing("models/fan-hd.stl", "models/fan-ld.stl");
+	auto thingGear = Thing("models/gear-hd.stl", "models/gear-ld.stl");
 	auto thingAssembler = Thing("models/assembler.stl");
-	auto thingFurnace = Thing("models/furnace.stl");
+	auto thingFurnace = Thing("models/furnace-hd.stl", "models/furnace-ld.stl");
 	auto thingMiner = Thing("models/miner.stl");
 	auto thingTruckChassisEngineer = Thing("models/truck-chassis-engineer.stl");
 	auto thingTruckChassisHauler = Thing("models/truck-chassis-hauler.stl");
@@ -154,8 +154,8 @@ int main(int argc, char const *argv[]) {
 	spec->h = 2;
 	spec->d = 5;
 	spec->parts = {
-		(new Part(thingContainer))->paint(0x990000ff),
-		(new PartSpinner(thingFan, 4))->paint(0xccccccff)->translate(0,1.1,0),
+		(new Part(thingContainer))->paint(0x990000ff)->gloss(16),
+		(new PartSpinner(thingFan, 4))->paint(0xccccccff)->translate(0,1.1,0)->gloss(32),
 	};
 	spec->store = true;
 	spec->enableSetLower = true;
@@ -166,7 +166,7 @@ int main(int argc, char const *argv[]) {
 	spec->h = 2;
 	spec->d = 5;
 	spec->parts = {
-		(new Part(thingContainer))->paint(0x0044ccff),
+		(new Part(thingContainer))->paint(0x0044ccff)->gloss(16),
 	};
 	spec->store = true;
 	spec->enableSetLower = true;
@@ -178,7 +178,7 @@ int main(int argc, char const *argv[]) {
 	spec->h = 2;
 	spec->d = 5;
 	spec->parts = {
-		(new Part(thingContainer))->paint(0x006600ff),
+		(new Part(thingContainer))->paint(0x006600ff)->gloss(16),
 	};
 	spec->store = true;
 	spec->rotate = true;
@@ -209,7 +209,7 @@ int main(int argc, char const *argv[]) {
 	spec->d = 10;
 	spec->parts = {
 		(new Part(thingMiner))->paint(0xB7410Eff),
-		(new PartSpinner(thingGear, 1))->paint(0xccccccff)->scale(3,3,3)->rotate(Point::East(), 90)->translate(0,0,3.75),
+		(new PartSpinner(thingGear, 1))->paint(0xccccccff)->scale(3,3,3)->rotate(Point::East(), 90)->translate(0,0,3.75)->gloss(32),
 	};
 	spec->store = true;
 	spec->rotate = true;
@@ -228,7 +228,7 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new Part(Thing("models/belt-base.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0),
 		(new Part(Thing("models/belt-surface.stl")))->paint(0x000000ff)->translate(0,-0.5,0),
-		(new PartCycle(Thing("models/belt-ridge.stl"), 2))->paint(0xcccc00ff)->translate(0,-0.5,0),
+		(new PartCycle(Thing("models/belt-ridge.stl"), 2))->paint(0xcccc00ff)->translate(0,-0.5,0)->ld(false),
 	};
 
 	std::vector<Spec*> rocks;
@@ -379,18 +379,18 @@ int main(int argc, char const *argv[]) {
 	spec->drone = true;
 
 	spec = new Spec("arm");
-	spec->w = 2;
+	spec->w = 1;
 	spec->h = 3;
-	spec->d = 2;
+	spec->d = 1;
 	spec->arm = true;
 	spec->rotate = true;
 	spec->parts = {
-		(new Part(Thing("models/arm-base.stl")))->translate(0,-1.5,0)->paint(0x660000ff),
-		(new Part(Thing("models/arm-pillar.stl")))->translate(0,-1.5,0)->paint(0x006600ff),
-		(new Part(Thing("models/arm-telescope1.stl")))->translate(0,-1.5,0)->paint(0x666666ff),
-		(new Part(Thing("models/arm-telescope2.stl")))->translate(0,-1.5,0)->paint(0x666666ff),
-		(new Part(Thing("models/arm-telescope3.stl")))->translate(0,-1.5,0)->paint(0x666666ff),
-		(new Part(Thing("models/arm-grip.stl")))->translate(0,-1.5,0)->paint(0x000066ff),
+		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.5,0)->paint(0xff6600ff),
+		(new Part(Thing("models/arm-pillar-hd.stl", "models/arm-pillar-ld.stl")))->translate(0,-1.5,0)->paint(0xff6600ff),
+		(new Part(Thing("models/arm-telescope1-hd.stl", "models/arm-telescope1-ld.stl")))->translate(0,-1.5,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/arm-telescope2-hd.stl", "models/arm-telescope2-ld.stl")))->translate(0,-1.5,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/arm-telescope3-hd.stl", "models/arm-telescope3-ld.stl")))->translate(0,-1.5,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/arm-grip-hd.stl", "models/arm-grip-ld.stl")))->translate(0,-1.5,0)->paint(0xff6600ff),
 	};
 
 	{
@@ -434,6 +434,23 @@ int main(int argc, char const *argv[]) {
 			});
 		}
 	}
+
+	auto steamEnginewheel = Thing("models/steam-engine-wheel-hd.stl", "models/steam-engine-wheel-ld.stl");
+
+	spec = new Spec("steam-engine");
+	spec->w = 4;
+	spec->h = 4;
+	spec->d = 5;
+	spec->parts = {
+		(new Part(Thing("models/steam-engine-boiler-hd.stl", "models/steam-engine-boiler-ld.stl")))->gloss(16)->paint(0x51412dff)->translate(0,-2,0),
+		(new Part(Thing("models/steam-engine-saddle-hd.stl", "models/steam-engine-saddle-ld.stl")))->gloss(16)->paint(0x004225ff)->translate(0,-2,0),
+		(new Part(Thing("models/steam-engine-foot-hd.stl", "models/steam-engine-foot-ld.stl")))->gloss(16)->paint(0x004225ff)->translate(0,-2,0),
+		(new Part(Thing("models/steam-engine-axel-hd.stl", "models/steam-engine-axel-ld.stl")))->gloss(16)->paint(0x444444ff)->translate(0,1,1),
+		(new PartSpinner(steamEnginewheel, 5))->gloss(32)->paint(0x444444ff)->translate(-1.75,1,1)->rotate(Point::South(), 90),
+		(new PartSpinner(steamEnginewheel, 5))->gloss(32)->paint(0x444444ff)->translate( 1.75,1,1)->rotate(Point::South(), 90),
+	};
+	spec->align = true;
+	spec->rotate = true;
 
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;
@@ -636,17 +653,11 @@ int main(int argc, char const *argv[]) {
 
 		if (camera->worldFocused) {
 
-			if (IsKeyReleased(KEY_ONE)) {
-				camera->resource = 0;
-			}
-			if (IsKeyReleased(KEY_TWO)) {
-				camera->resource = 1;
-			}
-			if (IsKeyReleased(KEY_THREE)) {
-				camera->resource = 2;
-			}
-			if (IsKeyReleased(KEY_FOUR)) {
-				camera->resource = 3;
+			if (IsKeyReleased(KEY_ONE) && camera->hovering && camera->hovering->spec->belt) {
+				Sim::locked([&]() {
+					Entity& en = Entity::get(camera->hovering->id);
+					notef("%d", en.belt().insert(Item::byName("iron-ore")->id));
+				});
 			}
 
 			if (IsKeyReleased(KEY_F1)) {
@@ -746,16 +757,16 @@ int main(int argc, char const *argv[]) {
 
 		BeginDrawing();
 
-			UpdateLightValues(shader, lightA);
-			UpdateLightValues(pshader, lightB);
+			//UpdateLightValues(shader, lightA);
+			//UpdateLightValues(pshader, lightB);
 
-			Point cameraTarget = camSec->groundTarget(0);
+			Point cameraTarget = camSec->pos;
 			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 			SetShaderValue(pshader, pshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 
 			camSec->draw(secondary);
 
-			cameraTarget = camera->groundTarget(0);
+			cameraTarget = camera->position;
 			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 			SetShaderValue(pshader, pshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 

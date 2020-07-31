@@ -15,6 +15,7 @@ namespace Sim {
 	extern TimeSeries statsCrafter;
 	extern TimeSeries statsPath;
 	extern TimeSeries statsVehicle;
+	extern TimeSeries statsBelt;
 
 	void reset();
 

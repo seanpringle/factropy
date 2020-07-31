@@ -2,7 +2,7 @@
 OBJECTS=$(shell ls -1 *.cc | sed 's/cc$$/o/g')
 
 dev: CFLAGS=-O1 -std=c++17 -g -Wall -Werror -I$(HOME)/include
-dev: LFLAGS=-lm -flto $(shell pkg-config --libs cairo freetype2) -lGL -lm -lpthread -ldl -lrt -lX11 -L$(HOME)/lib -Wl,-rpath,$(HOME)/lib -lwren 
+dev: LFLAGS=-lm -flto $(shell pkg-config --libs cairo freetype2) -lGL -lm -lpthread -ldl -lrt -lX11 -L$(HOME)/lib -Wl,-rpath,$(HOME)/lib -lwren
 dev: nuklear/nuklear.o $(OBJECTS)
 	g++ $(CFLAGS) -o main *.o nuklear/nuklear.o $(HOME)/lib/libraylib.a $(LFLAGS)
 

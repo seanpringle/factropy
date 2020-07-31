@@ -1,5 +1,6 @@
 #include "common.h"
 #include "arm.h"
+#include "sim.h"
 
 void Arm::reset() {
 	all.clear();
@@ -14,6 +15,7 @@ void Arm::tick() {
 Arm& Arm::create(uint id) {
 	Arm& arm = all[id];
 	arm.id = id;
+	arm.iid = 0;
 	arm.stage = Input;
 	arm.orientation = 0.0f;
 	return arm;
@@ -28,13 +30,44 @@ void Arm::destroy() {
 	all.erase(id);
 }
 
+Point Arm::input() {
+	Entity& en = Entity::get(id);
+	return en.pos.floor(0.5f) - en.dir;
+}
+
+Point Arm::output() {
+	Entity& en = Entity::get(id);
+	return en.pos.floor(0.5f) + en.dir;
+}
+
 void Arm::update() {
 	Entity& en = Entity::get(id);
 	if (en.isGhost()) return;
+	if (pause > Sim::tick) return;
 
 	switch (stage) {
 		case Input: {
-			stage = ToOutput;
+
+			uint inputId = Entity::at(input());
+
+			if (inputId) {
+				Entity& ei = Entity::get(inputId);
+
+				if (ei.spec->store) {
+					Stack stack = ei.store().removeAny(1);
+					iid = stack.iid;
+					stage = iid > 0 ? ToOutput: Input;
+					break;
+				}
+
+				if (ei.spec->belt) {
+					iid = ei.belt().removeAny();
+					stage = iid > 0 ? ToOutput: Input;
+					break;
+				}
+			}
+
+			pause = Sim::tick+30;
 			break;
 		}
 
@@ -48,7 +81,30 @@ void Arm::update() {
 		}
 
 		case Output: {
-			stage = ToInput;
+
+			uint outputId = Entity::at(output());
+
+			if (outputId) {
+				Entity& eo = Entity::get(outputId);
+
+				if (eo.spec->store) {
+					if (eo.store().insert({iid,1}).size == 0) {
+						iid = 0;
+						stage = ToInput;
+					}
+					break;
+				}
+
+				if (eo.spec->belt) {
+					if (eo.belt().insert(iid)) {
+						iid = 0;
+						stage = ToInput;
+					}
+					break;
+				}
+			}
+
+			pause = Sim::tick+30;
 			break;
 		}
 

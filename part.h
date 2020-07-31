@@ -14,18 +14,18 @@ struct Thing;
 struct Thing {
 	static inline std::vector<Mesh> meshes;
 
-	Mesh mesh;
+	Mesh meshHD;
+	Mesh meshLD;
 	Matrix transform;
-	Matrix s;
-	Matrix r;
-	Matrix t;
 
 	Thing();
 	Thing(std::string);
+	Thing(std::string, std::string);
+	Mesh loadSTL(std::string);
 
 	Thing& smooth();
-	void drawBatch(Color color, int count, Matrix *trx);
-	void drawGhostBatch(Color color, int count, Matrix *trx);
+	void drawBatch(Color color, float specular, bool hd, int count, Matrix *trx);
+	void drawGhostBatch(Color color, bool hd, int count, Matrix *trx);
 };
 
 struct Part: Thing {
@@ -41,17 +41,25 @@ struct Part: Thing {
 	virtual ~Part();
 
 	Color color;
+	float specular;
+	Matrix s;
+	Matrix r;
+	Matrix t;
 	Matrix srt;
+	bool drawHD;
+	bool drawLD;
 
+	Part* ld(bool);
 	Part* paint(int colour);
+	Part* gloss(float shine);
 	Part* rotate(Point axis, float degrees);
 	Part* scale(float x, float y, float z);
 	Part* translate(float x, float y, float z);
 	virtual void update();
 
 	void draw(Matrix trx);
-	void drawInstanced(int count, Matrix* trx);
-	void drawGhostInstanced(int count, Matrix* trx);
+	void drawInstanced(bool hd, int count, Matrix* trx);
+	void drawGhostInstanced(bool hd, int count, Matrix* trx);
 
 	Matrix instanceState(Spec* spec, uint slot, uint state);
 	virtual Matrix instance(Spec* spec, uint slot, uint state, Matrix trx);

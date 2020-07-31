@@ -149,9 +149,12 @@ bool Panel::contains(int px, int py) {
 	return px >= x && px < x+w && py >= y && py < y+h;
 }
 
-void Panel::draw() {
+void Panel::render() {
 	nk_cairo_render(&nuklear->ctx, canvas.data, w, h, w*4);
 	UpdateTexture(texture, canvas.data);
+}
+
+void Panel::draw() {
 	DrawTexture(texture, x, y, WHITE);
 }
 
@@ -176,6 +179,7 @@ void Panel::update() {
 
 	if (changed) {
 		build();
+		render();
 		changed = false;
 	}
 }
@@ -241,11 +245,11 @@ void Panel::input() {
 		}
 	}
 
+	nk_input_end(&nuklear->ctx);
+
 	if (IsKeyReleased(KEY_ESCAPE)) {
 		camera->popup = NULL;
 	}
-
-	nk_input_end(&nuklear->ctx);
 }
 
 MessagePopup::MessagePopup(int w, int h) : Panel(NULL, w, h) {
@@ -804,6 +808,7 @@ void StatsPopup::build() {
 		chart(&Sim::statsCrafter, "Crafter::tick");
 		chart(&Sim::statsPath, "Path::tick");
 		chart(&Sim::statsVehicle, "Vehicle::tick");
+		chart(&Sim::statsBelt, "Belt::tick");
 
 		nk_end(&nuklear->ctx);
 		refresh = 1;

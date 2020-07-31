@@ -1,7 +1,7 @@
 use <lib.scad>
 
 bounds = [2,5,2];
-body = [1.99, 4.99, 2];
+body = [1.95, 4.95, 2];
 
 module sideCutOuts() {
 	union() {
@@ -13,10 +13,19 @@ module sideCutOuts() {
 	}
 }
 
-difference() {
-	rbox(body,0.01,$fn=12);
-	rotate([0,000,0]) translate([-x(body)/2,0,0]) sideCutOuts();
-	rotate([0,090,0]) translate([-x(body)/2,0,0]) sideCutOuts();
-	rotate([0,180,0]) translate([-x(body)/2,0,0]) sideCutOuts();
-	rotate([0,270,0]) translate([-x(body)/2,0,0]) sideCutOuts();
+module hd() {
+	difference() {
+		rbox(body,0.01,$fn=12);
+		rotate([0,000,0]) translate([-x(body)/2,0,0]) sideCutOuts();
+		rotate([0,090,0]) translate([-x(body)/2,0,0]) sideCutOuts();
+		rotate([0,180,0]) translate([-x(body)/2,0,0]) sideCutOuts();
+		//rotate([0,270,0]) translate([-x(body)/2,0,0]) sideCutOuts();
+	}
 }
+
+module ld() {
+	box(body);
+}
+
+ld();
+//hd();

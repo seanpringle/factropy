@@ -27,9 +27,16 @@ void Entity::preTick() {
 }
 
 uint Entity::next() {
-	uint i = all.next(false);
-	ensuref(i > 0, "max entities reached");
-	return i;
+	for (uint i = 0; i < MaxEntity; i++) {
+		if (sequence == MaxEntity) {
+			sequence = 0;
+		}
+		sequence++;
+		if (!all.has(sequence)) {
+			return sequence;
+		}
+	}
+	fatalf("max entities reached");
 }
 
 Entity& Entity::create(uint id, Spec *spec) {
@@ -67,11 +74,11 @@ Entity& Entity::create(uint id, Spec *spec) {
 }
 
 bool Entity::exists(uint id) {
-	return all.has(id);
+	return id > 0 && all.has(id);
 }
 
 Entity& Entity::get(uint id) {
-	ensuref(all.has(id), "invalid id %d", id);
+	ensuref(id > 0 && all.has(id), "invalid id %d", id);
 	return all.ref(id);
 }
 
@@ -109,6 +116,10 @@ void Entity::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/entities.json");
 
+	json state;
+	state["sequence"] = sequence;
+	out << state << "\n";
+
 	for (Entity& en: all) {
 		json state;
 		state["id"] = en.id;
@@ -127,6 +138,11 @@ void Entity::loadAll(const char* name) {
 	auto path = std::string(name);
 	auto in = std::ifstream(path + "/entities.json");
 
+	std::string line;
+	std::getline(in, line);
+	auto state = json::parse(line);
+	sequence = state["sequence"];
+
 	for (std::string line; std::getline(in, line);) {
 		auto state = json::parse(line);
 		Entity& en = create(state["id"], Spec::byName(state["spec"]));
@@ -140,6 +156,12 @@ void Entity::loadAll(const char* name) {
 	}
 
 	in.close();
+
+	for (Entity& en: all) {
+		if (en.spec->belt) {
+			en.belt().manage();
+		}
+	}
 }
 
 std::unordered_set<uint> Entity::intersecting(Box box) {
@@ -152,6 +174,18 @@ std::unordered_set<uint> Entity::intersecting(Box box) {
 		}
 	}
 	return hits;
+}
+
+uint Entity::at(Point p) {
+	Box box = p.box();
+	for (auto xy: Chunk::walk(box)) {
+		for (uint id: grid[xy]) {
+			if (get(id).box().intersects(box)) {
+				return id;
+			}
+		}
+	}
+	return 0;
 }
 
 void Entity::destroy() {
@@ -302,6 +336,11 @@ Entity& Entity::rotate() {
 		dir = dir.rotateHorizontal();
 		pos = spec->aligned(pos, dir);
 		index();
+
+		if (!isGhost() && spec->belt) {
+			belt().unmanage();
+			belt().manage();
+		}
 	}
 	return *this;
 }

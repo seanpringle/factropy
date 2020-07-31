@@ -24,11 +24,17 @@ struct Arm {
 	};
 
 	uint id;
+	uint iid;
 	float orientation;
 	enum Stage stage;
+	uint64_t pause;
 
 	void destroy();
 	void update();
+	Point input();
+	Point output();
+	uint source();
+	uint target();
 };
 
 #endif

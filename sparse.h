@@ -20,13 +20,17 @@ public:
 		}
 
 		bool full() {
-			uint64_t *u2 = (uint64_t*)flags;
-			return u2[0] == ~0ULL && u2[1] == ~0ULL;
+			for (int i = 0; i < 128; i++) {
+				if (flags[i] != 0xFF) return false;
+			}
+			return true;
 		}
 
 		bool empty() {
-			uint64_t *u2 = (uint64_t*)flags;
-			return u2[0] == 0ULL && u2[1] == 0ULL;
+			for (int i = 0; i < 128; i++) {
+				if (flags[i] != 0x00) return false;
+			}
+			return true;
 		}
 
 		bool isset(int c) {
@@ -61,36 +65,6 @@ public:
 			delete pages[i];
 			pages[i] = NULL;
 		}
-	}
-
-	int next(bool zero) {
-		int width = (int)pages.size();
-
-		for (int p = 0; p < width; p++) {
-			Page *page = pages[p];
-			if (page != NULL && !page->full()) {
-				for (int b = 0; b < 128; b++) {
-					if (page->flags[b] != 0xFF) {
-						int c = ((!zero && b == 0) ? 1: b*8);
-						for (int l = c+8; c < l && c < 1024; c++) {
-							if (!page->isset(c)) {
-								return p*1024+c;
-							}
-						}
-					}
-				}
-			}
-		}
-
-		for (int p = 0; p < width; p++) {
-			Page *page = pages[p];
-			if (page == NULL) {
-				if (!zero && p == 0) continue;
-				return p*1024;
-			}
-		}
-
-		return -1;
 	}
 
 	void set(int i, T v) {
