@@ -481,7 +481,7 @@ void BeltSegment::advance() {
 void BeltSegment::load() {
 	if (pauseLoad > Sim::tick) return;
 
-	if (!itemAt(belts.back()->offset, Belt::Back)) {
+	if (items.size() < belts.size()) {
 		Entity& en = Entity::get(belts.back()->id);
 
 		uint sid = Entity::at(en.pos - en.dir);

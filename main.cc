@@ -101,7 +101,7 @@ int main(int argc, char const *argv[]) {
 	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero(), WHITE, pshader);
 
 	Sim::reset();
-	Sim::seed(879600773);
+	Sim::reseed(879600773);
 	//Sim::seed(4);
 
 	Item* item = new Item(Item::next(), "log");
@@ -231,7 +231,8 @@ int main(int argc, char const *argv[]) {
 		(new PartCycle(Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl"), 2))->paint(0xcccc00ff)->translate(0,-0.5,0)->ld(false),
 	};
 
-	View::beltPillar = (new Part(Thing("models/belt-pillar-hd.stl", "models/belt-pillar-hd.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0);
+	View::beltPillar1 = (new Part(Thing("models/belt-pillar-hd.stl", "models/belt-pillar-hd.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0);
+	View::beltPillar2 = (new Part(Thing("models/belt-pillar-hd.stl", "models/belt-pillar-hd.stl")))->paint(0xcccc00ff)->scale(1.0f, 2.1f, 1.0f)->translate(0,-1.5,0);
 
 	std::vector<Spec*> rocks;
 
@@ -442,11 +443,12 @@ int main(int argc, char const *argv[]) {
 	spec->lift = true;
 	spec->rotate = true;
 	spec->parts = {
-		(new Part(Thing("models/lift-base-hd.stl")))->translate(0,-1,0)->paint(0xff6600ff),
-		(new Part(Thing("models/lift-telescope1-hd.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/lift-telescope2-hd.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/lift-telescope3-hd.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/lift-platform-hd.stl")))->translate(0,-1,0)->paint(0xff6600ff),
+		(new Part(Thing("models/lift-base-hd.stl", "models/lift-base-ld.stl")))->translate(0,-1,0)->paint(0xcccc00ff),
+		(new Part(Thing("models/lift-telescope1-hd.stl", "models/lift-telescope1-ld.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/lift-telescope2-hd.stl", "models/lift-telescope2-ld.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/lift-telescope3-hd.stl", "models/lift-telescope3-ld.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/lift-platform-hd.stl", "models/lift-platform-ld.stl")))->translate(0,-1,0)->paint(0xcccc00ff),
+		(new Part(Thing("models/lift-surface-hd.stl", "models/lift-surface-ld.stl")))->translate(0,-1,0)->paint(0x000000ff),
 	};
 
 	{
@@ -455,18 +457,19 @@ int main(int argc, char const *argv[]) {
 		//x(theta) = rx cos(theta)
 		//y(theta) = ry sin(theta)
 
-		for (int i = 24; i >= 0; i--) {
+		for (int i = 15; i >= 0; i--) {
 			//Matrix stateT2 = MatrixTranslate(0.0f, -1.0f/(float)i/2.0f, 0.0f);
 			//Matrix stateT3 = MatrixTranslate(0.0f, -1.0f/(float)i, 0.0f);
-			Matrix stateT2 = MatrixTranslate(0.0f, -1.0f/25.0f*(float)i/2.0f, 0.0f);
-			Matrix stateT3 = MatrixTranslate(0.0f, -1.0f/25.0f*(float)i, 0.0f);
-			Matrix stateP = MatrixTranslate(0.0f, -1.0f/25.0f*(float)i, 0.0f);
+			Matrix stateT2 = MatrixTranslate(0.0f, -1.0f/15.0f*(float)i/2.0f, 0.0f);
+			Matrix stateT3 = MatrixTranslate(0.0f, -1.0f/15.0f*(float)i, 0.0f);
+			Matrix stateP = MatrixTranslate(0.0f, -1.0f/15.0f*(float)i, 0.0f);
 
 			spec->states.push_back({
 				state0,
 				state0,
 				stateT2,
 				stateT3,
+				stateP,
 				stateP,
 			});
 		}
@@ -488,6 +491,14 @@ int main(int argc, char const *argv[]) {
 	};
 	spec->align = true;
 	spec->rotate = true;
+
+	spec = new Spec("block");
+	spec->w = 1;
+	spec->h = 1;
+	spec->d = 1;
+	spec->parts = {
+		(new Part(Thing("models/block-hd.stl", "models/block-ld.stl")))->paint(0x666666ff)->gloss(16),
+	};
 
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;
@@ -735,7 +746,7 @@ int main(int argc, char const *argv[]) {
 				Sim::locked([&]() {
 					if (Entity::exists(camera->hovering->id)) {
 						Entity& en = Entity::get(camera->hovering->id);
-						en.floor(std::min(5.0f, std::floor(en.pos.y)+1.0f));
+						en.floor(std::min(3.0f, std::floor(en.pos.y)+1.0f));
 					}
 				});
 			}

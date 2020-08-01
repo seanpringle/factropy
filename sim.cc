@@ -4,13 +4,13 @@
 #include "chunk.h"
 #include "sim.h"
 #include "time-series.h"
-#include <filesystem>
 #include <cstdlib>
 
 namespace Sim {
 	OpenSimplex* opensimplex;
 	std::mutex mutex;
 	uint64_t tick;
+	int64_t seed;
 
 	TimeSeries statsEntity;
 	TimeSeries statsArm;
@@ -36,9 +36,10 @@ namespace Sim {
 		mutex.unlock();
 	}
 
-	void seed(int64_t seed) {
-		std::srand((unsigned)seed);
-		opensimplex = OpenSimplexNew(seed);
+	void reseed(int64_t s) {
+		seed = s;
+		std::srand((unsigned)s);
+		opensimplex = OpenSimplexNew(s);
 	}
 
 	float random() {
@@ -66,24 +67,6 @@ namespace Sim {
 		noise *= 1.5;
 		noise += 0.5;
 		return noise;
-	}
-
-	namespace fs = std::filesystem;
-
-	void save(const char *name) {
-		auto path = fs::path(name);
-		fs::remove_all(path);
-		fs::create_directory(path);
-		Spec::saveAll(name);
-		Chunk::saveAll(name);
-		Entity::saveAll(name);
-	}
-
-	void load(const char *name) {
-		auto path = fs::path(name);
-		Spec::loadAll(name);
-		Chunk::loadAll(name);
-		Entity::loadAll(name);
 	}
 
 	void update() {

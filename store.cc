@@ -14,6 +14,7 @@ void Store::tick() {
 Store& Store::create(uint id) {
 	Store& store = all.ref(id);
 	store.id = id;
+	store.activity = 0;
 	return store;
 }
 

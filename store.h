@@ -10,6 +10,8 @@
 struct Store {
 	static void reset();
 	static void tick();
+	static void saveAll(const char* name);
+	static void loadAll(const char* name);
 
 	static inline SparseArray<Store> all = (MaxEntity);
 	static Store& create(uint id);

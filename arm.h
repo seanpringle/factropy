@@ -11,6 +11,8 @@ struct Arm;
 struct Arm {
 	static void reset();
 	static void tick();
+	static void saveAll(const char* name);
+	static void loadAll(const char* name);
 
 	static inline std::map<uint,Arm> all;
 	static Arm& create(uint id);

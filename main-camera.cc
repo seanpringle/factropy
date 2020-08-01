@@ -538,38 +538,42 @@ void MainCamera::draw() {
 
 			Sim::locked([&]() {
 
-				std::vector<Matrix> reds;
-				std::vector<Matrix> greens;
-				std::vector<Matrix> pillars;
+				//std::vector<Matrix> reds;
+				//std::vector<Matrix> greens;
+				std::vector<Matrix> pillars1;
+				std::vector<Matrix> pillars2;
 
 				for (auto ge: entities) {
 					if (ge->spec->belt) {
 						Entity& en = Entity::get(ge->id);
 						Belt& belt = en.belt();
 
-						Matrix m = MatrixMultiply(MatrixScale(0.5, 0.5, 0.5), MatrixTranslate(en.pos.x, en.pos.y+0.5, en.pos.z));
-						if (belt.offset == 0) {
-							greens.push_back(m);
-						}
-						else
-						if (belt.offset == belt.segment->belts.size()-1) {
-							reds.push_back(m);
-						}
+						//Matrix m = MatrixMultiply(MatrixScale(0.5, 0.5, 0.5), MatrixTranslate(en.pos.x, en.pos.y+0.5, en.pos.z));
+						//if (belt.offset == 0) {
+						//	greens.push_back(m);
+						//}
+						//else
+						//if (belt.offset == belt.segment->belts.size()-1) {
+						//	reds.push_back(m);
+						//}
 
 						if (en.onFloor(0.0f) && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
-							pillars.push_back(View::beltPillar->instance(MatrixTranslate(en.pos.x, en.pos.y, en.pos.z)));
+							pillars1.push_back(View::beltPillar1->instance(MatrixTranslate(en.pos.x, en.pos.y, en.pos.z)));
 						}
 					}
 				}
 
-				if (reds.size() > 0)
-					rlDrawMeshInstanced(redCube.meshes[0], redCube.materials[0], reds.size(), reds.data());
+//				if (reds.size() > 0)
+//					rlDrawMeshInstanced(redCube.meshes[0], redCube.materials[0], reds.size(), reds.data());
+//
+//				if (greens.size() > 0)
+//					rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
 
-				if (greens.size() > 0)
-					rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
+				if (pillars1.size() > 0)
+					View::beltPillar1->drawInstanced(false, pillars1.size(), pillars1.data());
 
-				if (pillars.size() > 0)
-					View::beltPillar->drawInstanced(false, pillars.size(), pillars.data());
+				if (pillars2.size() > 0)
+					View::beltPillar2->drawInstanced(false, pillars2.size(), pillars2.data());
 
 				std::map<uint,std::vector<Matrix>> belt_transforms;
 

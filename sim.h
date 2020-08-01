@@ -9,6 +9,7 @@
 namespace Sim {
 	extern OpenSimplex* opensimplex;
 	extern uint64_t tick;
+	extern int64_t seed;
 
 	extern TimeSeries statsEntity;
 	extern TimeSeries statsArm;
@@ -19,11 +20,13 @@ namespace Sim {
 	extern TimeSeries statsLift;
 
 	void reset();
+	void save();
+	void load();
 
 	typedef std::function<void(void)> lockCallback;
 	void locked(lockCallback cb);
 
-	void seed(int64_t seed);
+	void reseed(int64_t seed);
 	float random();
 	int choose(uint range);
 

@@ -22,6 +22,6 @@ module ridge() {
 //fillet(0.01, $fn=12) base();
 //base();
 //fillet(0.01, $fn=12) pillar();
-pillar();
-//belt();
+//pillar();
+belt();
 //ridge();

@@ -12,6 +12,8 @@ struct BeltSegment;
 struct BeltSegment {
 	static inline std::set<BeltSegment*> all;
 	static const int slot = 50;
+	static void saveAll(const char* name);
+	static void loadAll(const char* name);
 
 	static void tick();
 

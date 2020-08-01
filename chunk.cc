@@ -2,8 +2,6 @@
 #include "chunk.h"
 #include "part.h"
 #include "sim.h"
-#include "json.hpp"
-#include <fstream>
 
 bool Chunk::XY::operator==(const XY &o) const {
 	return x == o.x && y == o.y;
@@ -140,57 +138,6 @@ Stack Chunk::mine(Box b) {
 		}
 	}
 	return {0,0};
-}
-
-using json = nlohmann::json;
-
-void Chunk::saveAll(const char* name) {
-	auto path = std::string(name);
-	auto out = std::ofstream(path + "/chunks.json");
-
-	for (auto pair: all) {
-		Chunk *chunk = pair.second;
-		json state;
-		state["x"] = chunk->x;
-		state["y"] = chunk->y;
-		json minerals;
-		for (auto [tx,ty]: chunk->minerals) {
-			minerals.push_back({tx,ty});
-		}
-		state["minerals"] = minerals;
-		for (int ty = 0; ty < size; ty++) {
-			for (int tx = 0; tx < size; tx++) {
-				Tile* tile = &chunk->tiles[ty][tx];
-				state["tiles"][ty][tx] = { tile->elevation, tile->resource, tile->mineral };
-			}
-		}
-		out << state << "\n";
-	}
-
-	out.close();
-}
-
-void Chunk::loadAll(const char* name) {
-	auto path = std::string(name);
-	auto in = std::ifstream(path + "/chunks.json");
-
-	for (std::string line; std::getline(in, line);) {
-		auto state = json::parse(line);
-		Chunk *chunk = new Chunk(state["x"], state["y"]);
-		for (auto xy: state["minerals"]) {
-			chunk->minerals.push_back({xy[0], xy[1]});
-		}
-		for (int ty = 0; ty < size; ty++) {
-			for (int tx = 0; tx < size; tx++) {
-				Tile* tile = &chunk->tiles[ty][tx];
-				tile->elevation = state["tiles"][ty][tx][0];
-				tile->resource = state["tiles"][ty][tx][1];
-				tile->mineral = state["tiles"][ty][tx][2];
-			}
-		}
-	}
-
-	in.close();
 }
 
 void Chunk::reset() {

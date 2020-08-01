@@ -22,6 +22,8 @@ struct Vehicle {
 
 	static void reset();
 	static void tick();
+	static void saveAll(const char* name);
+	static void loadAll(const char* name);
 
 	static inline SparseArray<Vehicle> all = (MaxEntity);
 	static Vehicle& create(int id);

@@ -1,29 +1,6 @@
 #include "common.h"
 #include "sim.h"
 #include "spec.h"
-#include "json.hpp"
-#include <filesystem>
-#include <fstream>
-
-namespace fs = std::filesystem;
-using json = nlohmann::json;
-
-void Spec::saveAll(const char* name) {
-	auto path = std::string(name);
-	auto out = std::ofstream(path + "/specs.json");
-
-	for (auto& pair: all) {
-		Spec *spec = pair.second;
-		json state;
-		state["name"] = spec->name;
-		out << state << "\n";
-	}
-
-	out.close();
-}
-
-void Spec::loadAll(const char* name) {
-}
 
 void Spec::reset() {
 	for (auto pair: all) {
