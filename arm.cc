@@ -61,7 +61,7 @@ void Arm::update() {
 				}
 
 				if (ei.spec->belt) {
-					iid = ei.belt().removeAny();
+					iid = ei.belt().removeAny(Belt::Any);
 					stage = iid > 0 ? ToOutput: Input;
 					break;
 				}
@@ -96,7 +96,7 @@ void Arm::update() {
 				}
 
 				if (eo.spec->belt) {
-					if (eo.belt().insert(iid)) {
+					if (eo.belt().insert(iid, Belt::Any)) {
 						iid = 0;
 						stage = ToInput;
 					}

@@ -16,6 +16,11 @@ struct Belt {
 	static Belt& create(uint id);
 	static Belt& get(uint id);
 
+	static inline uint Any = 0;
+	static inline uint Front = 1;
+	static inline uint Middle = 2;
+	static inline uint Back = 3;
+
 	uint id;
 	BeltSegment *segment;
 	uint offset;
@@ -23,10 +28,10 @@ struct Belt {
 	void destroy();
 	Belt& manage();
 	Belt& unmanage();
-	bool insert(uint iid);
-	bool remove(uint iid);
-	uint removeAny();
-	uint itemAt();
+	bool insert(uint iid, uint area);
+	bool remove(uint iid, uint area);
+	uint removeAny(uint area);
+	uint itemAt(uint area);
 };
 
 #endif

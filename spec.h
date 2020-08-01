@@ -37,6 +37,7 @@ struct Spec {
 	bool pivot;
 	bool arm;
 	bool belt;
+	bool lift;
 	bool vehicle;
 	bool drone;
 	bool store;

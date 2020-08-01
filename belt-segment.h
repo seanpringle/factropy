@@ -28,6 +28,7 @@ struct BeltSegment {
 	std::list<BeltItem>::iterator shrinkGap;
 
 	uint64_t pauseOffload;
+	uint64_t pauseLoad;
 
 	BeltSegment();
 	~BeltSegment();
@@ -40,14 +41,15 @@ struct BeltSegment {
 
 	void offload();
 	void advance();
+	void load();
 	Box box();
 	Point front();
 	Point step();
 
-	bool insert(int beltSlot, uint iid);
-	bool remove(int beltSlot, uint iid);
-	uint removeAny(int beltSlot);
-	uint itemAt(int beltSlot);
+	bool insert(int beltSlot, uint iid, uint area);
+	bool remove(int beltSlot, uint iid, uint area);
+	uint removeAny(int beltSlot, uint area);
+	uint itemAt(int beltSlot, uint area);
 };
 
 #endif

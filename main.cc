@@ -226,10 +226,12 @@ int main(int argc, char const *argv[]) {
 	spec->belt = true;
 
 	spec->parts = {
-		(new Part(Thing("models/belt-base.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0),
-		(new Part(Thing("models/belt-surface.stl")))->paint(0x000000ff)->translate(0,-0.5,0),
-		(new PartCycle(Thing("models/belt-ridge.stl"), 2))->paint(0xcccc00ff)->translate(0,-0.5,0)->ld(false),
+		(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0),
+		(new Part(Thing("models/belt-surface-hd.stl", "models/belt-surface-ld.stl")))->paint(0x000000ff)->translate(0,-0.5,0),
+		(new PartCycle(Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl"), 2))->paint(0xcccc00ff)->translate(0,-0.5,0)->ld(false),
 	};
+
+	View::beltPillar = (new Part(Thing("models/belt-pillar-hd.stl", "models/belt-pillar-hd.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0);
 
 	std::vector<Spec*> rocks;
 
@@ -258,14 +260,13 @@ int main(int argc, char const *argv[]) {
 					if (n < 0.4 && Sim::random() < 0.04) {
 						Spec *spec = rocks[Sim::choose(rocks.size())];
 						Entity::create(Entity::next(), spec)
-							.setGhost(true)
 							.look(Point::South().randomHorizontal())
 							.move((Point){
 								(float)(chunk->x*Chunk::size+x),
 								spec->h/2.0f,
 								(float)(chunk->y*Chunk::size+y),
 							})
-							.setGhost(false)
+							.materialize()
 						;
 					}
 				}
@@ -306,14 +307,13 @@ int main(int argc, char const *argv[]) {
 					if (n < 0.4 && Sim::random() < 0.04) {
 						Spec *spec = trees[Sim::choose(trees.size())];
 						Entity::create(Entity::next(), spec)
-							.setGhost(true)
 							.look(Point::South().randomHorizontal())
 							.move((Point){
 								(float)(chunk->x*Chunk::size+x),
 								(e*100.0f) + spec->h/2.0f,
 								(float)(chunk->y*Chunk::size+y),
 							})
-							.setGhost(false)
+							.materialize()
 						;
 					}
 				}
@@ -435,6 +435,43 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
+	spec = new Spec("lift");
+	spec->w = 1;
+	spec->h = 2;
+	spec->d = 1;
+	spec->lift = true;
+	spec->rotate = true;
+	spec->parts = {
+		(new Part(Thing("models/lift-base-hd.stl")))->translate(0,-1,0)->paint(0xff6600ff),
+		(new Part(Thing("models/lift-telescope1-hd.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/lift-telescope2-hd.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/lift-telescope3-hd.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/lift-platform-hd.stl")))->translate(0,-1,0)->paint(0xff6600ff),
+	};
+
+	{
+		Matrix state0 = MatrixIdentity();
+
+		//x(theta) = rx cos(theta)
+		//y(theta) = ry sin(theta)
+
+		for (int i = 24; i >= 0; i--) {
+			//Matrix stateT2 = MatrixTranslate(0.0f, -1.0f/(float)i/2.0f, 0.0f);
+			//Matrix stateT3 = MatrixTranslate(0.0f, -1.0f/(float)i, 0.0f);
+			Matrix stateT2 = MatrixTranslate(0.0f, -1.0f/25.0f*(float)i/2.0f, 0.0f);
+			Matrix stateT3 = MatrixTranslate(0.0f, -1.0f/25.0f*(float)i, 0.0f);
+			Matrix stateP = MatrixTranslate(0.0f, -1.0f/25.0f*(float)i, 0.0f);
+
+			spec->states.push_back({
+				state0,
+				state0,
+				stateT2,
+				stateT3,
+				stateP,
+			});
+		}
+	}
+
 	auto steamEnginewheel = Thing("models/steam-engine-wheel-hd.stl", "models/steam-engine-wheel-ld.stl");
 
 	spec = new Spec("steam-engine");
@@ -483,7 +520,7 @@ int main(int argc, char const *argv[]) {
 			}
 		}
 
-		Entity& en = Entity::create(Entity::next(), Spec::byName("truck-engineer")).floor(0);
+		Entity& en = Entity::create(Entity::next(), Spec::byName("truck-engineer")).floor(0).materialize();
 		en.store().insert({Item::byName("log")->id, 10});
 	}
 
@@ -656,7 +693,7 @@ int main(int argc, char const *argv[]) {
 			if (IsKeyReleased(KEY_ONE) && camera->hovering && camera->hovering->spec->belt) {
 				Sim::locked([&]() {
 					Entity& en = Entity::get(camera->hovering->id);
-					notef("%d", en.belt().insert(Item::byName("iron-ore")->id));
+					notef("%d", en.belt().insert(Item::byName("iron-ore")->id, Belt::Any));
 				});
 			}
 
@@ -675,10 +712,41 @@ int main(int argc, char const *argv[]) {
 				else
 				if (camera->hovering) {
 					Sim::locked([&]() {
-						Entity::get(camera->hovering->id)
-							.rotate();
+						if (Entity::exists(camera->hovering->id)) {
+							Entity::get(camera->hovering->id)
+								.rotate();
+						}
 					});
 				}
+			}
+
+			if (IsKeyReleased(KEY_T)) {
+				if (camera->hovering) {
+					Sim::locked([&]() {
+						if (Entity::exists(camera->hovering->id)) {
+							Entity::get(camera->hovering->id)
+								.toggle();
+						}
+					});
+				}
+			}
+
+			if (IsKeyReleased(KEY_PAGE_UP) && camera->hovering && camera->hovering->spec->belt) {
+				Sim::locked([&]() {
+					if (Entity::exists(camera->hovering->id)) {
+						Entity& en = Entity::get(camera->hovering->id);
+						en.floor(std::min(5.0f, std::floor(en.pos.y)+1.0f));
+					}
+				});
+			}
+
+			if (IsKeyReleased(KEY_PAGE_DOWN) && camera->hovering && camera->hovering->spec->belt) {
+				Sim::locked([&]() {
+					if (Entity::exists(camera->hovering->id)) {
+						Entity& en = Entity::get(camera->hovering->id);
+						en.floor(std::max(0.0f, std::floor(en.pos.y)-1.0f));
+					}
+				});
 			}
 
 			if (IsKeyReleased(KEY_E)) {

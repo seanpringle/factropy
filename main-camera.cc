@@ -46,7 +46,7 @@ MainCamera::MainCamera(Point pos, Point dir) {
 	up = Point::Up();
 
 	ZERO(mouse);
-	showGrid = false;
+	showGrid = true;
 	selecting = false;
 
 	hovering = NULL;
@@ -58,6 +58,8 @@ MainCamera::MainCamera(Point pos, Point dir) {
 	recipePopup = NULL;
 	popupFocused = false;
 	worldFocused = true;
+
+	buildLevel = 0.0f;
 
 	statsUpdate.clear();
 	statsDraw.clear();
@@ -90,7 +92,7 @@ Point MainCamera::groundTarget(float ground) {
 Camera3D MainCamera::raylibCamera() {
 	return (Camera3D){
 		position : position,
-		target   : groundTarget(0),
+		target   : groundTarget(buildLevel),
 		up       : up,
 		fovy     : fovy,
 		type     : CAMERA_PERSPECTIVE,
@@ -231,7 +233,7 @@ void MainCamera::updateCamera() {
 			mouse.rV -= rDV;
 		}
 
-		Point target = groundTarget(0);
+		Point target = groundTarget(buildLevel);
 		Point radius = position - target;
 		Point right = radius.cross(up).normalize();
 		Matrix rotateH = MatrixRotate(up, -rDH);
@@ -262,7 +264,7 @@ void MainCamera::updateCamera() {
 			mouse.zW -= zDW;
 		}
 
-		Point target = groundTarget(0);
+		Point target = groundTarget(buildLevel);
 		Point radius = position - target;
 
 		if (radius.length() > 10.0f || zDW > 0.0f) {
@@ -279,7 +281,7 @@ void MainCamera::updateCamera() {
 	mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, raylibCamera());
 
 	if (mouse.right.clicked) {
-		RayHitInfo spot = GetCollisionRayGround(mouse.ray, 0);
+		RayHitInfo spot = GetCollisionRayGround(mouse.ray, buildLevel);
 		nextDirection = -(position - Point(spot.position)).normalize();
 	}
 
@@ -318,12 +320,12 @@ void MainCamera::update() {
 
 		if (worldFocused) {
 			if (placing) {
-				RayHitInfo hit = GetCollisionRayGround(mouse.ray, 0);
-				placing->move(Point(hit.position))->floor(placing->pos.y);
+				RayHitInfo hit = GetCollisionRayGround(mouse.ray, buildLevel);
+				placing->move(Point(hit.position))->floor(buildLevel);
 			}
 		}
 
-		Point target = groundTarget(0);
+		Point target = groundTarget(buildLevel);
 		Box view = (Box){target.x, target.y, target.z, 500, 500, 500};
 
 		Sim::locked([&]() {
@@ -362,6 +364,10 @@ void MainCamera::update() {
 					}
 				}
 			}
+
+			if (placing) {
+				placing->floor(buildLevel);
+			}
 		}
 	});
 }
@@ -371,7 +377,7 @@ void MainCamera::draw() {
 
 		Camera3D camera = {
 			position : position,
-			target   : groundTarget(0),
+			target   : groundTarget(buildLevel),
 			up       : up,
 			fovy     : fovy,
 			type     : CAMERA_PERSPECTIVE,
@@ -380,7 +386,7 @@ void MainCamera::draw() {
 		ClearBackground(SKYBLUE);
 
 		BeginMode3D(camera);
-			Point groundZero = groundTarget(0);
+			Point groundZero = groundTarget(buildLevel);
 
 			if (showGrid) {
 				groundZero.x = std::floor(groundZero.x);
@@ -443,7 +449,7 @@ void MainCamera::draw() {
 				for (uint i = 0; i < ge->spec->parts.size(); i++) {
 					Part *part = ge->spec->parts[i];
 					bool hd = ge->pos.distance(position) < 100;
-					Matrix instance = part->instance(ge->spec, i, ge->state, ge->transform);
+					Matrix instance = part->specInstance(ge->spec, i, ge->state, ge->transform);
 					(ge->ghost ? (hd ? ghosts_hd: ghosts_ld): (hd ? extant_hd: extant_ld))[part].push_back(instance);
 				}
 			}
@@ -485,15 +491,13 @@ void MainCamera::draw() {
 			if (placing) {
 				for (uint i = 0; i < placing->spec->parts.size(); i++) {
 					Part *part = placing->spec->parts[i];
-					Matrix instance = part->instance(placing->spec, i, placing->state, placing->transform);
+					Matrix instance = part->specInstance(placing->spec, i, placing->state, placing->transform);
 					part->drawGhostInstanced(true, 1, &instance);
 				}
 
-				if (!placingFits) {
-					Box box = placing->box();
-					Point bounds = {box.w, box.h, box.d};
-					DrawCubeWiresV(placing->pos, bounds + 0.01f, RED);
-				}
+				Box box = placing->box();
+				Point bounds = {box.w, box.h, box.d};
+				DrawCubeWiresV(placing->pos, bounds + 0.01f, placingFits ? GREEN: RED);
 			}
 
 			if (Path::jobs.size() > 0) {
@@ -529,8 +533,6 @@ void MainCamera::draw() {
 						DrawLine3D(p, n, RED);
 						p = n;
 					}
-
-					//DrawRay((Ray){en.pos, en.dir}, BLUE);
 				}
 			}
 
@@ -538,18 +540,24 @@ void MainCamera::draw() {
 
 				std::vector<Matrix> reds;
 				std::vector<Matrix> greens;
+				std::vector<Matrix> pillars;
 
 				for (auto ge: entities) {
 					if (ge->spec->belt) {
 						Entity& en = Entity::get(ge->id);
 						Belt& belt = en.belt();
-						Matrix m = MatrixMultiply(MatrixScale(0.5, 0.5, 0.5), MatrixTranslate(en.pos.x, en.pos.y*2, en.pos.z));
+
+						Matrix m = MatrixMultiply(MatrixScale(0.5, 0.5, 0.5), MatrixTranslate(en.pos.x, en.pos.y+0.5, en.pos.z));
 						if (belt.offset == 0) {
 							greens.push_back(m);
 						}
 						else
 						if (belt.offset == belt.segment->belts.size()-1) {
 							reds.push_back(m);
+						}
+
+						if (en.onFloor(0.0f) && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
+							pillars.push_back(View::beltPillar->instance(MatrixTranslate(en.pos.x, en.pos.y, en.pos.z)));
 						}
 					}
 				}
@@ -560,27 +568,40 @@ void MainCamera::draw() {
 				if (greens.size() > 0)
 					rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
 
+				if (pillars.size() > 0)
+					View::beltPillar->drawInstanced(false, pillars.size(), pillars.data());
+
 				std::map<uint,std::vector<Matrix>> belt_transforms;
 
 				for (BeltSegment* segment: BeltSegment::all) {
-					Box box = segment->box();
-					Point bounds = {box.w, box.h, box.d};
-					DrawCubeWiresV(box.centroid(), bounds + 0.01f, GREEN);
-
 					Point spot = segment->front();
 					Point step = segment->step();
 					for (auto beltItem: segment->items) {
 						spot += step * (float)beltItem.offset;
 						Point p = spot + (step * ((float)BeltSegment::slot/2.0f));
 						Part* part = Item::get(beltItem.iid)->part;
-						belt_transforms[beltItem.iid].push_back(
-							MatrixMultiply(MatrixMultiply(part->transform, part->srt), MatrixTranslate(p.x, p.y, p.z))
-						);
+						belt_transforms[beltItem.iid].push_back(part->instance(MatrixTranslate(p.x, p.y, p.z)));
 						spot += step * (float)BeltSegment::slot;
 					}
 				}
 
 				for (auto [iid,transforms]: belt_transforms) {
+					Item::get(iid)->part->drawInstanced(false, transforms.size(), transforms.data());
+				}
+
+				std::map<uint,std::vector<Matrix>> lift_transforms;
+
+				for (auto pair: Lift::all) {
+					Lift& lift = pair.second;
+					if (lift.iid) {
+						Entity& en = Entity::get(lift.id);
+						Point p = en.pos;
+						Part* part = Item::get(lift.iid)->part;
+						lift_transforms[lift.iid].push_back(part->instance(MatrixMultiply(en.spec->states[en.state][4], MatrixTranslate(p.x, p.y+1.0f, p.z))));
+					}
+				}
+
+				for (auto [iid,transforms]: lift_transforms) {
 					Item::get(iid)->part->drawInstanced(false, transforms.size(), transforms.data());
 				}
 			});

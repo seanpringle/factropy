@@ -94,7 +94,7 @@ void Crafter::update() {
 			}
 
 			if (eo.spec->belt) {
-				if (eo.belt().insert(iid)) {
+				if (eo.belt().insert(iid, Belt::Any)) {
 					store.remove({iid,1});
 				}
 			}

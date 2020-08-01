@@ -16,6 +16,7 @@ struct GuiFakeEntity;
 #include "store.h"
 #include "arm.h"
 #include "belt.h"
+#include "lift.h"
 #include "crafter.h"
 #include "vehicle.h"
 #include <unordered_set>
@@ -71,12 +72,16 @@ struct Entity {
 	Entity& move(Point p);
 	Entity& move(float x, float y, float z);
 	Entity& floor(float level);
+	bool onFloor(float level);
 	Entity& rotate();
+	Entity& toggle();
 	void destroy();
 	void remove();
 
 	Entity& index();
 	Entity& unindex();
+	Entity& manage();
+	Entity& unmanage();
 
 	Entity& construct();
 	Entity& deconstruct();
@@ -87,6 +92,7 @@ struct Entity {
 	Vehicle& vehicle();
 	Arm& arm();
 	Belt& belt();
+	Lift& lift();
 };
 
 struct GuiEntity {

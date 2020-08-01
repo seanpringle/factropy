@@ -49,6 +49,7 @@ Spec::Spec(std::string name) {
 	crafter = false;
 	arm = false;
 	belt = false;
+	lift = false;
 
 	magic = false;
 	enableSetLower = false;

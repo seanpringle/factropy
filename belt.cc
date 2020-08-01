@@ -81,18 +81,18 @@ Belt& Belt::unmanage() {
 	return *this;
 }
 
-bool Belt::insert(uint iid) {
-	return segment->insert(offset, iid);
+bool Belt::insert(uint iid, uint area) {
+	return segment->insert(offset, iid, area);
 }
 
-bool Belt::remove(uint iid) {
-	return segment->remove(offset, iid);
+bool Belt::remove(uint iid, uint area) {
+	return segment->remove(offset, iid, area);
 }
 
-uint Belt::removeAny() {
-	return segment->removeAny(offset);
+uint Belt::removeAny(uint area) {
+	return segment->removeAny(offset, area);
 }
 
-uint Belt::itemAt() {
-	return segment->itemAt(offset);
+uint Belt::itemAt(uint area) {
+	return segment->itemAt(offset, area);
 }

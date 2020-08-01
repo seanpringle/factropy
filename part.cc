@@ -295,7 +295,7 @@ void Part::draw(Matrix trx) {
 	drawBatch(color, specular, true, 1, &m);
 }
 
-Matrix Part::instanceState(Spec* spec, uint slot, uint state) {
+Matrix Part::specInstanceState(Spec* spec, uint slot, uint state) {
 	if (spec->states.size() == 0) {
 		ensure(state == 0);
 	}
@@ -308,10 +308,14 @@ Matrix Part::instanceState(Spec* spec, uint slot, uint state) {
 	return MatrixIdentity();
 }
 
-Matrix Part::instance(Spec* spec, uint slot, uint state, Matrix trx) {
-	Matrix i = instanceState(spec, slot, state);
+Matrix Part::specInstance(Spec* spec, uint slot, uint state, Matrix trx) {
+	Matrix i = specInstanceState(spec, slot, state);
 	Matrix m = MatrixMultiply(MatrixMultiply(transform, i), srt);
 	return MatrixMultiply(m, trx);
+}
+
+Matrix Part::instance(Matrix trx) {
+	return MatrixMultiply(MatrixMultiply(transform, srt), trx);
 }
 
 void Part::drawInstanced(bool hd, int count, Matrix* trx) {
@@ -328,8 +332,8 @@ PartSpinner::PartSpinner(Thing thing, float sspeed) : Part(thing) {
 	speed = sspeed;
 }
 
-Matrix PartSpinner::instance(Spec* spec, uint slot, uint state, Matrix trx) {
-	Matrix i = instanceState(spec, slot, state);
+Matrix PartSpinner::specInstance(Spec* spec, uint slot, uint state, Matrix trx) {
+	Matrix i = specInstanceState(spec, slot, state);
 	float noise = 0.0f;
 	noise += trx.m0;
 	noise += trx.m4;
@@ -363,8 +367,8 @@ void PartCycle::update() {
 	shunt = MatrixMultiply(transform, MatrixTranslate(0, 0, (float)(Sim::tick%mod)*inc));
 }
 
-Matrix PartCycle::instance(Spec* spec, uint slot, uint state, Matrix trx) {
-	Matrix i = instanceState(spec, slot, state);
+Matrix PartCycle::specInstance(Spec* spec, uint slot, uint state, Matrix trx) {
+	Matrix i = specInstanceState(spec, slot, state);
 	Matrix m = MatrixMultiply(MatrixMultiply(shunt, i), srt);
 	return MatrixMultiply(m, trx);
 }

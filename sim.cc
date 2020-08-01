@@ -18,6 +18,7 @@ namespace Sim {
 	TimeSeries statsPath;
 	TimeSeries statsVehicle;
 	TimeSeries statsBelt;
+	TimeSeries statsLift;
 
 	void reset() {
 		statsEntity.clear();
@@ -26,6 +27,7 @@ namespace Sim {
 		statsPath.clear();
 		statsVehicle.clear();
 		statsBelt.clear();
+		statsLift.clear();
 	}
 
 	void locked(lockCallback cb) {
@@ -92,5 +94,6 @@ namespace Sim {
 		statsPath.track(tick, Path::tick);
 		statsVehicle.track(tick, Vehicle::tick);
 		statsBelt.track(tick, Belt::tick);
+		statsLift.track(tick, Lift::tick);
 	}
 }

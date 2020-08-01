@@ -61,15 +61,16 @@ struct Part: Thing {
 	void drawInstanced(bool hd, int count, Matrix* trx);
 	void drawGhostInstanced(bool hd, int count, Matrix* trx);
 
-	Matrix instanceState(Spec* spec, uint slot, uint state);
-	virtual Matrix instance(Spec* spec, uint slot, uint state, Matrix trx);
+	Matrix specInstanceState(Spec* spec, uint slot, uint state);
+	virtual Matrix specInstance(Spec* spec, uint slot, uint state, Matrix trx);
+	virtual Matrix instance(Matrix trx);
 };
 
 struct PartSpinner : Part {
 	float speed;
 
 	PartSpinner(Thing thing, float speed);
-	virtual Matrix instance(Spec* spec, uint slot, uint state, Matrix trx);
+	virtual Matrix specInstance(Spec* spec, uint slot, uint state, Matrix trx);
 };
 
 struct PartCycle : Part {
@@ -78,7 +79,7 @@ struct PartCycle : Part {
 
 	PartCycle(Thing thing, uint step);
 	virtual void update();
-	virtual Matrix instance(Spec* spec, uint slot, uint state, Matrix trx);
+	virtual Matrix specInstance(Spec* spec, uint slot, uint state, Matrix trx);
 };
 
 #endif

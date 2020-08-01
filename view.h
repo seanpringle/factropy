@@ -15,6 +15,7 @@ struct View {
 	static inline Model waterCube;
 	static inline Model redCube;
 	static inline Model greenCube;
+	static inline Part* beltPillar;
 	static constexpr float fovy = 45.0f;
 
 	View();
@@ -88,6 +89,8 @@ struct MainCamera : View {
 	std::vector<GuiEntity*> selected;
 
 	bool worldFocused;
+
+	float buildLevel;
 
 	Panel *popup;
 	BuildPopup *buildPopup;

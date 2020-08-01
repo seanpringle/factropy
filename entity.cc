@@ -43,7 +43,7 @@ Entity& Entity::create(uint id, Spec *spec) {
 	Entity& en = all.ref(id);
 	en.id = id;
 	en.spec = spec;
-	en.flags = 0;
+	en.flags = GHOST;
 	en.dir = Point::South();
 	en.state = 0;
 
@@ -65,6 +65,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 
 	if (spec->belt) {
 		Belt::create(id);
+	}
+
+	if (spec->lift) {
+		Lift::create(id);
 	}
 
 	en.pos = {0,0,0};
@@ -153,15 +157,10 @@ void Entity::loadAll(const char* name) {
 		en.flags = state["flags"];
 
 		en.index();
+		en.materialize();
 	}
 
 	in.close();
-
-	for (Entity& en: all) {
-		if (en.spec->belt) {
-			en.belt().manage();
-		}
-	}
 }
 
 std::unordered_set<uint> Entity::intersecting(Box box) {
@@ -210,6 +209,11 @@ void Entity::destroy() {
 	if (spec->belt) {
 		belt().destroy();
 	}
+
+	if (spec->lift) {
+		lift().destroy();
+	}
+
 	all.drop(id);
 }
 
@@ -281,6 +285,24 @@ Entity& Entity::unindex() {
 	return *this;
 }
 
+Entity& Entity::manage() {
+	if (!isGhost()) {
+		if (spec->belt) {
+			belt().manage();
+		}
+	}
+	return *this;
+}
+
+Entity& Entity::unmanage() {
+	if (!isGhost()) {
+		if (spec->belt) {
+			belt().unmanage();
+		}
+	}
+	return *this;
+}
+
 Entity& Entity::construct() {
 	setGhost(true);
 	setConstruction(true);
@@ -292,11 +314,7 @@ Entity& Entity::deconstruct() {
 	setGhost(true);
 	setConstruction(false);
 	setDeconstruction(true);
-
-	if (spec->belt) {
-		belt().unmanage();
-	}
-
+	unmanage();
 	return *this;
 }
 
@@ -304,18 +322,16 @@ Entity& Entity::materialize() {
 	setGhost(false);
 	setConstruction(false);
 	setDeconstruction(false);
-
-	if (spec->belt) {
-		belt().manage();
-	}
-
+	manage();
 	return *this;
 }
 
 Entity& Entity::move(Point p) {
+	unmanage();
 	unindex();
 	pos = spec->aligned(p, dir);
 	index();
+	manage();
 	return *this;
 }
 
@@ -324,23 +340,34 @@ Entity& Entity::move(float x, float y, float z) {
 }
 
 Entity& Entity::floor(float level) {
+	unmanage();
 	unindex();
 	pos.y = level + spec->h/2.0f;
 	index();
+	manage();
 	return *this;
+}
+
+bool Entity::onFloor(float level) {
+	float y = level + spec->h/2.0f;
+	return std::abs(pos.y-y) < 0.01;
 }
 
 Entity& Entity::rotate() {
 	if (spec->rotate) {
+		unmanage();
 		unindex();
 		dir = dir.rotateHorizontal();
 		pos = spec->aligned(pos, dir);
 		index();
+		manage();
+	}
+	return *this;
+}
 
-		if (!isGhost() && spec->belt) {
-			belt().unmanage();
-			belt().manage();
-		}
+Entity& Entity::toggle() {
+	if (spec->lift) {
+		lift().toggle();
 	}
 	return *this;
 }
@@ -363,4 +390,8 @@ Arm& Entity::arm() {
 
 Belt& Entity::belt() {
 	return Belt::get(id);
+}
+
+Lift& Entity::lift() {
+	return Lift::get(id);
 }

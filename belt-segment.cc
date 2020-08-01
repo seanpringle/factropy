@@ -9,12 +9,16 @@ void BeltSegment::tick() {
 	for (BeltSegment* segment: all) {
 		segment->advance();
 	}
+	for (BeltSegment* segment: all) {
+		segment->load();
+	}
 }
 
 BeltSegment::BeltSegment() {
 	all.insert(this);
 	changed = true;
 	pauseOffload = 0;
+	pauseLoad = 0;
 }
 
 BeltSegment::~BeltSegment() {
@@ -98,7 +102,7 @@ void BeltSegment::join(BeltSegment* other) {
 
 void BeltSegment::split(uint beltSlot) {
 
-	removeAny(beltSlot);
+	removeAny(beltSlot, Belt::Any);
 	uint len = belts.size();
 
 	if (len == 1) {
@@ -174,9 +178,17 @@ void BeltSegment::split(uint beltSlot) {
 	right->changed = true;
 }
 
-bool BeltSegment::insert(int beltSlot, uint iid) {
+bool BeltSegment::insert(int beltSlot, uint iid, uint area) {
 	ensure(beltSlot >= 0 && beltSlot < (int)belts.size());
 	int absOffset = beltSlot * slot;
+
+	if (area == Belt::Middle) {
+		absOffset += slot/4;
+	}
+
+	if (area == Belt::Back) {
+		absOffset += slot/2;
+	}
 
 	// belt is empty
 	if (items.size() == 0) {
@@ -232,9 +244,17 @@ bool BeltSegment::insert(int beltSlot, uint iid) {
 	return false;
 }
 
-bool BeltSegment::remove(int beltSlot, uint iid) {
+bool BeltSegment::remove(int beltSlot, uint iid, uint area) {
 	ensure(beltSlot >= 0 && beltSlot < (int)belts.size());
 	int absOffset = beltSlot * slot;
+
+	if (area == Belt::Middle) {
+		absOffset += slot/4;
+	}
+
+	if (area == Belt::Back) {
+		absOffset += slot/2;
+	}
 
 	int sumOffset = 0;
 
@@ -260,9 +280,17 @@ bool BeltSegment::remove(int beltSlot, uint iid) {
 	return false;
 }
 
-uint BeltSegment::removeAny(int beltSlot) {
+uint BeltSegment::removeAny(int beltSlot, uint area) {
 	ensure(beltSlot >= 0 && beltSlot < (int)belts.size());
 	int absOffset = beltSlot * slot;
+
+	if (area == Belt::Middle) {
+		absOffset += slot/4;
+	}
+
+	if (area == Belt::Back) {
+		absOffset += slot/2;
+	}
 
 	int sumOffset = 0;
 
@@ -289,9 +317,17 @@ uint BeltSegment::removeAny(int beltSlot) {
 	return 0;
 }
 
-uint BeltSegment::itemAt(int beltSlot) {
+uint BeltSegment::itemAt(int beltSlot, uint area) {
 	ensure(beltSlot >= 0 && beltSlot < (int)belts.size());
 	int absOffset = beltSlot * slot;
+
+	if (area == Belt::Middle) {
+		absOffset += slot/4;
+	}
+
+	if (area == Belt::Back) {
+		absOffset += slot/2;
+	}
 
 	int sumOffset = 0;
 
@@ -375,13 +411,18 @@ void BeltSegment::offload() {
 		if (tid) {
 			Entity& te = Entity::get(tid);
 
-			if (te.spec->belt && te.belt().insert(items.front().iid)) {
-				removeAny(0);
+			if (te.spec->belt && te.belt().insert(items.front().iid, Belt::Front)) {
+				removeAny(0, Belt::Front);
+				return;
+			}
+
+			if (te.spec->lift && te.lift().insert(items.front().iid, en.pos.y)) {
+				removeAny(0, Belt::Front);
 				return;
 			}
 
 			if (te.spec->store && te.store().insert({items.front().iid,1}).size == 0) {
-				removeAny(0);
+				removeAny(0, Belt::Front);
 				return;
 			}
 		}
@@ -435,4 +476,36 @@ void BeltSegment::advance() {
 	while (expandGap != items.end() && expandGap->offset >= 0) {
 		expandGap++;
 	}
+}
+
+void BeltSegment::load() {
+	if (pauseLoad > Sim::tick) return;
+
+	if (!itemAt(belts.back()->offset, Belt::Back)) {
+		Entity& en = Entity::get(belts.back()->id);
+
+		uint sid = Entity::at(en.pos - en.dir);
+
+		if (sid) {
+			Entity& se = Entity::get(sid);
+
+			if (se.spec->lift) {
+				uint iid = se.lift().removeAny(en.pos.y);
+				if (iid) {
+					insert(belts.back()->offset, iid, Belt::Back);
+				}
+				return;
+			}
+
+			if (se.spec->store) {
+				Stack stack = se.store().removeAny(1);
+				if (stack.iid) {
+					insert(belts.back()->offset, stack.iid, Belt::Back);
+				}
+				return;
+			}
+		}
+	}
+
+	pauseLoad = Sim::tick+15;
 }

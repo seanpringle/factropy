@@ -335,6 +335,17 @@ void EntityPopup::build() {
 			nk_prog(&nuklear->ctx, (int)(arm.orientation*100), 100, NK_FIXED);
 		}
 
+		if (en.spec->lift) {
+			Lift& lift = en.lift();
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_label(&nuklear->ctx, fmtc("%s", lift.mode == Lift::Raise ? "raise": "lower"), NK_TEXT_LEFT);
+			nk_label(&nuklear->ctx, fmtc("%s",
+				lift.stage == Lift::Lowered ? "lowered":
+					lift.stage == Lift::Lowering ? "lowering":
+						lift.stage == Lift::Raised ? "raised":
+							lift.stage == Lift::Raising ? "raising": "wtf"), NK_TEXT_LEFT);
+		}
+
 		if (en.spec->store) {
 			Store& store = en.store();
 
