@@ -1,6 +1,6 @@
 #include "common.h"
 #include "store.h"
-#include "spec.h"
+#include "entity.h"
 #include "sim.h"
 
 void Store::reset() {
@@ -8,14 +8,64 @@ void Store::reset() {
 }
 
 void Store::tick() {
-
+	for (Store& store: all) {
+		store.update();
+	}
 }
 
-Store& Store::create(uint id) {
+void Store::update() {
+	for (Level& lvl: levels) {
+		lvl.promised = 0;
+		lvl.reserved = 0;
+		lvl.upper = std::max(lvl.lower, lvl.upper);
+	}
+
+	std::vector<uint> remove;
+
+	for (uint did: drones) {
+		if (!Entity::exists(did)) {
+			remove.push_back(did);
+			continue;
+		}
+
+		Entity& de = Entity::get(did);
+
+		if (de.drone().src == id) {
+			reserve(de.drone().stack);
+		}
+
+		if (de.drone().dst == id) {
+			promise(de.drone().stack);
+		}
+	}
+
+	for (uint did: remove) {
+		drones.erase(did);
+	}
+}
+
+Store& Store::create(uint id, Mass cap) {
 	Store& store = all.ref(id);
 	store.id = id;
 	store.activity = 0;
+	store.capacity = cap;
+	store.fuel = false;
 	return store;
+}
+
+void Store::ghostInit(uint id) {
+	id = id;
+	activity = 0;
+	capacity = Mass::Inf;
+	fuel = false;
+}
+
+void Store::burnerInit(uint id, Mass cap) {
+	id = id;
+	activity = 0;
+	capacity = cap;
+	fuel = true;
+	fuelCategory = "chemical";
 }
 
 Store& Store::get(uint id) {
@@ -28,17 +78,28 @@ void Store::destroy() {
 	all.drop(id);
 }
 
+void Store::ghostDestroy() {
+	stacks.clear();
+}
+
+void Store::burnerDestroy() {
+	stacks.clear();
+}
+
 Stack Store::insert(Stack istack) {
+	uint size = std::min(limit() - usage(), Item::get(istack.iid)->mass * istack.size);
+
 	for (auto it = stacks.begin(); it != stacks.end(); it++) {
 		if (it->iid == istack.iid) {
-			it->size += istack.size;
-			istack.size = 0;
+			it->size += size;
+			istack.size -= size;
+			size = 0;
 			break;
 		}
 	}
-	if (istack.size > 0) {
-		stacks.push_back(istack);
-		istack.size = 0;
+	if (size > 0) {
+		stacks.push_back({istack.iid, size});
+		istack.size -= size;
 	}
 	return istack;
 }
@@ -61,7 +122,41 @@ Stack Store::remove(Stack rstack) {
 
 Stack Store::removeAny(uint size) {
 	for (auto it = stacks.begin(); it != stacks.end(); it++) {
-		return remove({it->iid, size});
+		if (isActiveProviding(it->iid)) {
+			return remove({it->iid, size});
+		}
+	}
+	for (auto it = stacks.begin(); it != stacks.end(); it++) {
+		if (isProviding(it->iid)) {
+			return remove({it->iid, size});
+		}
+	}
+	for (auto it = stacks.begin(); it != stacks.end(); it++) {
+		if (fuel && Item::get(it->iid)->fuel.category == fuelCategory) {
+			continue;
+		}
+		Level *lvl = level(it->iid);
+		if (!lvl) {
+			return remove({it->iid, size});
+		}
+	}
+	return {0,0};
+}
+
+Stack Store::removeFuel(uint size) {
+	for (auto it = stacks.begin(); it != stacks.end(); it++) {
+		if (fuel && Item::get(it->iid)->fuel.category == fuelCategory) {
+			return remove({it->iid, size});
+		}
+	}
+	return {0,0};
+}
+
+Stack Store::overflowAny(uint size) {
+	for (auto it = stacks.begin(); it != stacks.end(); it++) {
+		if (isActiveProviding(it->iid)) {
+			return remove({it->iid, size});
+		}
 	}
 	return {0,0};
 }
@@ -80,10 +175,6 @@ void Store::reserve(Stack stack) {
 	if (lvl != NULL) {
 		lvl->reserved += stack.size;
 	}
-}
-
-void Store::clearLevels() {
-	levels.clear();
 }
 
 void Store::levelSet(uint iid, uint lower, uint upper) {
@@ -123,15 +214,19 @@ bool Store::isEmpty() {
 }
 
 bool Store::isFull() {
-	return false;
+	return usage() >= limit();
 }
 
 Mass Store::limit() {
-	return 1000;
+	return capacity;
 }
 
 Mass Store::usage() {
-	return 0;
+	Mass m = 0;
+	for (Stack stack: stacks) {
+		m += Item::get(stack.iid)->mass * stack.size;
+	}
+	return m;
 }
 
 uint Store::count(uint iid) {
@@ -206,6 +301,9 @@ bool Store::isAccepting(uint iid) {
 	if (lvl != NULL && countExpected(iid) < lvl->upper) {
 		return true;
 	}
+	if (fuel && Item::get(iid)->fuel.category == fuelCategory) {
+		return true;
+	}
 	return false;
 }
 
@@ -229,6 +327,9 @@ Stack Store::forceSupplyFrom(Store& src) {
 Stack Store::supplyFrom(Store& src) {
 	for (Level& dl: levels) {
 		if (isRequesting(dl.iid) && src.isProviding(dl.iid)) {
+			return {dl.iid, 1};
+		}
+		if (fuel && Item::get(dl.iid)->fuel.category == fuelCategory) {
 			return {dl.iid, 1};
 		}
 	}
@@ -266,4 +367,3 @@ Stack Store::overflowDefaulTo(Store& dst) {
 	}
 	return {0,0};
 }
-

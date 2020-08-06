@@ -58,7 +58,7 @@ translate([0,0,0.5]) scale([0.05,0.05,0.05])
 	        rotate([0,0,z])
 
 	        // translate radius
-	        translate([rands(radius*0.4,radius*0.7,1)[0],0,0])
+	        translate([rands(radius*0.4,radius*0.5,1)[0],0,0])
 	        	randomRock(rands(radius*0.3,radius*0.5,1)[0],corner_size*0.5,10);
 	      }
 	    }

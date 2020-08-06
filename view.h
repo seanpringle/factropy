@@ -17,6 +17,8 @@ struct View {
 	static inline Model greenCube;
 	static inline Part* beltPillar1;
 	static inline Part* beltPillar2;
+	static inline Part* electricalCoverage;
+
 	static constexpr float fovy = 45.0f;
 
 	View();

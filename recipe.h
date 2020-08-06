@@ -28,10 +28,12 @@ struct Recipe {
 
 	std::set<std::string> tags;
 
-	float mining;
+	bool mining;
 
-	std::map<Item*,size_t> inputItems;
-	std::map<Item*,size_t> outputItems;
+	std::map<uint,uint> inputItems;
+	std::map<uint,uint> outputItems;
+
+	Energy energyUsage;
 
 	Recipe(uint id, std::string name);
 	~Recipe();

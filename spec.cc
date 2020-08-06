@@ -20,15 +20,16 @@ Spec::Spec(std::string name) {
 
 	align = true;
 	pivot = false;
-	vehicle = false;
 	drone = false;
 	store = false;
 	crafter = false;
 	arm = false;
 	belt = false;
 	lift = false;
+	shunt = false;
 
 	magic = false;
+	capacity = 0;
 	enableSetLower = false;
 	enableSetUpper = false;
 	// loaders
@@ -42,11 +43,22 @@ Spec::Spec(std::string name) {
 
 	place = Land;
 
-	w = 1.0;
-	d = 1.0;
-	h = 1.0;
+	collision = {0,0,0};
+
 	costGreedy = 1.0;
 	clearance = 1.0;
+
+	depot = false;
+	drones = 0;
+
+	consumeChemical = false;
+	consumeElectricity = false;
+	energyConsume = 0;
+	generateElectricity = false;
+	energyGenerate = 0;
+
+	vehicle = false;
+	vehicleEnergy = 0;
 }
 
 Spec::~Spec() {
@@ -61,13 +73,13 @@ Spec* Spec::byName(std::string name) {
 Point Spec::aligned(Point p, Point dir) {
 	if (align) {
 
-		float ww = w;
+		float ww = collision.w;
 		//float hh = h;
-		float dd = d;
+		float dd = collision.d;
 
-		if (dir == Point::West() || dir == Point::East()) {
-			ww = d;
-			dd = w;
+		if (dir == Point::West || dir == Point::East) {
+			ww = collision.d;
+			dd = collision.w;
 		}
 
 		p.x = std::floor(p.x);
@@ -90,15 +102,29 @@ Point Spec::aligned(Point p, Point dir) {
 
 Box Spec::box(Point pos, Point dir) {
 
-	float ww = w;
+	float ww = collision.w;
 	//float hh = h;
-	float dd = d;
+	float dd = collision.d;
 
-	if (dir == Point::West() || dir == Point::East()) {
-		ww = d;
-		dd = w;
+	if (dir == Point::West || dir == Point::East) {
+		ww = collision.d;
+		dd = collision.w;
 	}
 
-	return {pos.x, pos.y, pos.z, ww, h, dd};
+	return {pos.x, pos.y, pos.z, ww, collision.h, dd};
+}
+
+Area Spec::electricalArea(Point pos, Point dir) {
+
+	float ww = electrical.area.w;
+	//float hh = h;
+	float dd = electrical.area.d;
+
+	if (dir == Point::West || dir == Point::East) {
+		ww = electrical.area.d;
+		dd = electrical.area.w;
+	}
+
+	return {ww, dd};
 }
 

@@ -2,33 +2,13 @@
 #include "box.h"
 #include "sim.h"
 
-Point Point::Zero() {
-	return Point( 0, 0, 0);
-}
-
-Point Point::North() {
-	return Point( 0, 0,-1);
-}
-
-Point Point::South() {
-	return Point( 0, 0, 1);
-}
-
-Point Point::East() {
-	return Point( 1, 0, 0);
-}
-
-Point Point::West() {
-	return Point(-1, 0, 0);
-}
-
-Point Point::Up() {
-	return Point( 0, 1, 0);
-}
-
-Point Point::Down() {
-	return Point( 0,-1, 0);
-}
+const Point Point::Zero  = { 0, 0, 0};
+const Point Point::North = { 0, 0,-1};
+const Point Point::South = { 0, 0, 1};
+const Point Point::East  = { 1, 0, 0};
+const Point Point::West  = {-1, 0, 0};
+const Point Point::Up    = { 0, 1, 0};
+const Point Point::Down  = { 0,-1, 0};
 
 Point::Point() {
 	x = 0;
@@ -53,6 +33,12 @@ Point::Point(Vector3 vec) {
 	x = vec.x;
 	y = vec.y;
 	z = vec.z;
+}
+
+Point::Point(Volume vol) {
+	x = vol.w;
+	y = vol.h;
+	z = vol.d;
 }
 
 bool Point::operator==(const Point& o) const {
@@ -114,16 +100,16 @@ void Point::operator-=(const Point& o) {
 	*this = *this-o;
 }
 
-Box Point::box() {
+Box Point::box() const {
 	float ep = std::numeric_limits<float>::epsilon() * 2;
 	return (Box){x, y, z, ep, ep, ep};
 }
 
-float Point::distance(Point p) {
+float Point::distance(Point p) const {
 	return Vector3Distance(*this, p);
 }
 
-Point Point::round() {
+Point Point::round() const {
 	return (Point){
 		std::round(x),
 		std::round(y),
@@ -131,7 +117,7 @@ Point Point::round() {
 	};
 }
 
-Point Point::tileCentroid() {
+Point Point::tileCentroid() const {
 	return (Point){
 		std::floor(x) + 0.5f,
 		std::floor(y) + 0.5f,
@@ -139,11 +125,11 @@ Point Point::tileCentroid() {
 	};
 }
 
-Point Point::floor(float fy) {
+Point Point::floor(float fy) const {
 	return (Point){x,fy,z};
 }
 
-float Point::lineDistance(Point a, Point b) {
+float Point::lineDistance(Point a, Point b) const {
 	float ad = distance(a);
 	float bd = distance(b);
 
@@ -166,23 +152,23 @@ float Point::lineDistance(Point a, Point b) {
 	return d;
 }
 
-Point Point::normalize() {
+Point Point::normalize() const {
 	return Point(Vector3Normalize(*this));
 }
 
-Point Point::cross(Point b) {
+Point Point::cross(Point b) const {
 	return Point(Vector3CrossProduct(*this, b));
 }
 
-float Point::dot(Point b) {
+float Point::dot(Point b) const {
 	return Vector3DotProduct(*this, b);
 }
 
-Point Point::scale(float s) {
+Point Point::scale(float s) const {
 	return Point(Vector3Scale(*this, s));
 }
 
-Point Point::pivot(Point target, float speed) {
+Point Point::pivot(Point target, float speed) const {
 	Matrix r;
 	target = target.normalize();
 	// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
@@ -207,53 +193,74 @@ Point Point::pivot(Point target, float speed) {
 	return Point(Vector3Transform(*this, r));
 }
 
-Point Point::roundCardinal() {
+Point Point::roundCardinal() const {
 	Point p = normalize();
 
-	Point c = North();
-	float d = p.distance(North());
+	Point c = North;
+	float d = p.distance(North);
 
-	float ds = p.distance(South());
+	float ds = p.distance(South);
 	if (ds < d) {
-		c = South();
+		c = South;
 		d = ds;
 	}
 
-	float de = p.distance(East());
+	float de = p.distance(East);
 	if (de < d) {
-		c = East();
+		c = East;
 		d = de;
 	}
 
-	float dw = p.distance(West());
+	float dw = p.distance(West);
 	if (dw < d) {
-		c = West();
+		c = West;
 		d = dw;
 	}
 
 	return c;
 }
 
-Point Point::rotateHorizontal() {
+Point Point::rotateHorizontal() const {
 	Point p = roundCardinal();
 
-	if (p == North()) return East();
-	if (p == East()) return South();
-	if (p == South()) return West();
-	if (p == West()) return North();
+	if (p == North) return East;
+	if (p == East) return South;
+	if (p == South) return West;
+	if (p == West) return North;
 
 	return p;
 }
 
-Point Point::randomHorizontal() {
+Point Point::randomHorizontal() const {
 	float angle = Sim::random()*360.0f*DEG2RAD;
 	return transform(MatrixRotateY(angle));
 }
 
-Point Point::transform(Matrix m) {
+Point Point::transform(Matrix m) const {
 	return Point(Vector3Transform(*this, m));
 }
 
-float Point::length() {
+float Point::length() const {
 	return Vector3Length(*this);
+}
+
+Matrix Point::rotation() {
+	Matrix r = MatrixIdentity();
+	Point dir = *this;
+
+	// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
+	if (dir == Point::North) {
+		r = MatrixRotate(Point::Up, 180.0f*DEG2RAD);
+	}
+	else
+	if (dir == Point::South) {
+		r = MatrixIdentity();
+	}
+	else {
+		Point axis = Point::South.cross(dir);
+		float angle = std::acos(Point::South.dot(dir));
+		r = MatrixRotate(axis, angle);
+	}
+
+	return r;
 }

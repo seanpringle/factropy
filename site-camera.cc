@@ -39,7 +39,7 @@ void SiteCamera::draw(RenderTexture canvas) {
 	Camera3D camera = {
 		position : pos,
 		target   : pos + dir,
-		up       : -Point::Up(),
+		up       : -Point::Up,
 		fovy     : -fovy,
 		type     : CAMERA_PERSPECTIVE,
 	};

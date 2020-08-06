@@ -48,10 +48,10 @@ struct BeltSegment {
 	Point front();
 	Point step();
 
-	bool insert(int beltSlot, uint iid, uint area);
-	bool remove(int beltSlot, uint iid, uint area);
-	uint removeAny(int beltSlot, uint area);
-	uint itemAt(int beltSlot, uint area);
+	bool insert(int beltSlot, uint iid, BeltSpot spot);
+	bool remove(int beltSlot, uint iid, BeltSpot spot);
+	uint removeAny(int beltSlot, BeltSpot spot);
+	uint itemAt(int beltSlot, BeltSpot spot);
 };
 
 #endif

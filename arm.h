@@ -33,6 +33,8 @@ struct Arm {
 
 	void destroy();
 	void update();
+	void updateInput();
+	void updateOutput();
 	Point input();
 	Point output();
 	uint source();

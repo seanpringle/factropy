@@ -34,6 +34,8 @@ namespace Sim {
 		Arm::saveAll(name);
 		Vehicle::saveAll(name);
 		Crafter::saveAll(name);
+		Depot::saveAll(name);
+		Drone::saveAll(name);
 	}
 
 	void load(const char* name) {
@@ -58,6 +60,8 @@ namespace Sim {
 		Arm::loadAll(name);
 		Vehicle::loadAll(name);
 		Crafter::loadAll(name);
+		//Depot::loadAll(name);
+		//Drone::loadAll(name);
 	}
 }
 
@@ -168,6 +172,18 @@ void Entity::loadAll(const char* name) {
 		en.flags = state["flags"];
 
 		en.index();
+
+		if (en.isGhost()) {
+			Ghost::create(en.id);
+		}
+
+		if (en.isConstruction()) {
+			en.construct();
+		}
+
+		if (en.isDeconstruction()) {
+			en.deconstruct();
+		}
 	}
 
 	in.close();
@@ -340,7 +356,7 @@ void Lift::saveAll(const char* name) {
 
 		json state;
 		state["id"] = lift.id;
-		state["item"] = Item::get(lift.iid)->name;
+		if (lift.iid) state["item"] = Item::get(lift.iid)->name;
 		state["ascent"] = lift.ascent;
 		state["mode"] = lift.mode;
 		state["stage"] = lift.stage;
@@ -360,7 +376,7 @@ void Lift::loadAll(const char* name) {
 		auto state = json::parse(line);
 		Lift& lift = get(state["id"]);
 
-		lift.iid = Item::byName(state["item"])->id;
+		lift.iid = state["item"].is_null() ? 0: Item::byName(state["item"])->id;
 		lift.ascent = state["ascent"];
 		lift.mode = state["mode"];
 		lift.stage = state["stage"];
@@ -424,7 +440,7 @@ void Arm::saveAll(const char* name) {
 
 		json state;
 		state["id"] = arm.id;
-		state["item"] = Item::get(arm.iid)->name;
+		if (arm.iid) state["item"] = Item::get(arm.iid)->name;
 		state["orientation"] = arm.orientation;
 		state["stage"] = arm.stage;
 		state["pause"] = arm.pause;
@@ -442,7 +458,7 @@ void Arm::loadAll(const char* name) {
 	for (std::string line; std::getline(in, line);) {
 		auto state = json::parse(line);
 		Arm& arm = get(state["id"]);
-		arm.iid = Item::byName(state["item"])->id;
+		arm.iid = state["item"].is_null() ? 0: Item::byName(state["item"])->id;
 		arm.orientation = state["orientation"];
 		arm.stage = state["stage"];
 		arm.pause = state["pause"];
@@ -462,7 +478,7 @@ void Crafter::saveAll(const char* name) {
 		state["id"] = crafter.id;
 		state["working"] = crafter.working;
 		state["progress"] = crafter.progress;
-		state["recipe"] = crafter.recipe ? crafter.recipe->name: NULL;
+		if (crafter.recipe) state["recipe"] = crafter.recipe->name;
 
 		out << state << "\n";
 	}
@@ -480,6 +496,85 @@ void Crafter::loadAll(const char* name) {
 		crafter.working = state["working"];
 		crafter.progress = state["progress"];
 		crafter.recipe = state["recipe"].is_null() ? NULL: Recipe::byName(state["recipe"]);
+	}
+
+	in.close();
+}
+
+void Depot::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/depots.json");
+
+	for (auto& pair: all) {
+		Depot& depot = pair.second;
+
+		json state;
+		state["id"] = depot.id;
+
+		int i = 0;
+		for (uint did: depot.drones) {
+			state["drones"][i++] = did;
+		}
+
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Depot::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/depots.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Depot& depot = get(state["id"]);
+
+		for (uint did: state["drones"]) {
+			depot.drones.insert(did);
+		}
+	}
+
+	in.close();
+}
+
+
+void Drone::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/drones.json");
+
+	for (auto& drone: all) {
+
+		json state;
+		state["id"] = drone.id;
+		state["dep"] = drone.dep;
+		state["src"] = drone.src;
+		state["dst"] = drone.dst;
+		state["srcGhost"] = drone.srcGhost;
+		state["dstGhost"] = drone.dstGhost;
+		state["stage"] = drone.stage;
+		state["stack"] = { Item::get(drone.stack.iid)->name, drone.stack.size };
+
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Drone::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/drones.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Drone& drone = get(state["id"]);
+		drone.dep = state["dep"];
+		drone.src = state["src"];
+		drone.dst = state["dst"];
+		drone.srcGhost = state["srcGhost"];
+		drone.dstGhost = state["dstGhost"];
+		drone.stage = state["stage"];
+		drone.stack = { Item::byName(state["stack"][0])->id, state["stack"][1] };
 	}
 
 	in.close();

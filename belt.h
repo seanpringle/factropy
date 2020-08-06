@@ -3,6 +3,13 @@
 
 struct Belt;
 
+enum BeltSpot {
+	BeltAny = 0,
+	BeltFront,
+	BeltMiddle,
+	BeltBack,
+};
+
 #include "sparse.h"
 #include "entity.h"
 #include "belt-segment.h"
@@ -18,11 +25,6 @@ struct Belt {
 	static Belt& create(uint id);
 	static Belt& get(uint id);
 
-	static inline uint Any = 0;
-	static inline uint Front = 1;
-	static inline uint Middle = 2;
-	static inline uint Back = 3;
-
 	uint id;
 	BeltSegment *segment;
 	uint offset;
@@ -30,10 +32,10 @@ struct Belt {
 	void destroy();
 	Belt& manage();
 	Belt& unmanage();
-	bool insert(uint iid, uint area);
-	bool remove(uint iid, uint area);
-	uint removeAny(uint area);
-	uint itemAt(uint area);
+	bool insert(uint iid, enum BeltSpot spot);
+	bool remove(uint iid, enum BeltSpot spot);
+	uint removeAny(enum BeltSpot spot);
+	uint itemAt(enum BeltSpot spot);
 };
 
 #endif

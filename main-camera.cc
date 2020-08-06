@@ -4,8 +4,8 @@
 
 namespace {
 
-	const float speedH = 0.005f;
-	const float speedV = 0.005f;
+	const float speedH = 0.0025f;
+	const float speedV = 0.0025f;
 	const float speedW = 0.25f;
 
 	void drawGrid(Vector3 p, int slices, float spacing) {
@@ -43,7 +43,7 @@ MainCamera::MainCamera(Point pos, Point dir) {
 	nextPosition = pos;
 	direction = dir;
 	nextDirection = dir;
-	up = Point::Up();
+	up = Point::Up;
 
 	ZERO(mouse);
 	showGrid = true;
@@ -437,7 +437,10 @@ void MainCamera::draw() {
 			rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
 			for (auto [iid,transforms]: resource_transforms) {
-				Item::get(iid)->part->drawInstanced(false, transforms.size(), transforms.data());
+				Item* item = Item::get(iid);
+				for (uint i = 0; i < item->parts.size(); i++) {
+					item->parts[i]->drawInstanced(false, transforms.size(), transforms.data());
+				}
 			}
 
 			std::map<Part*,std::vector<Matrix>> extant_ld;
@@ -557,7 +560,7 @@ void MainCamera::draw() {
 						//	reds.push_back(m);
 						//}
 
-						if (en.onFloor(0.0f) && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
+						if (en.ground().y < 0.01f && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
 							pillars1.push_back(View::beltPillar1->instance(MatrixTranslate(en.pos.x, en.pos.y, en.pos.z)));
 						}
 					}
@@ -575,7 +578,7 @@ void MainCamera::draw() {
 				if (pillars2.size() > 0)
 					View::beltPillar2->drawInstanced(false, pillars2.size(), pillars2.data());
 
-				std::map<uint,std::vector<Matrix>> belt_transforms;
+				std::map<Part*,std::vector<Matrix>> belt_transforms;
 
 				for (BeltSegment* segment: BeltSegment::all) {
 					Point spot = segment->front();
@@ -583,30 +586,59 @@ void MainCamera::draw() {
 					for (auto beltItem: segment->items) {
 						spot += step * (float)beltItem.offset;
 						Point p = spot + (step * ((float)BeltSegment::slot/2.0f));
-						Part* part = Item::get(beltItem.iid)->part;
-						belt_transforms[beltItem.iid].push_back(part->instance(MatrixTranslate(p.x, p.y, p.z)));
+						Item* item = Item::get(beltItem.iid);
+						for (uint i = 0; i < item->parts.size(); i++) {
+							Part* part = item->parts[i];
+							belt_transforms[part].push_back(part->instance(MatrixTranslate(p.x, p.y, p.z)));
+						}
 						spot += step * (float)BeltSegment::slot;
 					}
 				}
 
-				for (auto [iid,transforms]: belt_transforms) {
-					Item::get(iid)->part->drawInstanced(false, transforms.size(), transforms.data());
+				for (auto [part,transforms]: belt_transforms) {
+					part->drawInstanced(false, transforms.size(), transforms.data());
 				}
 
-				std::map<uint,std::vector<Matrix>> lift_transforms;
+				std::map<Part*,std::vector<Matrix>> lift_transforms;
 
 				for (auto pair: Lift::all) {
 					Lift& lift = pair.second;
 					if (lift.iid) {
 						Entity& en = Entity::get(lift.id);
 						Point p = en.pos;
-						Part* part = Item::get(lift.iid)->part;
-						lift_transforms[lift.iid].push_back(part->instance(MatrixMultiply(en.spec->states[en.state][4], MatrixTranslate(p.x, p.y+1.0f, p.z))));
+						Item* item = Item::get(lift.iid);
+						for (uint i = 0; i < item->parts.size(); i++) {
+							Part* part = item->parts[i];
+							lift_transforms[part].push_back(part->instance(MatrixMultiply(en.spec->states[en.state][4], MatrixTranslate(p.x, p.y+1.0f, p.z))));
+						}
 					}
 				}
 
-				for (auto [iid,transforms]: lift_transforms) {
-					Item::get(iid)->part->drawInstanced(false, transforms.size(), transforms.data());
+				for (auto [part,transforms]: lift_transforms) {
+					part->drawInstanced(false, transforms.size(), transforms.data());
+				}
+
+				std::map<Part*,std::vector<Matrix>> arm_transforms;
+
+				for (auto ge: entities) {
+					if (ge->spec->arm) {
+						Entity& en = Entity::get(ge->id);
+						if (en.arm().iid) {
+							Item* item = Item::get(en.arm().iid);
+							for (uint i = 0; i < item->parts.size(); i++) {
+								Part* part = item->parts[i];
+								Matrix o = en.spec->parts[5]->specInstance(en.spec, 5, en.state, en.dir.rotation());
+								Point p = Point::Up.transform(o) + ge->pos + Point::Up;
+								//DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
+								Matrix t = MatrixTranslate(p.x, p.y+0.2, p.z);
+								arm_transforms[part].push_back(part->instance(t));
+							}
+						}
+					}
+				}
+
+				for (auto [part,transforms]: arm_transforms) {
+					part->drawInstanced(false, transforms.size(), transforms.data());
 				}
 			});
 

@@ -77,6 +77,8 @@ void Vehicle::update() {
 		return;
 	}
 
+	en.consume(en.spec->vehicleEnergy);
+
 	float distance = target.distance(centroid);
 	float speed = 0.1f;
 
@@ -172,7 +174,7 @@ double Vehicle::Route::calcCost(Point a, Point b) {
 		cost *= 1000.0f;
 	}
 
-	auto entities = Entity::intersecting(b.box().grow(clearance));
+	auto entities = Entity::intersecting(b.box().grow(clearance, 0, clearance));
 
 	for (int eid: entities) {
 		if (vehicle->id != eid) {

@@ -1,8 +1,6 @@
 #ifndef _H_entity
 #define _H_entity
 
-#define MaxEntity 1000000
-
 struct Entity;
 struct GuiEntity;
 struct GuiFakeEntity;
@@ -13,16 +11,18 @@ struct GuiFakeEntity;
 #include "part.h"
 #include "point.h"
 #include "box.h"
+#include "ghost.h"
 #include "store.h"
 #include "arm.h"
 #include "belt.h"
 #include "lift.h"
 #include "crafter.h"
+#include "drone.h"
+#include "depot.h"
 #include "vehicle.h"
+#include "burner.h"
 #include <unordered_set>
 #include <vector>
-
-struct Store;
 
 struct Entity {
 
@@ -32,6 +32,14 @@ struct Entity {
 
 	static inline std::map<Chunk::XY,std::set<uint>> grid;
 	static inline std::unordered_set<uint> removing;
+
+	static inline float electricityLoad = 0.0f;
+	static inline float electricitySatisfaction = 0.0f;
+	static inline Energy electricityDemand = 0;
+	static inline Energy electricitySupply = 0;
+	static inline Energy electricityCapacity = 0;
+	static inline std::set<uint> electricityConsumers;
+	static inline std::set<uint> electricityGenerators;
 
 	static inline SparseArray<Entity> all = (MaxEntity);
 	static inline uint sequence = 0;
@@ -66,13 +74,13 @@ struct Entity {
 	Entity& setDeconstruction(bool state);
 
 	Box box();
+	Point ground();
 	Entity& look(Point); // rel
 	Entity& lookAt(Point); // abs
 	bool lookAtPivot(Point);
 	Entity& move(Point p);
 	Entity& move(float x, float y, float z);
 	Entity& floor(float level);
-	bool onFloor(float level);
 	Entity& rotate();
 	Entity& toggle();
 	void destroy();
@@ -87,12 +95,20 @@ struct Entity {
 	Entity& deconstruct();
 	Entity& materialize();
 
+	Energy consume(Energy e);
+	void generate();
+
+	Ghost& ghost();
 	Store& store();
+	std::vector<Store*> stores();
 	Crafter& crafter();
 	Vehicle& vehicle();
 	Arm& arm();
 	Belt& belt();
 	Lift& lift();
+	Drone& drone();
+	Depot& depot();
+	Burner& burner();
 };
 
 struct GuiEntity {
@@ -109,6 +125,7 @@ struct GuiEntity {
 	~GuiEntity();
 
 	Box box();
+	Point ground();
 	void updateTransform();
 };
 

@@ -17,6 +17,8 @@ Crafter& Crafter::create(uint id) {
 	crafter.working = false;
 	crafter.progress = 0.0f;
 	crafter.recipe = NULL;
+	crafter.nextRecipe = NULL;
+	crafter.energyUsed = 0;
 	return crafter;
 }
 
@@ -31,45 +33,85 @@ void Crafter::destroy() {
 
 Point Crafter::output() {
 	Entity& en = Entity::get(id);
-	return en.pos.floor(0.5f) + (en.dir * (en.spec->d/2.0f+0.5f));
+	return en.pos.floor(0.5f) + (en.dir * (en.spec->collision.d/2.0f+0.5f));
 }
 
 void Crafter::update() {
 	Entity& en = Entity::get(id);
 	if (en.isGhost()) return;
 
+	en.state = (uint)std::floor(progress * (float)en.spec->states.size());
+
 	Store& store = en.store();
+
+	if (nextRecipe) {
+		if (nextRecipe != recipe) {
+
+			recipe = nextRecipe;
+			nextRecipe = NULL;
+
+			ensure(recipe->energyUsage > Energy(0));
+
+			store.levels.clear();
+			store.stacks.clear();
+
+			for (auto [iid,count]: recipe->inputItems) {
+				store.levelSet(iid, count*2, count*2);
+			}
+
+			for ([[maybe_unused]] auto [iid,count]: recipe->outputItems) {
+				store.levelSet(iid, 0, 0);
+			}
+
+			if (recipe->mining) {
+				for (auto iid: Item::mining) {
+					store.levelSet(iid, 0, 1);
+				}
+			}
+
+			working = false;
+			energyUsed = 0;
+			progress = 0.0f;
+		}
+	}
 
 	if (!working && recipe) {
 
 		bool itemsReady = true;
 
-		for (auto [item,count]: recipe->inputItems) {
-			itemsReady = itemsReady && store.count(item->id) >= count;
+		for (auto [iid,count]: recipe->inputItems) {
+			itemsReady = itemsReady && store.count(iid) >= count;
 		}
 
-		bool miningReady = !recipe->mining || Chunk::isHill(en.box());
+		bool outputReady = true;
 
-		if (itemsReady && miningReady) {
+		for (auto [iid,count]: recipe->outputItems) {
+			outputReady = outputReady && store.count(iid) <= count;
+		}
 
-			for (auto [item,count]: recipe->inputItems) {
-				store.remove({item->id,count});
+		bool miningReady = !recipe->mining || (Chunk::isHill(en.box()) && !store.isFull());
+
+		if (itemsReady && miningReady && outputReady) {
+
+			for (auto [iid,count]: recipe->inputItems) {
+				store.remove({iid,count});
 			}
 
 			working = true;
+			energyUsed = 0;
 			progress = 0.0f;
 		}
 	}
 
 	if (working) {
-		progress += 0.001f;
-		progress = std::min(1.0f, progress);
+		energyUsed += en.consume(en.spec->energyConsume);
+		progress = energyUsed.portion(recipe->energyUsage);
 	}
 
 	if (working && progress > 0.999) {
 
-		for (auto [item,count]: recipe->outputItems) {
-			store.insert({item->id,count});
+		for (auto [iid,count]: recipe->outputItems) {
+			store.insert({iid,count});
 		}
 
 		if (recipe->mining) {
@@ -77,27 +119,7 @@ void Crafter::update() {
 		}
 
 		working = false;
+		energyUsed = 0;
 		progress = 0.0f;
-	}
-
-	if (!store.isEmpty()) {
-		uint iid = store.stacks.begin()->iid;
-		uint outputId = Entity::at(output());
-
-		if (outputId) {
-			Entity& eo = Entity::get(outputId);
-
-			if (eo.spec->store) {
-				if (eo.store().insert({iid,1}).size == 0) {
-					store.remove({iid,1});
-				}
-			}
-
-			if (eo.spec->belt) {
-				if (eo.belt().insert(iid, Belt::Any)) {
-					store.remove({iid,1});
-				}
-			}
-		}
 	}
 }

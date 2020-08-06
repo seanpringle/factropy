@@ -1,6 +1,26 @@
 #include "common.h"
 #include "item.h"
 
+Fuel::Fuel() {
+	energy = 0;
+}
+
+Fuel::Fuel(std::string cat, Energy e) {
+	category = cat;
+	energy = e;
+}
+
+Stack::Stack() {
+	iid = 0;
+	size = 0;
+}
+
+Stack::Stack(std::initializer_list<uint> l) {
+	auto i = l.begin();
+	iid = (uint)*i++;
+	size = *i++;
+}
+
 void Item::reset() {
 	for (auto pair: ids) {
 		delete pair.second;
@@ -19,8 +39,7 @@ Item::Item(uint id, std::string name) {
 	this->id = id;
 	names[name] = this;
 	ids[id] = this;
-	mass = 1;
-	part = NULL;
+	mass = Mass::kg(1);
 
 	ZERO(image);
 	ZERO(texture);
@@ -41,8 +60,3 @@ Item* Item::get(uint id) {
 	return ids[id];
 }
 
-Stack::Stack(std::initializer_list<size_t> l) {
-	auto i = l.begin();
-	iid = (uint)*i++;
-	size = *i++;
-}

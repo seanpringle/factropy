@@ -47,3 +47,5 @@ std::string fmt(std::string fmt, Args&& ... args) {
 #define fmtc(...) fmt(__VA_ARGS__).c_str()
 
 #endif
+
+#define MaxEntity 1000000

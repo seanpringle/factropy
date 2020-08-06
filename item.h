@@ -2,13 +2,32 @@
 #define _H_item
 
 struct Item;
+struct Fuel;
 struct Stack;
 
 #include "raylib.h"
 #include "part.h"
 #include "mass.h"
+#include "energy.h"
 #include <map>
 #include <set>
+#include <vector>
+
+struct Fuel {
+	std::string category;
+	Energy energy;
+
+	Fuel();
+	Fuel(std::string, Energy);
+};
+
+struct Stack {
+	uint iid;
+	uint size;
+
+	Stack();
+	Stack(std::initializer_list<uint>);
+};
 
 struct Item {
 	static void reset();
@@ -27,18 +46,12 @@ struct Item {
 	std::string name;
 	Image image;
 	Mass mass;
-	Part *part;
+	Fuel fuel;
+	std::vector<Part*> parts;
 	RenderTexture texture;
 
 	Item(uint id, std::string name);
 	~Item();
-};
-
-struct Stack {
-	uint iid;
-	size_t size;
-
-	Stack(std::initializer_list<size_t>);
 };
 
 #endif

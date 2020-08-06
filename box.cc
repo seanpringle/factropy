@@ -1,6 +1,34 @@
 #include "common.h"
 #include "box.h"
 
+Box::Box() {
+	x = 0;
+	y = 0;
+	z = 0;
+	w = 0;
+	h = 0;
+	d = 0;
+}
+
+Box::Box(Point p, Volume v) {
+	x = p.x;
+	y = p.y;
+	z = p.z;
+	w = v.w;
+	h = v.h;
+	d = v.d;
+}
+
+Box::Box(std::initializer_list<float> l) {
+	auto i = l.begin();
+	x = *i++;
+	y = *i++;
+	z = *i++;
+	w = *i++;
+	h = *i++;
+	d = *i++;
+}
+
 Point Box::centroid() {
 	return (Point){x, y, z};
 }

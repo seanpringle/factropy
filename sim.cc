@@ -12,22 +12,34 @@ namespace Sim {
 	uint64_t tick;
 	int64_t seed;
 
+	TimeSeries statsElectricityDemand;
+	TimeSeries statsElectricitySupply;
 	TimeSeries statsEntity;
+	TimeSeries statsStore;
 	TimeSeries statsArm;
 	TimeSeries statsCrafter;
 	TimeSeries statsPath;
 	TimeSeries statsVehicle;
 	TimeSeries statsBelt;
 	TimeSeries statsLift;
+	TimeSeries statsShunt;
+	TimeSeries statsDepot;
+	TimeSeries statsDrone;
 
 	void reset() {
+		statsElectricityDemand.clear();
+		statsElectricitySupply.clear();
 		statsEntity.clear();
+		statsStore.clear();
 		statsArm.clear();
 		statsCrafter.clear();
 		statsPath.clear();
 		statsVehicle.clear();
 		statsBelt.clear();
 		statsLift.clear();
+		statsShunt.clear();
+		statsDepot.clear();
+		statsDrone.clear();
 	}
 
 	void locked(lockCallback cb) {
@@ -70,13 +82,23 @@ namespace Sim {
 	}
 
 	void update() {
+		statsElectricityDemand.set(tick, Entity::electricityDemand.value);
+		statsElectricityDemand.update(tick);
+		statsElectricitySupply.set(tick, Entity::electricitySupply.value);
+		statsElectricitySupply.update(tick);
+
 		tick++;
 		Entity::preTick();
+		Ghost::tick();
+		statsStore.track(tick, Store::tick);
 		statsArm.track(tick, Arm::tick);
 		statsCrafter.track(tick, Crafter::tick);
 		statsPath.track(tick, Path::tick);
 		statsVehicle.track(tick, Vehicle::tick);
 		statsBelt.track(tick, Belt::tick);
 		statsLift.track(tick, Lift::tick);
+		//statsShunt.track(tick, Shunt::tick);
+		statsDepot.track(tick, Depot::tick);
+		statsDrone.track(tick, Drone::tick);
 	}
 }

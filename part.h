@@ -21,6 +21,7 @@ struct Thing {
 	Thing();
 	Thing(std::string);
 	Thing(std::string, std::string);
+	Thing(Mesh hd);
 	Mesh loadSTL(std::string);
 
 	Thing& smooth();

@@ -22,6 +22,20 @@ void Entity::preTick() {
 		Entity::get(id).destroy();
 	}
 	removing.clear();
+
+	electricitySupply = 0;
+	electricityCapacity = 0;
+
+	for (uint eid: electricityGenerators) {
+		Entity& en = Entity::get(eid);
+		if (en.isGhost()) continue;
+		electricityCapacity += en.spec->energyGenerate;
+		en.generate();
+	}
+
+	electricityLoad = electricityDemand.portion(electricityCapacity);
+	electricitySatisfaction = electricityCapacity.portion(electricityDemand);
+	electricityDemand = 0;
 }
 
 uint Entity::next() {
@@ -41,16 +55,26 @@ Entity& Entity::create(uint id, Spec *spec) {
 	Entity& en = all.ref(id);
 	en.id = id;
 	en.spec = spec;
-	en.flags = GHOST;
-	en.dir = Point::South();
+	en.dir = Point::South;
 	en.state = 0;
 
+	en.flags = GHOST;
+	Ghost::create(id);
+
 	if (spec->store) {
-		Store::create(id);
+		Store::create(id, spec->capacity);
 	}
 
 	if (spec->crafter) {
 		Crafter::create(id);
+	}
+
+	if (spec->drone) {
+		Drone::create(id);
+	}
+
+	if (spec->depot) {
+		Depot::create(id);
 	}
 
 	if (spec->vehicle) {
@@ -69,10 +93,76 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Lift::create(id);
 	}
 
+	if (spec->consumeChemical) {
+		Burner::create(id);
+	}
+
+	if (spec->consumeElectricity) {
+		electricityConsumers.insert(id);
+	}
+
+	if (spec->generateElectricity) {
+		electricityGenerators.insert(id);
+	}
+
 	en.pos = {0,0,0};
 	en.move((Point){0,0,0});
 
 	return en;
+}
+
+void Entity::destroy() {
+	unindex();
+
+	if (isGhost()) {
+		ghost().destroy();
+	}
+
+	if (spec->store) {
+		store().destroy();
+	}
+
+	if (spec->crafter) {
+		crafter().destroy();
+	}
+
+	if (spec->vehicle) {
+		vehicle().destroy();
+	}
+
+	if (spec->drone) {
+		drone().destroy();
+	}
+
+	if (spec->depot) {
+		depot().destroy();
+	}
+
+	if (spec->arm) {
+		arm().destroy();
+	}
+
+	if (spec->belt) {
+		belt().destroy();
+	}
+
+	if (spec->lift) {
+		lift().destroy();
+	}
+
+	if (spec->consumeElectricity) {
+		electricityConsumers.erase(id);
+	}
+
+	if (spec->consumeChemical) {
+		burner().destroy();
+	}
+
+	if (spec->generateElectricity) {
+		electricityGenerators.erase(id);
+	}
+
+	all.drop(id);
 }
 
 bool Entity::exists(uint id) {
@@ -134,36 +224,6 @@ uint Entity::at(Point p) {
 		}
 	}
 	return 0;
-}
-
-void Entity::destroy() {
-	unindex();
-
-	if (spec->store) {
-		store().destroy();
-	}
-
-	if (spec->crafter) {
-		crafter().destroy();
-	}
-
-	if (spec->vehicle) {
-		vehicle().destroy();
-	}
-
-	if (spec->arm) {
-		arm().destroy();
-	}
-
-	if (spec->belt) {
-		belt().destroy();
-	}
-
-	if (spec->lift) {
-		lift().destroy();
-	}
-
-	all.drop(id);
 }
 
 void Entity::remove() {
@@ -253,21 +313,46 @@ Entity& Entity::unmanage() {
 }
 
 Entity& Entity::construct() {
+
+	if (!isGhost()) {
+		Ghost::create(id);
+	}
+
+	unmanage();
 	setGhost(true);
 	setConstruction(true);
 	setDeconstruction(false);
+
+	for (Stack stack: spec->materials) {
+		ghost().store.levelSet(stack.iid, stack.size, stack.size);
+	}
+
 	return *this;
 }
 
 Entity& Entity::deconstruct() {
+
+	if (!isGhost()) {
+		Ghost::create(id);
+	}
+
+	unmanage();
 	setGhost(true);
 	setConstruction(false);
 	setDeconstruction(true);
-	unmanage();
+
+	Store& gstore = ghost().store;
+	for (Stack stack: spec->materials) {
+		gstore.insert(stack);
+		gstore.levelSet(stack.iid, 0, 0);
+	}
+
 	return *this;
 }
 
 Entity& Entity::materialize() {
+	ghost().destroy();
+
 	setGhost(false);
 	setConstruction(false);
 	setDeconstruction(false);
@@ -291,15 +376,14 @@ Entity& Entity::move(float x, float y, float z) {
 Entity& Entity::floor(float level) {
 	unmanage();
 	unindex();
-	pos.y = level + spec->h/2.0f;
+	pos.y = level + spec->collision.h/2.0f;
 	index();
 	manage();
 	return *this;
 }
 
-bool Entity::onFloor(float level) {
-	float y = level + spec->h/2.0f;
-	return std::abs(pos.y-y) < 0.01;
+Point Entity::ground() {
+	return {pos.x, pos.y - spec->collision.h/2.0f, pos.z};
 }
 
 Entity& Entity::rotate() {
@@ -321,8 +405,45 @@ Entity& Entity::toggle() {
 	return *this;
 }
 
+Energy Entity::consume(Energy e) {
+	if (spec->consumeElectricity) {
+		electricityDemand += e;
+		return e * electricitySatisfaction;
+	}
+	if (spec->consumeChemical) {
+		return burner().consume(e);
+	}
+	return 0;
+}
+
+void Entity::generate() {
+	if (spec->generateElectricity && spec->consumeChemical) {
+		Energy e = spec->energyGenerate * electricityLoad;
+		electricitySupply += burner().consume(e);
+		state = std::floor((float)burner().energy.value/(float)burner().buffer.value * (float)spec->states.size());
+	}
+}
+
+Ghost& Entity::ghost() {
+	return Ghost::get(id);
+}
+
 Store& Entity::store() {
 	return Store::get(id);
+}
+
+std::vector<Store*> Entity::stores() {
+	std::vector<Store*> stores;
+	if (isGhost()) {
+		stores.push_back(&ghost().store);
+	}
+	if (spec->consumeChemical) {
+		stores.push_back(&burner().store);
+	}
+	if (spec->store) {
+		stores.push_back(&store());
+	}
+	return stores;
 }
 
 Crafter& Entity::crafter() {
@@ -343,4 +464,16 @@ Belt& Entity::belt() {
 
 Lift& Entity::lift() {
 	return Lift::get(id);
+}
+
+Drone& Entity::drone() {
+	return Drone::get(id);
+}
+
+Depot& Entity::depot() {
+	return Depot::get(id);
+}
+
+Burner& Entity::burner() {
+	return Burner::get(id);
 }

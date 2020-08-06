@@ -1,11 +1,13 @@
 #ifndef _H_store
 #define _H_store
 
+struct Store;
+
 #include "sparse.h"
 #include "item.h"
-#include "entity.h"
 #include "mass.h"
 #include <vector>
+#include <set>
 
 struct Store {
 	static void reset();
@@ -14,7 +16,7 @@ struct Store {
 	static void loadAll(const char* name);
 
 	static inline SparseArray<Store> all = (MaxEntity);
-	static Store& create(uint id);
+	static Store& create(uint id, Mass cap);
 	static Store& get(uint id);
 
 	struct Level {
@@ -27,16 +29,26 @@ struct Store {
 
 	uint id;
 	uint64_t activity;
+	Mass capacity;
 	std::vector<Stack> stacks;
 	std::vector<Level> levels;
+	std::set<uint> drones;
+	bool fuel;
+	std::string fuelCategory;
 
 	void destroy();
+	void update();
+	void ghostInit(uint id);
+	void ghostDestroy();
+	void burnerInit(uint id, Mass cap);
+	void burnerDestroy();
 	Stack insert(Stack stack);
 	Stack remove(Stack stack);
 	Stack removeAny(uint size);
+	Stack removeFuel(uint size);
+	Stack overflowAny(uint size);
 	void promise(Stack stack);
 	void reserve(Stack stack);
-	void clearLevels();
 	void levelSet(uint iid, uint lower, uint upper);
 	void levelClear(uint iid);
 	Level* level(uint iid);
@@ -59,7 +71,6 @@ struct Store {
 	Stack forceOverflowTo(Store& dst);
 	Stack overflowTo(Store& dst);
 	Stack overflowDefaulTo(Store& dst);
-
 };
 
 #endif

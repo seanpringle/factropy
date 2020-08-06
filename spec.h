@@ -11,7 +11,12 @@ struct Spec;
 #include "raymath.h"
 #include "rlgl.h"
 #include "point.h"
+#include "item.h"
 #include "part.h"
+#include "area.h"
+#include "volume.h"
+#include "mass.h"
+#include "energy.h"
 
 struct Spec {
 
@@ -19,6 +24,11 @@ struct Spec {
 		Land = 1,
 		Water,
 		Hill,
+	};
+
+	struct EnergyUser {
+		Area area;
+		Energy rate;
 	};
 
 	static inline std::map<std::string,Spec*> all;
@@ -38,14 +48,13 @@ struct Spec {
 	bool arm;
 	bool belt;
 	bool lift;
-	bool vehicle;
+	bool shunt;
 	bool drone;
 	bool store;
 	bool rotate;
 
-	float w;
-	float h;
-	float d;
+	Volume collision;
+	EnergyUser electrical;
 
 	enum Place place;
 
@@ -53,6 +62,7 @@ struct Spec {
 	float clearance;
 
 	// store
+	Mass capacity;
 	bool magic;
 	bool enableSetLower;
 	bool enableSetUpper;
@@ -68,10 +78,25 @@ struct Spec {
 	bool crafter;
 	std::set<std::string> recipeTags;
 
+	bool depot;
+	uint drones;
+
+	std::vector<Stack> materials;
+
+	bool consumeChemical;
+	bool consumeElectricity;
+	Energy energyConsume;
+	bool generateElectricity;
+	Energy energyGenerate;
+
+	bool vehicle;
+	Energy vehicleEnergy;
+
 	Spec(std::string name);
 	~Spec();
 	Point aligned(Point p, Point dir);
 	Box box(Point pos, Point dir);
+	Area electricalArea(Point pos, Point dir);
 	bool hasStore();
 };
 

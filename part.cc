@@ -53,6 +53,12 @@ Thing::Thing(std::string hd, std::string ld) {
 	transform = MatrixRotateX(90.0f*DEG2RAD);
 }
 
+Thing::Thing(Mesh mesh) {
+	meshHD = mesh;
+	meshLD = mesh;
+	transform = MatrixIdentity();
+}
+
 Mesh Thing::loadSTL(std::string stl) {
 	auto in = std::ifstream(stl);
 

@@ -102,7 +102,7 @@ void BeltSegment::join(BeltSegment* other) {
 
 void BeltSegment::split(uint beltSlot) {
 
-	removeAny(beltSlot, Belt::Any);
+	removeAny(beltSlot, BeltAny);
 	uint len = belts.size();
 
 	if (len == 1) {
@@ -178,15 +178,15 @@ void BeltSegment::split(uint beltSlot) {
 	right->changed = true;
 }
 
-bool BeltSegment::insert(int beltSlot, uint iid, uint area) {
+bool BeltSegment::insert(int beltSlot, uint iid, enum BeltSpot spot) { //uint spot) {
 	ensure(beltSlot >= 0 && beltSlot < (int)belts.size());
 	int absOffset = beltSlot * slot;
 
-	if (area == Belt::Middle) {
+	if (spot == BeltMiddle) {
 		absOffset += slot/4;
 	}
 
-	if (area == Belt::Back) {
+	if (spot == BeltBack) {
 		absOffset += slot/2;
 	}
 
@@ -244,16 +244,24 @@ bool BeltSegment::insert(int beltSlot, uint iid, uint area) {
 	return false;
 }
 
-bool BeltSegment::remove(int beltSlot, uint iid, uint area) {
+bool BeltSegment::remove(int beltSlot, uint iid, enum BeltSpot spot) { //uint spot) {
 	ensure(beltSlot >= 0 && beltSlot < (int)belts.size());
-	int absOffset = beltSlot * slot;
 
-	if (area == Belt::Middle) {
-		absOffset += slot/4;
+	int absLow = beltSlot * slot;
+	int absHigh = absLow+slot/2;
+
+	if (spot == BeltAny) {
+		absHigh = absLow + slot;
 	}
 
-	if (area == Belt::Back) {
-		absOffset += slot/2;
+	if (spot == BeltMiddle) {
+		absLow += slot/4;
+		absHigh = absLow+slot/2;
+	}
+
+	if (spot == BeltBack) {
+		absLow += slot/2;
+		absHigh = absLow+slot/2;
 	}
 
 	int sumOffset = 0;
@@ -261,7 +269,7 @@ bool BeltSegment::remove(int beltSlot, uint iid, uint area) {
 	for (auto it = items.begin(); it != items.end(); it++) {
 		sumOffset += it->offset;
 
-		if (absOffset == sumOffset && it->iid == iid) {
+		if (sumOffset >= absLow && sumOffset < absHigh && it->iid == iid) {
 			auto in = std::next(it, 1);
 
 			if (in != items.end()) {
@@ -280,16 +288,24 @@ bool BeltSegment::remove(int beltSlot, uint iid, uint area) {
 	return false;
 }
 
-uint BeltSegment::removeAny(int beltSlot, uint area) {
+uint BeltSegment::removeAny(int beltSlot, enum BeltSpot spot) { //uint spot) {
 	ensure(beltSlot >= 0 && beltSlot < (int)belts.size());
-	int absOffset = beltSlot * slot;
 
-	if (area == Belt::Middle) {
-		absOffset += slot/4;
+	int absLow = beltSlot * slot;
+	int absHigh = absLow+slot/2;
+
+	if (spot == BeltAny) {
+		absHigh = absLow + slot;
 	}
 
-	if (area == Belt::Back) {
-		absOffset += slot/2;
+	if (spot == BeltMiddle) {
+		absLow += slot/4;
+		absHigh = absLow+slot/2;
+	}
+
+	if (spot == BeltBack) {
+		absLow += slot/2;
+		absHigh = absLow+slot/2;
 	}
 
 	int sumOffset = 0;
@@ -297,7 +313,7 @@ uint BeltSegment::removeAny(int beltSlot, uint area) {
 	for (auto it = items.begin(); it != items.end(); it++) {
 		sumOffset += it->offset;
 
-		if (absOffset == sumOffset) {
+		if (sumOffset >= absLow && sumOffset < absHigh) {
 			uint iid = it->iid;
 			auto in = std::next(it, 1);
 
@@ -317,16 +333,24 @@ uint BeltSegment::removeAny(int beltSlot, uint area) {
 	return 0;
 }
 
-uint BeltSegment::itemAt(int beltSlot, uint area) {
+uint BeltSegment::itemAt(int beltSlot, enum BeltSpot spot) { //uint spot) {
 	ensure(beltSlot >= 0 && beltSlot < (int)belts.size());
-	int absOffset = beltSlot * slot;
 
-	if (area == Belt::Middle) {
-		absOffset += slot/4;
+	int absLow = beltSlot * slot;
+	int absHigh = absLow+slot/2;
+
+	if (spot == BeltAny) {
+		absHigh = absLow + slot;
 	}
 
-	if (area == Belt::Back) {
-		absOffset += slot/2;
+	if (spot == BeltMiddle) {
+		absLow += slot/4;
+		absHigh = absLow+slot/2;
+	}
+
+	if (spot == BeltBack) {
+		absLow += slot/2;
+		absHigh = absLow+slot/2;
 	}
 
 	int sumOffset = 0;
@@ -334,7 +358,7 @@ uint BeltSegment::itemAt(int beltSlot, uint area) {
 	for (auto it = items.begin(); it != items.end(); it++) {
 		sumOffset += it->offset;
 
-		if (absOffset == sumOffset) {
+		if (sumOffset >= absLow && sumOffset < absHigh) {
 			return it->iid;
 		}
 
@@ -355,7 +379,7 @@ Box BeltSegment::box() {
 
 	Point dir = Entity::get(belts.front()->id).dir;
 
-	if (dir == Point::South()) {
+	if (dir == Point::South) {
 		float l = fb.z-bb.z;
 		return (Box){
 			fb.x, fb.y, fb.z - l/2.0f,
@@ -363,7 +387,7 @@ Box BeltSegment::box() {
 		};
 	}
 
-	if (dir == Point::North()) {
+	if (dir == Point::North) {
 		float l = bb.z-fb.z;
 		return (Box){
 			bb.x, bb.y, bb.z - l/2.0f,
@@ -371,7 +395,7 @@ Box BeltSegment::box() {
 		};
 	}
 
-	if (dir == Point::East()) {
+	if (dir == Point::East) {
 		float l = fb.x-bb.x;
 		return (Box){
 			fb.x - l/2.0f, fb.y, fb.z,
@@ -379,7 +403,7 @@ Box BeltSegment::box() {
 		};
 	}
 
-	if (dir == Point::West()) {
+	if (dir == Point::West) {
 		float l = bb.x-fb.x;
 		return (Box){
 			bb.x - l/2.0f, bb.y, bb.z,
@@ -392,7 +416,7 @@ Box BeltSegment::box() {
 
 Point BeltSegment::front() {
 	Entity& en = Entity::get(belts.front()->id);
-	return en.pos + (Point::Up()*0.5f) + (en.dir*0.5f);
+	return en.pos + (Point::Up*0.5f) + (en.dir*0.5f);
 }
 
 Point BeltSegment::step() {
@@ -410,19 +434,15 @@ void BeltSegment::offload() {
 
 		if (tid) {
 			Entity& te = Entity::get(tid);
+			uint iid = items.front().iid;
 
-			if (te.spec->belt && te.belt().insert(items.front().iid, Belt::Front)) {
-				removeAny(0, Belt::Front);
+			if (te.spec->belt && te.belt().insert(iid, te.belt().offset > 0 ? BeltFront: BeltMiddle)) {
+				removeAny(0, BeltFront);
 				return;
 			}
 
-			if (te.spec->lift && te.lift().insert(items.front().iid, en.pos.y)) {
-				removeAny(0, Belt::Front);
-				return;
-			}
-
-			if (te.spec->store && te.store().insert({items.front().iid,1}).size == 0) {
-				removeAny(0, Belt::Front);
+			if (te.spec->lift && te.lift().insert(iid, en.pos.y)) {
+				removeAny(0, BeltFront);
 				return;
 			}
 		}
@@ -432,6 +452,8 @@ void BeltSegment::offload() {
 }
 
 void BeltSegment::advance() {
+	Entity::get(belts.front()->id).consume(Entity::get(belts.front()->id).spec->energyConsume * (float)belts.size());
+
 	if (changed) {
 
 		bool shrinkFound = false;
@@ -492,17 +514,8 @@ void BeltSegment::load() {
 			if (se.spec->lift) {
 				uint iid = se.lift().removeAny(en.pos.y);
 				if (iid) {
-					insert(belts.back()->offset, iid, Belt::Back);
+					insert(belts.back()->offset, iid, BeltBack);
 				}
-				return;
-			}
-
-			if (se.spec->store) {
-				Stack stack = se.store().removeAny(1);
-				if (stack.iid) {
-					insert(belts.back()->offset, stack.iid, Belt::Back);
-				}
-				return;
 			}
 		}
 	}

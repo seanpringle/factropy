@@ -104,6 +104,8 @@ uint Lift::removeAny(float level) {
 }
 
 void Lift::updateRaise() {
+	Entity& en = Entity::get(id);
+
 	switch (stage) {
 		case Lowered: { // input
 			if (iid) {
@@ -113,6 +115,7 @@ void Lift::updateRaise() {
 		}
 
 		case Lowering: {
+			en.consume(en.spec->energyConsume);
 			ascent--;
 			if (ascent == 0) {
 				stage = Lowered;
@@ -128,6 +131,7 @@ void Lift::updateRaise() {
 		}
 
 		case Raising: {
+			en.consume(en.spec->energyConsume);
 			ascent++;
 			if (ascent == steps-1) {
 				stage = Raised;
@@ -138,6 +142,8 @@ void Lift::updateRaise() {
 }
 
 void Lift::updateLower() {
+	Entity& en = Entity::get(id);
+
 	switch (stage) {
 		case Raised: { // input
 			if (iid) {
@@ -147,6 +153,7 @@ void Lift::updateLower() {
 		}
 
 		case Raising: {
+			en.consume(en.spec->energyConsume);
 			ascent++;
 			if (ascent == steps-1) {
 				stage = Raised;
@@ -162,6 +169,7 @@ void Lift::updateLower() {
 		}
 
 		case Lowering: {
+			en.consume(en.spec->energyConsume);
 			ascent--;
 			if (ascent == 0) {
 				stage = Lowered;

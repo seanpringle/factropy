@@ -5,7 +5,7 @@ GuiEntity::GuiEntity() {
 	id = 0;
 	spec = NULL;
 	pos = {0,0,0};
-	dir = Point::South();
+	dir = Point::South;
 	transform = MatrixIdentity();
 }
 
@@ -27,23 +27,12 @@ Box GuiEntity::box() {
 	return spec->box(pos, dir);
 }
 
+Point GuiEntity::ground() {
+	return {pos.x, pos.y - spec->collision.h/2.0f, pos.z};
+}
+
 void GuiEntity::updateTransform() {
-	Matrix r = MatrixIdentity();
-
-	// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
-	if (dir == Point::North()) {
-		r = MatrixRotate(Point::Up(), 180.0f*DEG2RAD);
-	}
-	else
-	if (dir == Point::South()) {
-		r = MatrixIdentity();
-	}
-	else {
-		Point axis = Point::South().cross(dir);
-		float angle = std::acos(Point::South().dot(dir));
-		r = MatrixRotate(axis, angle);
-	}
-
+	Matrix r = dir.rotation();
 	Matrix t = MatrixTranslate(pos.x, pos.y, pos.z);
 	transform = MatrixMultiply(r, t);
 }
@@ -53,7 +42,7 @@ void GuiEntity::updateTransform() {
 GuiFakeEntity::GuiFakeEntity(Spec* spec) : GuiEntity() {
 	id = 0;
 	this->spec = spec;
-	dir = Point::South();
+	dir = Point::South;
 	state = 0;
 	ghost = true;
 	move((Point){0,0,0});
@@ -73,7 +62,7 @@ GuiFakeEntity* GuiFakeEntity::move(float x, float y, float z) {
 }
 
 GuiFakeEntity* GuiFakeEntity::floor(float level) {
-	pos.y = level + spec->h/2.0f;
+	pos.y = level + spec->collision.h/2.0f;
 	updateTransform();
 	return this;
 }

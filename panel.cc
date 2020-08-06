@@ -311,6 +311,21 @@ void EntityPopup::build() {
 
 		nk_begin(&nuklear->ctx, en.spec->name.c_str(), nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
 
+		if (en.spec->consumeChemical) {
+			Burner& burner = en.burner();
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_prog(&nuklear->ctx, (int)(burner.energy.portion(burner.buffer)*100), 100, NK_FIXED);
+			for (Stack stack: burner.store.stacks) {
+				Item* item = Item::get(stack.iid);
+				nk_layout_row_template_begin(&nuklear->ctx, tilePix);
+					nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+					nk_layout_row_template_push_variable(&nuklear->ctx, tilePix);
+				nk_layout_row_template_end(&nuklear->ctx);
+				nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
+				nk_label(&nuklear->ctx, fmtc("%u", stack.size), NK_TEXT_LEFT);
+			}
+		}
+
 		if (en.spec->crafter) {
 			Crafter& crafter = en.crafter();
 			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
@@ -325,7 +340,7 @@ void EntityPopup::build() {
 			Store& store = en.store();
 			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
 			for (Stack stack: store.stacks) {
-				nk_labelf(&nuklear->ctx, NK_TEXT_LEFT, "%s %lu", Item::get(stack.iid)->name.c_str(), stack.size);
+				nk_labelf(&nuklear->ctx, NK_TEXT_LEFT, "%s %u", Item::get(stack.iid)->name.c_str(), stack.size);
 			}
 		}
 
@@ -346,16 +361,16 @@ void EntityPopup::build() {
 							lift.stage == Lift::Raising ? "raising": "wtf"), NK_TEXT_LEFT);
 		}
 
-		if (en.spec->store) {
-			Store& store = en.store();
+		if (en.spec->store || en.isGhost()) {
+			Store& store = en.isGhost() ? en.ghost().store: en.store();
 
 			Mass usage = store.usage();
 			Mass limit = store.limit();
 
-			if (limit > 0) {
+			if (limit > Mass(0)) {
 				nk_layout_row_dynamic(&nuklear->ctx, 0, 2);
 				nk_label(&nuklear->ctx, fmtc("Storage Capacity %s", limit.format()), NK_TEXT_LEFT);
-				nk_prog(&nuklear->ctx, std::max(0.0f, std::min(1.0f, (usage/limit))) * 100, 100, NK_FIXED);
+				nk_prog(&nuklear->ctx, usage.portion(limit) * 100, 100, NK_FIXED);
 			}
 
 			// requester/provider
@@ -381,7 +396,7 @@ void EntityPopup::build() {
 					for (Store::Level level: store.levels) {
 						Item *item = Item::get(level.iid);
 
-						uint limit = std::max(level.upper, (uint)std::ceil(store.limit()/item->mass));
+						uint limit = std::max(level.upper, (uint)store.limit().value/item->mass.value);
 						uint step  = std::max(1U, (uint)limit/100);
 
 						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
@@ -431,7 +446,7 @@ void EntityPopup::build() {
 						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
 
 						if (nk_button_label(&nuklear->ctx, "+")) {
-							store.levelSet(stack.iid, 0, (uint)ceil(store.limit()/item->mass));
+							store.levelSet(stack.iid, 0, (uint)store.limit().value/item->mass.value);
 						}
 
 						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
@@ -462,7 +477,7 @@ void EntityPopup::build() {
 								Entity& en = Entity::get(eid);
 								Store& store = en.store();
 								uint lower = store.count(iid);
-								uint upper = ceil(store.limit()/Item::get(iid)->mass);
+								uint upper = store.limit().value/Item::get(iid)->mass.value;
 								lower += (lower%10 != 0) ? 10-(lower%10): 0;
 								lower = std::min(lower, upper);
 								store.levelSet(iid, lower, upper);
@@ -493,7 +508,7 @@ void EntityPopup::build() {
 					for (Store::Level level: store.levels) {
 						Item *item = Item::get(level.iid);
 
-						uint limit = std::max(level.upper, (uint)std::ceil(store.limit()/item->mass));
+						uint limit = std::max(level.upper, (uint)store.limit().value/item->mass.value);
 						uint step  = std::max(1U, (uint)limit/100);
 
 						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
@@ -537,7 +552,7 @@ void EntityPopup::build() {
 						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
 
 						if (nk_button_label(&nuklear->ctx, "+")) {
-							store.levelSet(stack.iid, 0, (uint)ceil(store.limit()/item->mass));
+							store.levelSet(stack.iid, 0, (uint)store.limit().value/item->mass.value);
 						}
 
 						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
@@ -568,7 +583,7 @@ void EntityPopup::build() {
 								Entity& en = Entity::get(eid);
 								Store& store = en.store();
 								uint lower = store.count(iid);
-								uint cap = ceil(store.limit()/Item::get(iid)->mass);
+								uint cap = store.limit().value/Item::get(iid)->mass.value;
 								lower += (lower%10 != 0) ? 10-(lower%10): 0;
 								lower = std::min(lower, cap);
 								store.levelSet(iid, lower, lower);
@@ -599,7 +614,7 @@ void EntityPopup::build() {
 					for (Store::Level level: store.levels) {
 						Item *item = Item::get(level.iid);
 
-						uint limit = std::max(level.upper, (uint)std::ceil(store.limit()/item->mass));
+						uint limit = std::max(level.upper, (uint)store.limit().value/item->mass.value);
 						uint step  = std::max(1U, (uint)limit/100);
 
 						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
@@ -645,7 +660,7 @@ void EntityPopup::build() {
 						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
 
 						if (nk_button_label(&nuklear->ctx, "+")) {
-							store.levelSet(stack.iid, 0, (uint)ceil(store.limit()/item->mass));
+							store.levelSet(stack.iid, 0, (uint)store.limit().value/item->mass.value);
 						}
 
 						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
@@ -676,7 +691,7 @@ void EntityPopup::build() {
 								Entity& en = Entity::get(eid);
 								Store& store = en.store();
 								uint lower = 0;
-								uint upper = ceil(store.limit()/Item::get(iid)->mass);
+								uint upper = store.limit().value/Item::get(iid)->mass.value;
 								store.levelSet(iid, lower, upper);
 							}
 						});
@@ -758,9 +773,18 @@ void RecipePopup::build() {
 		nk_layout_row_static(&nuklear->ctx, tilePix, tilePix, std::floor(content.x/(tilePix+spacing.x)));
 
 		for (auto [name,recipe]: Recipe::names) {
-			if (nk_button_image(&nuklear->ctx, nk_img("recipe"+name, recipe->image))) {
-				en.crafter().recipe = recipe;
-				camera->popup = camera->entityPopup;
+			bool show = true;
+			if (en.spec->recipeTags.size()) {
+				show = false;
+				for (auto tag: en.spec->recipeTags) {
+					show = show || recipe->tags.count(tag);
+				}
+			}
+			if (show) {
+				if (nk_button_image(&nuklear->ctx, nk_img("recipe"+name, recipe->image))) {
+					en.crafter().nextRecipe = recipe;
+					camera->popup = camera->entityPopup;
+				}
 			}
 		}
 
@@ -812,6 +836,20 @@ void StatsPopup::build() {
 	Sim::locked([&]() {
 		nk_begin(&nuklear->ctx, "Stats", nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
 
+		nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+		nk_label(&nuklear->ctx,
+			fmtc("Electricity : %s/%s",
+				Energy(Sim::statsElectricityDemand.minuteMax).formatRate(),
+				Entity::electricityCapacity.formatRate()),
+			NK_TEXT_LEFT);
+		nk_layout_row_dynamic(&nuklear->ctx, 100, 1);
+		if (nk_chart_begin(&nuklear->ctx, NK_CHART_LINES, 59, 0, (float)Entity::electricityCapacity.value)) {
+			for (uint i = 59; i >= 1; i--) {
+				nk_chart_push(&nuklear->ctx, (i*60) > Sim::tick ? 0: Sim::statsElectricityDemand.minutes[Sim::statsElectricityDemand.minute(Sim::tick-(i*60))]);
+			}
+			nk_chart_end(&nuklear->ctx);
+		}
+
 		chart(&camera->statsFrame, "frame");
 		chart(&camera->statsUpdate, "MainCamera::update");
 		chart(&camera->statsDraw, "MainCamera::draw");
@@ -820,6 +858,9 @@ void StatsPopup::build() {
 		chart(&Sim::statsPath, "Path::tick");
 		chart(&Sim::statsVehicle, "Vehicle::tick");
 		chart(&Sim::statsBelt, "Belt::tick");
+		chart(&Sim::statsLift, "Lift::tick");
+		chart(&Sim::statsDepot, "Depot::tick");
+		chart(&Sim::statsDrone, "Drone::tick");
 
 		nk_end(&nuklear->ctx);
 		refresh = 1;

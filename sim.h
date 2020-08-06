@@ -11,6 +11,9 @@ namespace Sim {
 	extern uint64_t tick;
 	extern int64_t seed;
 
+	extern TimeSeries statsElectricityDemand;
+	extern TimeSeries statsElectricitySupply;
+	extern TimeSeries statsStore;
 	extern TimeSeries statsEntity;
 	extern TimeSeries statsArm;
 	extern TimeSeries statsCrafter;
@@ -18,6 +21,9 @@ namespace Sim {
 	extern TimeSeries statsVehicle;
 	extern TimeSeries statsBelt;
 	extern TimeSeries statsLift;
+	extern TimeSeries statsShunt;
+	extern TimeSeries statsDepot;
+	extern TimeSeries statsDrone;
 
 	void reset();
 	void save();

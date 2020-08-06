@@ -5,9 +5,15 @@
 
 struct Box;
 #include "point.h"
+#include "volume.h"
+#include <initializer_list>
 
 struct Box {
 	float x, y, z, w, h, d;
+
+	Box();
+	Box(Point p, Volume v);
+	Box(std::initializer_list<float>);
 
 	Point centroid();
 	BoundingBox bounds();
