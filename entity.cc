@@ -416,6 +416,10 @@ Energy Entity::consume(Energy e) {
 	return 0;
 }
 
+float Entity::consumeRate(Energy e) {
+	return consume(e).portion(e);
+}
+
 void Entity::generate() {
 	if (spec->generateElectricity && spec->consumeChemical) {
 		Energy e = spec->energyGenerate * electricityLoad;

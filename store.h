@@ -45,6 +45,7 @@ struct Store {
 	Stack insert(Stack stack);
 	Stack remove(Stack stack);
 	Stack removeAny(uint size);
+	uint wouldRemoveAny();
 	Stack removeFuel(uint size);
 	Stack overflowAny(uint size);
 	void promise(Stack stack);

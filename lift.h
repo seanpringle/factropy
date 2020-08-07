@@ -44,6 +44,7 @@ struct Lift {
 	bool insert(uint iid, float level);
 	bool remove(uint iid, float level);
 	uint removeAny(float level);
+	uint64_t removeAnyPredict();
 
 	void updateLower();
 	void updateRaise();

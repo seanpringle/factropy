@@ -516,9 +516,13 @@ void BeltSegment::load() {
 				if (iid) {
 					insert(belts.back()->offset, iid, BeltBack);
 				}
+
+				uint64_t predict = se.lift().removeAnyPredict();
+				pauseLoad = predict ? predict: Sim::tick+10;
+				return;
 			}
 		}
 	}
 
-	pauseLoad = Sim::tick+15;
+	pauseLoad = Sim::tick+30;
 }

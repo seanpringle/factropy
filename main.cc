@@ -500,14 +500,54 @@ int main(int argc, char const *argv[]) {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(10);
 
+	// Arm states:
+	// 0-359: rotation
+	// 360-n: parking
+
 	{
 		Matrix state0 = MatrixIdentity();
 
-		//x(theta) = rx cos(theta)
-		//y(theta) = ry sin(theta)
-
 		for (uint i = 0; i < 360; i++) {
 			Matrix state = MatrixRotateY((float)i*DEG2RAD);
+
+			float theta = (float)i;
+
+			float a3 = sin(theta*DEG2RAD)*0.9;
+			float b3 = cos(theta*DEG2RAD)*0.60;
+			float r3 = 0.9*0.60 / std::sqrt(a3*a3 + b3*b3);
+
+			float a4 = sin(theta*DEG2RAD)*0.8;
+			float b4 = cos(theta*DEG2RAD)*0.25;
+			float r4 = 0.8*0.25 / std::sqrt(a4*a4 + b4*b4);
+
+			float a5 = sin(theta*DEG2RAD)*0.8;
+			float b5 = cos(theta*DEG2RAD)*0.25;
+			float r5 = 0.8*0.25 / std::sqrt(a5*a5 + b5*b5);
+
+			Point t3 = Point::South * (1.0f-r3);
+			Point t4 = Point::South * (1.0f-r4);
+			Point t5 = Point::South * (1.0f-r5);
+
+			Matrix extend3 = MatrixMultiply(MatrixTranslate(t3.x, t3.y, t3.z), state);
+			Matrix extend4 = MatrixMultiply(MatrixTranslate(t4.x, t4.y, t4.z), state);
+			Matrix extend5 = MatrixMultiply(MatrixTranslate(t5.x, t5.y, t5.z), state);
+
+			spec->states.push_back({
+				state0,
+				state,
+				state,
+				extend3,
+				extend4,
+				extend5,
+			});
+		}
+	}
+
+	{
+		Matrix state0 = MatrixIdentity();
+
+		for (uint i = 0; i < 90; i+=10) {
+			Matrix state = state0;
 
 			float theta = (float)i;
 

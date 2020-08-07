@@ -120,15 +120,15 @@ Stack Store::remove(Stack rstack) {
 	return rstack;
 }
 
-Stack Store::removeAny(uint size) {
+uint Store::wouldRemoveAny() {
 	for (auto it = stacks.begin(); it != stacks.end(); it++) {
 		if (isActiveProviding(it->iid)) {
-			return remove({it->iid, size});
+			return it->iid;
 		}
 	}
 	for (auto it = stacks.begin(); it != stacks.end(); it++) {
 		if (isProviding(it->iid)) {
-			return remove({it->iid, size});
+			return it->iid;
 		}
 	}
 	for (auto it = stacks.begin(); it != stacks.end(); it++) {
@@ -137,8 +137,16 @@ Stack Store::removeAny(uint size) {
 		}
 		Level *lvl = level(it->iid);
 		if (!lvl) {
-			return remove({it->iid, size});
+			return it->iid;
 		}
+	}
+	return 0;
+}
+
+Stack Store::removeAny(uint size) {
+	uint iid = wouldRemoveAny();
+	if (iid) {
+		return remove({iid,size});
 	}
 	return {0,0};
 }

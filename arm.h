@@ -23,6 +23,9 @@ struct Arm {
 		ToInput,
 		Output,
 		ToOutput,
+		Parked,
+		Parking,
+		Unparking,
 	};
 
 	uint id;
@@ -33,8 +36,9 @@ struct Arm {
 
 	void destroy();
 	void update();
-	void updateInput();
+	bool updateInput();
 	void updateOutput();
+	bool updateReady();
 	Point input();
 	Point output();
 	uint source();

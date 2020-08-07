@@ -40,7 +40,59 @@ Point Arm::output() {
 	return en.pos.floor(0.5f) + en.dir;
 }
 
-void Arm::updateInput() {
+bool Arm::updateReady() {
+	uint inputId = Entity::at(input());
+	uint outputId = Entity::at(output());
+
+	if (inputId && outputId) {
+
+		Entity& ei = Entity::get(inputId);
+		Entity& eo = Entity::get(outputId);
+
+		for (Store* si: ei.stores()) {
+			for (Store* so: eo.stores()) {
+				Stack stack = so->supplyFrom(*si);
+				if (!stack.iid || !stack.size) {
+					stack = si->overflowTo(*so);
+				}
+				if (stack.iid && stack.size) {
+					return true;
+				}
+			}
+		}
+
+		if (eo.spec->belt) {
+			for (Store* si: ei.stores()) {
+				uint iid = si->wouldRemoveAny();
+				if (iid) {
+					return true;
+				}
+			}
+		}
+
+		if (ei.spec->belt) {
+			uint biid = ei.belt().itemAt(BeltAny);
+			if (biid) {
+				for (Store* so: eo.stores()) {
+					if (so->isAccepting(biid)) {
+						return true;
+					}
+				}
+			}
+		}
+
+		if (ei.spec->belt && eo.spec->belt) {
+			uint biid = ei.belt().itemAt(BeltAny);
+			if (biid) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+bool Arm::updateInput() {
 	uint inputId = Entity::at(input());
 	uint outputId = Entity::at(output());
 
@@ -59,7 +111,7 @@ void Arm::updateInput() {
 					si->remove({stack.iid,1});
 					iid = stack.iid;
 					stage = ToOutput;
-					return;
+					return true;
 				}
 			}
 		}
@@ -71,7 +123,7 @@ void Arm::updateInput() {
 					si->remove({stack.iid,1});
 					iid = stack.iid;
 					stage = ToOutput;
-					return;
+					return true;
 				}
 			}
 		}
@@ -84,7 +136,7 @@ void Arm::updateInput() {
 						ei.belt().remove(biid, BeltAny);
 						iid = biid;
 						stage = ToOutput;
-						return;
+						return true;
 					}
 				}
 			}
@@ -96,12 +148,12 @@ void Arm::updateInput() {
 				ei.belt().remove(biid, BeltAny);
 				iid = biid;
 				stage = ToOutput;
-				return;
+				return true;
 			}
 		}
 	}
 
-	pause = Sim::tick+10;
+	return false;
 }
 
 void Arm::updateOutput() {
@@ -111,10 +163,12 @@ void Arm::updateOutput() {
 		Entity& eo = Entity::get(outputId);
 
 		for (Store* so: eo.stores()) {
-			if (so->insert({iid,1}).size == 0) {
-				iid = 0;
-				stage = ToInput;
-				return;
+			if (so->isAccepting(iid)) {
+				if (so->insert({iid,1}).size == 0) {
+					iid = 0;
+					stage = ToInput;
+					return;
+				}
 			}
 		}
 
@@ -130,42 +184,85 @@ void Arm::updateOutput() {
 	pause = Sim::tick+10;
 }
 
+// Expected states:
+// 0-359: rotation
+// 360-?: parking
+
 void Arm::update() {
 	Entity& en = Entity::get(id);
 	if (en.isGhost()) return;
 	if (pause > Sim::tick) return;
 
+	uint maxState = en.spec->states.size()-1;
+	ensure(maxState > 360);
+
 	switch (stage) {
+		case Parked: {
+			en.state = maxState;
+			if (updateReady()) {
+				stage = Unparking;
+			} else {
+				pause = Sim::tick+10;
+			}
+			break;
+		}
+
+		case Parking: {
+			if (en.state >= maxState) {
+				en.state = maxState;
+				stage = Parked;
+			} else {
+				en.state++;
+			}
+			break;
+		}
+
+		case Unparking: {
+			if (en.state <= 360) {
+				en.state = 0;
+				stage = Input;
+			} else {
+				en.state--;
+			}
+			break;
+		}
+
 		case Input: {
-			updateInput();
+			if (!updateInput()) {
+				stage = Parking;
+				en.state = 360;
+			}
 			break;
 		}
 
 		case ToInput: {
-			en.consume(en.spec->energyConsume);
-			orientation = std::min(1.0f, orientation+0.01f);
+			float speed = std::max(en.consumeRate(en.spec->energyConsume) * 0.01f, 0.001f);
+
+			orientation = std::min(1.0f, orientation+speed);
 			if (std::abs(orientation-1.0f) < 0.01f) {
 				orientation = 0.0f;
 				stage = Input;
 			}
+			en.state = (uint)std::floor(orientation*360.f);
 			break;
 		}
 
 		case Output: {
 			updateOutput();
+			en.state = (uint)std::floor(orientation*360.f);
 			break;
 		}
 
 		case ToOutput: {
-			en.consume(en.spec->energyConsume);
-			orientation = std::min(0.5f, orientation+0.01f);
+			float speed = std::max(en.consumeRate(en.spec->energyConsume) * 0.01f, 0.001f);
+
+			orientation = std::min(0.5f, orientation+speed);
 			if (std::abs(orientation-0.5f) < 0.01) {
 				orientation = 0.5f;
 				stage = Output;
 			}
+			en.state = (uint)std::floor(orientation*360.f);
 			break;
 		}
 	}
-
-	en.state = (uint)std::floor(orientation*360.f);
 }

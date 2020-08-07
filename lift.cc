@@ -103,6 +103,14 @@ uint Lift::removeAny(float level) {
 	return riid;
 }
 
+uint64_t Lift::removeAnyPredict() {
+	if (iid && stage == Raising) {
+		uint remain = steps-ascent-1;
+		return Sim::tick + remain;
+	}
+	return 0;
+}
+
 void Lift::updateRaise() {
 	Entity& en = Entity::get(id);
 

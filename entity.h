@@ -96,6 +96,7 @@ struct Entity {
 	Entity& materialize();
 
 	Energy consume(Energy e);
+	float consumeRate(Energy e);
 	void generate();
 
 	Ghost& ghost();

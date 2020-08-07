@@ -146,6 +146,7 @@ void Entity::saveAll(const char* name) {
 		state["flags"] = en.flags;
 		state["pos"] = { en.pos.x, en.pos.y, en.pos.z };
 		state["dir"] = { en.dir.x, en.dir.y, en.dir.z };
+		state["state"] = en.state;
 
 		out << state << "\n";
 	}
@@ -170,6 +171,10 @@ void Entity::loadAll(const char* name) {
 		en.pos = (Point){state["pos"][0], state["pos"][1], state["pos"][2]};
 		en.dir = (Point){state["dir"][0], state["dir"][1], state["dir"][2]};
 		en.flags = state["flags"];
+
+		en.state = state["state"];
+		// in case spec state animations changed across save or mod upgrade
+		en.state = (uint)std::max(0, std::min((int)en.state, (int)en.spec->states.size()-1));
 
 		en.index();
 
