@@ -1,6 +1,7 @@
 #include "common.h"
 #include "sim.h"
 #include "view.h"
+#include "mat4.h"
 
 namespace {
 
@@ -190,14 +191,14 @@ void MainCamera::updateCamera() {
 
 	if (IsKeyDown(KEY_D)) {
 		Point ahead = {direction.x, 0, direction.z};
-		Point left = ahead.transform(MatrixRotate(up, -90*DEG2RAD));
+		Point left = ahead.transform(Mat4::rotate(up, -90*DEG2RAD));
 		position += left.normalize();
 		nextPosition = position;
 	}
 
 	if (IsKeyDown(KEY_A)) {
 		Point ahead = {direction.x, 0, direction.z};
-		Point left = ahead.transform(MatrixRotate(up, 90*DEG2RAD));
+		Point left = ahead.transform(Mat4::rotate(up, 90*DEG2RAD));
 		position += left.normalize();
 		nextPosition = position;
 	}
@@ -236,9 +237,9 @@ void MainCamera::updateCamera() {
 		Point target = groundTarget(buildLevel);
 		Point radius = position - target;
 		Point right = radius.cross(up).normalize();
-		Matrix rotateH = MatrixRotate(up, -rDH);
-		Matrix rotateV = MatrixRotate(right, rDV);
-		Matrix rotate = MatrixMultiply(rotateH, rotateV);
+		Mat4 rotateH = Mat4::rotate(up, -rDH);
+		Mat4 rotateV = Mat4::rotate(right, rDV);
+		Mat4 rotate = rotateH * rotateV;
 		radius = radius.transform(rotate);
 
 		position = target + radius;
@@ -394,13 +395,14 @@ void MainCamera::draw() {
 				drawGrid(groundZero, 64, 1);
 			}
 
-			std::vector<Matrix> water;
+			std::vector<Mat4> water;
 			std::vector<Mesh> chunk_meshes;
-			std::vector<Matrix> chunk_transforms;
+			std::vector<Mat4> chunk_transforms;
 
-			std::map<uint,std::vector<Matrix>> resource_transforms;
+			std::map<uint,std::vector<Mat4>> resource_transforms;
 
 			float size = (float)Chunk::size;
+			Mat4 scale = Mat4::scale(size,size,size);
 			for (auto pair: Chunk::all) {
 				Chunk *chunk = pair.second;
 				float x = chunk->x;
@@ -411,12 +413,7 @@ void MainCamera::draw() {
 				}
 				chunk_meshes.push_back(chunk->heightmap);
 				chunk_transforms.push_back(chunk->transform);
-				water.push_back(
-					MatrixMultiply(
-						MatrixTranslate(x+0.5f, -0.52f, y+0.5f),
-						MatrixScale(size,size,size)
-					)
-				);
+				water.push_back(Mat4::translate(x+0.5f, -0.52f, y+0.5f) * scale);
 
 				int cx = chunk->x*Chunk::size;
 				int cz = chunk->y*Chunk::size;
@@ -426,9 +423,9 @@ void MainCamera::draw() {
 					for (auto [tx,ty]: chunk->minerals) {
 						Chunk::Tile* tile = &chunk->tiles[ty][tx];
 						float h = tile->elevation*(49.82*2)-0.25;
-						Matrix r = MatrixRotate(Point(cx+tx, h, cz+ty), tx);
-						Matrix m = MatrixTranslate(cx+tx, h, cz+ty);
-						resource_transforms[tile->mineral].push_back(MatrixMultiply(r, m));
+						Mat4 r = Mat4::rotate(Point(cx+tx, h, cz+ty), tx);
+						Mat4 m = Mat4::translate(cx+tx, h, cz+ty);
+						resource_transforms[tile->mineral].push_back(r * m);
 					}
 				}
 			}
@@ -443,16 +440,16 @@ void MainCamera::draw() {
 				}
 			}
 
-			std::map<Part*,std::vector<Matrix>> extant_ld;
-			std::map<Part*,std::vector<Matrix>> extant_hd;
-			std::map<Part*,std::vector<Matrix>> ghosts_ld;
-			std::map<Part*,std::vector<Matrix>> ghosts_hd;
+			std::map<Part*,std::vector<Mat4>> extant_ld;
+			std::map<Part*,std::vector<Mat4>> extant_hd;
+			std::map<Part*,std::vector<Mat4>> ghosts_ld;
+			std::map<Part*,std::vector<Mat4>> ghosts_hd;
 
 			for (auto ge: entities) {
 				for (uint i = 0; i < ge->spec->parts.size(); i++) {
 					Part *part = ge->spec->parts[i];
 					bool hd = ge->pos.distance(position) < 100;
-					Matrix instance = part->specInstance(ge->spec, i, ge->state, ge->transform);
+					Mat4 instance = part->specInstance(ge->spec, i, ge->state, ge->transform);
 					(ge->ghost ? (hd ? ghosts_hd: ghosts_ld): (hd ? extant_hd: extant_ld))[part].push_back(instance);
 				}
 			}
@@ -494,7 +491,7 @@ void MainCamera::draw() {
 			if (placing) {
 				for (uint i = 0; i < placing->spec->parts.size(); i++) {
 					Part *part = placing->spec->parts[i];
-					Matrix instance = part->specInstance(placing->spec, i, placing->state, placing->transform);
+					Mat4 instance = part->specInstance(placing->spec, i, placing->state, placing->transform);
 					part->drawGhostInstanced(true, 1, &instance);
 				}
 
@@ -507,15 +504,15 @@ void MainCamera::draw() {
 				Path* job = Path::jobs.front();
 				DrawCube(job->target, 0.5f, 0.5f, 0.5f, GOLD);
 
-				std::vector<Matrix> reds;
-				std::vector<Matrix> greens;
+				std::vector<Mat4> reds;
+				std::vector<Mat4> greens;
 
 				for (auto pair: job->nodes) {
 					Path::Node* node = pair.second;
 					if (job->inOpenSet(node)) {
-						greens.push_back(MatrixTranslate(node->point.x, node->point.y, node->point.z));
+						greens.push_back(Mat4::translate(node->point.x, node->point.y, node->point.z));
 					} else {
-						reds.push_back(MatrixTranslate(node->point.x, node->point.y, node->point.z));
+						reds.push_back(Mat4::translate(node->point.x, node->point.y, node->point.z));
 					}
 				}
 
@@ -541,36 +538,19 @@ void MainCamera::draw() {
 
 			Sim::locked([&]() {
 
-				//std::vector<Matrix> reds;
-				//std::vector<Matrix> greens;
-				std::vector<Matrix> pillars1;
-				std::vector<Matrix> pillars2;
+				std::vector<Mat4> pillars1;
+				std::vector<Mat4> pillars2;
 
 				for (auto ge: entities) {
 					if (ge->spec->belt) {
 						Entity& en = Entity::get(ge->id);
 						Belt& belt = en.belt();
 
-						//Matrix m = MatrixMultiply(MatrixScale(0.5, 0.5, 0.5), MatrixTranslate(en.pos.x, en.pos.y+0.5, en.pos.z));
-						//if (belt.offset == 0) {
-						//	greens.push_back(m);
-						//}
-						//else
-						//if (belt.offset == belt.segment->belts.size()-1) {
-						//	reds.push_back(m);
-						//}
-
 						if (en.ground().y < 0.01f && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
-							pillars1.push_back(View::beltPillar1->instance(MatrixTranslate(en.pos.x, en.pos.y, en.pos.z)));
+							pillars1.push_back(View::beltPillar1->instance(Mat4::translate(en.pos.x, en.pos.y, en.pos.z)));
 						}
 					}
 				}
-
-//				if (reds.size() > 0)
-//					rlDrawMeshInstanced(redCube.meshes[0], redCube.materials[0], reds.size(), reds.data());
-//
-//				if (greens.size() > 0)
-//					rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
 
 				if (pillars1.size() > 0)
 					View::beltPillar1->drawInstanced(false, pillars1.size(), pillars1.data());
@@ -578,7 +558,7 @@ void MainCamera::draw() {
 				if (pillars2.size() > 0)
 					View::beltPillar2->drawInstanced(false, pillars2.size(), pillars2.data());
 
-				std::map<Part*,std::vector<Matrix>> belt_transforms;
+				std::map<Part*,std::vector<Mat4>> belt_transforms;
 
 				for (BeltSegment* segment: BeltSegment::all) {
 					Point spot = segment->front();
@@ -586,10 +566,11 @@ void MainCamera::draw() {
 					for (auto beltItem: segment->items) {
 						spot += step * (float)beltItem.offset;
 						Point p = spot + (step * ((float)BeltSegment::slot/2.0f));
+						Mat4 m = Mat4::translate(p.x, p.y, p.z);
 						Item* item = Item::get(beltItem.iid);
 						for (uint i = 0; i < item->parts.size(); i++) {
 							Part* part = item->parts[i];
-							belt_transforms[part].push_back(part->instance(MatrixTranslate(p.x, p.y, p.z)));
+							belt_transforms[part].push_back(part->instance(m));
 						}
 						spot += step * (float)BeltSegment::slot;
 					}
@@ -599,17 +580,18 @@ void MainCamera::draw() {
 					part->drawInstanced(false, transforms.size(), transforms.data());
 				}
 
-				std::map<Part*,std::vector<Matrix>> lift_transforms;
+				std::map<Part*,std::vector<Mat4>> lift_transforms;
 
 				for (auto pair: Lift::all) {
 					Lift& lift = pair.second;
 					if (lift.iid) {
 						Entity& en = Entity::get(lift.id);
 						Point p = en.pos;
+						Mat4 m = Mat4::translate(p.x, p.y+1.0f, p.z);
 						Item* item = Item::get(lift.iid);
 						for (uint i = 0; i < item->parts.size(); i++) {
 							Part* part = item->parts[i];
-							lift_transforms[part].push_back(part->instance(MatrixMultiply(en.spec->states[en.state][4], MatrixTranslate(p.x, p.y+1.0f, p.z))));
+							lift_transforms[part].push_back(part->instance(en.spec->states[en.state][4] * m));
 						}
 					}
 				}
@@ -618,19 +600,19 @@ void MainCamera::draw() {
 					part->drawInstanced(false, transforms.size(), transforms.data());
 				}
 
-				std::map<Part*,std::vector<Matrix>> arm_transforms;
+				std::map<Part*,std::vector<Mat4>> arm_transforms;
 
 				for (auto ge: entities) {
 					if (ge->spec->arm) {
 						Entity& en = Entity::get(ge->id);
 						if (en.arm().iid) {
 							Item* item = Item::get(en.arm().iid);
+							uint grip = en.spec->states[0].size()-1;
 							for (uint i = 0; i < item->parts.size(); i++) {
 								Part* part = item->parts[i];
-								Matrix o = en.spec->parts[5]->specInstance(en.spec, 5, en.state, en.dir.rotation());
-								Point p = Point::Up.transform(o) + ge->pos + Point::Up;
-								//DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
-								Matrix t = MatrixTranslate(p.x, p.y+0.2, p.z);
+								Mat4 o = en.spec->parts[grip]->specInstance(en.spec, grip, en.state, en.dir.rotation());
+								Point p = Point::Zero.transform(o) + ge->pos + Point::Up;
+								Mat4 t = Mat4::translate(p.x, p.y+0.2, p.z);
 								arm_transforms[part].push_back(part->instance(t));
 							}
 						}
@@ -641,10 +623,6 @@ void MainCamera::draw() {
 					part->drawInstanced(false, transforms.size(), transforms.data());
 				}
 			});
-
-			DrawCube(Point(0,0,2.5), 0.5f, 0.5f, 5.0f, BLUE);
-			DrawCube(Point(2.5,0,0), 5.0f, 0.5f, 0.5f, RED);
-			DrawCube(Point(0,2.5,0), 0.5f, 5.0f, 0.5f, GREEN);
 
 		EndMode3D();
 

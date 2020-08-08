@@ -9,6 +9,7 @@ struct GuiFakeEntity;
 #include "spec.h"
 #include "chunk.h"
 #include "part.h"
+#include "mat4.h"
 #include "point.h"
 #include "box.h"
 #include "ghost.h"
@@ -119,7 +120,7 @@ struct GuiEntity {
 	Point dir;
 	uint state;
 	bool ghost;
-	Matrix transform;
+	Mat4 transform;
 
 	GuiEntity();
 	GuiEntity(uint id);

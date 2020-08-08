@@ -16,6 +16,8 @@ Arm& Arm::create(uint id) {
 	Arm& arm = all[id];
 	arm.id = id;
 	arm.iid = 0;
+	arm.inputId = 0;
+	arm.outputId = 0;
 	arm.stage = Input;
 	arm.orientation = 0.0f;
 	return arm;
@@ -32,17 +34,48 @@ void Arm::destroy() {
 
 Point Arm::input() {
 	Entity& en = Entity::get(id);
-	return en.pos.floor(0.5f) - en.dir;
+	return en.pos.floor(0.5f) - (en.dir * en.spec->armOffset);
 }
 
 Point Arm::output() {
 	Entity& en = Entity::get(id);
-	return en.pos.floor(0.5f) + en.dir;
+	return en.pos.floor(0.5f) + (en.dir * en.spec->armOffset);
+}
+
+void Arm::updateProximity() {
+	if (inputId && !Entity::exists(inputId)) {
+		inputId = 0;
+	}
+
+	if (inputId) {
+		Entity& en = Entity::get(inputId);
+		if (!en.box().contains(input())) {
+			inputId = 0;
+		}
+	}
+
+	if (outputId && !Entity::exists(outputId)) {
+		outputId = 0;
+	}
+
+	if (outputId) {
+		Entity& en = Entity::get(outputId);
+		if (!en.box().contains(output())) {
+			outputId = 0;
+		}
+	}
+
+	if (!inputId) {
+		inputId = Entity::at(input());
+	}
+
+	if (!outputId) {
+		outputId = Entity::at(output());
+	}
 }
 
 bool Arm::updateReady() {
-	uint inputId = Entity::at(input());
-	uint outputId = Entity::at(output());
+	updateProximity();
 
 	if (inputId && outputId) {
 
@@ -93,8 +126,7 @@ bool Arm::updateReady() {
 }
 
 bool Arm::updateInput() {
-	uint inputId = Entity::at(input());
-	uint outputId = Entity::at(output());
+	updateProximity();
 
 	if (inputId && outputId) {
 
@@ -120,7 +152,6 @@ bool Arm::updateInput() {
 			for (Store* si: ei.stores()) {
 				Stack stack = si->removeAny(1);
 				if (stack.iid && stack.size) {
-					si->remove({stack.iid,1});
 					iid = stack.iid;
 					stage = ToOutput;
 					return true;
@@ -157,7 +188,7 @@ bool Arm::updateInput() {
 }
 
 void Arm::updateOutput() {
-	uint outputId = Entity::at(output());
+	updateProximity();
 
 	if (outputId) {
 		Entity& eo = Entity::get(outputId);

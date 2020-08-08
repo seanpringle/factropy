@@ -30,12 +30,15 @@ struct Arm {
 
 	uint id;
 	uint iid;
+	uint inputId;
+	uint outputId;
 	float orientation;
 	enum Stage stage;
 	uint64_t pause;
 
 	void destroy();
 	void update();
+	void updateProximity();
 	bool updateInput();
 	void updateOutput();
 	bool updateReady();

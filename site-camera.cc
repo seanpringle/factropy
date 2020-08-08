@@ -1,6 +1,7 @@
 #include "common.h"
 #include "sim.h"
 #include "view.h"
+#include "mat4.h"
 
 SiteCamera::SiteCamera(Point ppos, Point ddir) {
 	pos = ppos;
@@ -50,9 +51,9 @@ void SiteCamera::draw(RenderTexture canvas) {
 
 		BeginMode3D(camera);
 
-			std::vector<Matrix> water;
+			std::vector<Mat4> water;
 			std::vector<Mesh> chunk_meshes;
-			std::vector<Matrix> chunk_transforms;
+			std::vector<Mat4> chunk_transforms;
 
 			float size = (float)Chunk::size;
 			for (auto pair: Chunk::all) {
@@ -62,17 +63,14 @@ void SiteCamera::draw(RenderTexture canvas) {
 				chunk_meshes.push_back(chunk->heightmap);
 				chunk_transforms.push_back(chunk->transform);
 				water.push_back(
-					MatrixMultiply(
-						MatrixTranslate(x+0.5f, -0.52f, y+0.5f),
-						MatrixScale(size,size,size)
-					)
+					Mat4::translate(x+0.5f, -0.52f, y+0.5f) * Mat4::scale(size,size,size)
 				);
 			}
 
 			rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());
 			rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
-			std::map<Part*,std::vector<Matrix>> batches;
+			std::map<Part*,std::vector<Mat4>> batches;
 
 			for (auto ge: entities) {
 				for (uint i = 0; i < ge->spec->parts.size(); i++) {

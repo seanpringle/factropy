@@ -11,6 +11,7 @@ struct Spec;
 #include "raymath.h"
 #include "rlgl.h"
 #include "point.h"
+#include "mat4.h"
 #include "item.h"
 #include "part.h"
 #include "area.h"
@@ -40,12 +41,11 @@ struct Spec {
 
 	std::string name;
 	std::vector<Part*> parts;
-	std::vector<std::vector<Matrix>> states;
+	std::vector<std::vector<Mat4>> states;
 	Image image;
 	RenderTexture texture;
 	bool align;
 	bool pivot;
-	bool arm;
 	bool belt;
 	bool lift;
 	bool shunt;
@@ -76,7 +76,11 @@ struct Spec {
 	bool defaultOverflow;
 
 	bool crafter;
+	bool crafterProgress;
 	std::set<std::string> recipeTags;
+
+	bool arm;
+	float armOffset;
 
 	bool depot;
 	uint drones;

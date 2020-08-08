@@ -98,8 +98,24 @@ int main(int argc, char const *argv[]) {
 	Part::shader = pshader;
 	Part::material = LoadMaterialDefault();
 
+	Shader particleShader = LoadShader(
+		FormatText("shaders/glsl%i/base_lighting_particles.vs", GLSL_VERSION),
+		FormatText("shaders/glsl%i/fog.fs", GLSL_VERSION)
+	);
+
+	particleShader.locs[LOC_MATRIX_MVP] = GetShaderLocation(particleShader, "mvp");
+	particleShader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(particleShader, "transform");
+	particleShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(particleShader, "viewPos");
+
+  SetShaderValue(particleShader, GetShaderLocation(particleShader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
+  SetShaderValue(particleShader, GetShaderLocation(particleShader, "fogColor"), &fogColor, UNIFORM_VEC4);
+	SetShaderValue(particleShader, GetShaderLocation(particleShader, "ambient"), &ambient, UNIFORM_VEC4);
+
+	Part::particleShader = particleShader;
+
 	/*Light lightA =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, shader);
 	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, pshader);
+	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, particleShader);
 
 	Sim::reset();
 	Sim::reseed(879600773);
@@ -163,8 +179,6 @@ int main(int argc, char const *argv[]) {
 	auto thingContainer = Thing("models/container-hd.stl", "models/container-ld.stl");
 	auto thingFan = Thing("models/fan-hd.stl", "models/fan-ld.stl");
 	auto thingGear = Thing("models/gear-hd.stl", "models/gear-ld.stl");
-	auto thingAssembler = Thing("models/assembler.stl");
-	auto thingFurnace = Thing("models/furnace-hd.stl", "models/furnace-ld.stl");
 	auto thingMiner = Thing("models/miner.stl");
 	auto thingTruckChassisEngineer = Thing("models/truck-chassis-engineer.stl");
 	auto thingTruckChassisHauler = Thing("models/truck-chassis-hauler.stl");
@@ -274,31 +288,118 @@ int main(int argc, char const *argv[]) {
 		{Item::byName("steel-ingot")->id, 5},
 	};
 
+	auto thingAssemblerPiston = Thing("models/assembler-piston-hd.stl", "models/assembler-piston-ld.stl");
+
 	spec = new Spec("assembler");
 	spec->store = true;
 	spec->capacity = Mass::kg(100);
 	spec->rotate = true;
 	spec->crafter = true;
+	spec->crafterProgress = false;
 	spec->recipeTags = {"crafting"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(300);
 	spec->collision = { w: 6, h: 3, d: 6 };
 	spec->parts = {
-		(new Part(thingAssembler))->paint(0x009900ff),
+		(new Part(Thing("models/assembler-chassis-hd.stl", "models/assembler-chassis-ld.stl")))->paint(0x009900ff)->gloss(16),
+		(new PartSpinner(thingFan, 1))->paint(0x222222ff)->rotate(Point::East, 70)->translate(0,0.5,2.5)->gloss(16),
+		(new PartSpinner(thingFan, 1))->paint(0x222222ff)->rotate(Point::West, 70)->translate(0,0.5,-2.5)->gloss(16),
+		(new PartSpinner(thingFan, 1))->paint(0x222222ff)->rotate(Point::North, 70)->translate(2.5,0.5,0)->gloss(16),
+		(new PartSpinner(thingFan, 1))->paint(0x222222ff)->rotate(Point::South, 70)->translate(-2.5,0.5,0)->gloss(16),
+		(new Part(thingAssemblerPiston))->paint(0x222222ff)->gloss(16),
+		(new Part(thingAssemblerPiston))->paint(0x222222ff)->translate(0,0,1.2)->gloss(16),
+		(new Part(thingAssemblerPiston))->paint(0x222222ff)->translate(0,0,-1.2)->gloss(16),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.5,1.8,1.5)->rotate(Point::East, 90)->translate(1,1,-1.2)->gloss(32),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.1,1.8,1.1)->rotate(Point::East, 90)->translate(1,1,-0.6)->gloss(32),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.3,1.8,1.3)->rotate(Point::East, 90)->translate(1,1, 0.0)->gloss(32),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.2,1.8,1.2)->rotate(Point::East, 90)->translate(1,1, 0.6)->gloss(32),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.4,1.8,1.4)->rotate(Point::East, 90)->translate(1,1, 1.2)->gloss(32),
 	};
+
+	{
+		Mat4 state0 = Mat4::identity;
+
+		for (int i = 0; i < 360; i++) {
+			Mat4 state1 = Mat4::rotateY((float)(i*5)*DEG2RAD);
+
+			Mat4 piston1 = state0;
+			Mat4 piston2 = state0;
+			Mat4 piston3 = state0;
+
+			if (i >=   0 && i <  60) piston1 = Mat4::translate(0,(float)(i%60)*-0.01f,0);
+			if (i >=  60 && i < 120) piston1 = Mat4::translate(0,(float)-0.60+(i%60)*0.01f,0);
+
+			if (i >= 120 && i < 180) piston2 = Mat4::translate(0,(float)(i%60)*-0.01f,0);
+			if (i >= 180 && i < 240) piston2 = Mat4::translate(0,(float)-0.60+(i%60)*0.01f,0);
+
+			if (i >= 240 && i < 300) piston3 = Mat4::translate(0,(float)(i%60)*-0.01f,0);
+			if (i >= 300 && i < 360) piston3 = Mat4::translate(0,(float)-0.60+(i%60)*0.01f,0);
+
+			spec->states.push_back({
+				state0,
+				state1,
+				state1,
+				state1,
+				state1,
+
+				piston1,
+				piston2,
+				piston3,
+
+				Mat4::rotateY((float)i*1.0f*DEG2RAD),
+				Mat4::rotateY((float)i*-0.8f*DEG2RAD),
+				Mat4::rotateY((float)i*0.6f*DEG2RAD),
+				Mat4::rotateY((float)i*-0.4f*DEG2RAD),
+				Mat4::rotateY((float)i*0.2f*DEG2RAD),
+			});
+		}
+	}
 
 	spec = new Spec("furnace");
 	spec->collision = { w: 4, h: 4, d: 4 };
 	spec->parts = {
-		(new Part(thingFurnace))->paint(0xcc6600ff),
+		(new Part(Thing("models/furnace-hd.stl", "models/furnace-ld.stl")))->paint(0xcc6600ff),
+		(new Part(Thing("models/furnace-fire-hd.stl", "models/furnace-fire-ld.stl")))->paint(0x000000ff),
+		(new Part(Thing("models/furnace-smoke-hd.stl", "models/furnace-smoke-ld.stl")))->paint(0x000000ff),
+		(new PartSmoke(1800, 20, 0.01, 0.5f, 0.01f, 0.005f, 0.1f, 0.99f, 60, 180))->translate(0,2,0),
 	};
 	spec->store = true;
 	spec->capacity = Mass::kg(100);
 	spec->rotate = true;
 	spec->crafter = true;
+	spec->crafterProgress = true;
 	spec->recipeTags = {"smelting"};
 	spec->consumeChemical = true;
 	spec->energyConsume = Energy::kW(60);
+
+	for (uint i = 0; i < 10; i++) {
+		float fi = (float)i;
+		spec->states.push_back({
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::scale(0.1f*fi, 0.1f*fi, 0.1f*fi),
+		});
+	}
+
+	for (uint i = 0; i < 80; i++) {
+		spec->states.push_back({
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+		});
+	}
+
+	for (uint i = 0; i < 10; i++) {
+		float fi = (float)(9-i);
+		spec->states.push_back({
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::scale(0.1f*fi, 0.1f*fi, 0.1f*fi),
+		});
+	}
 
 	spec = new Spec("miner");
 	spec->store = true;
@@ -306,6 +407,7 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = true;
 	spec->place = Spec::Hill;
 	spec->crafter = true;
+	spec->crafterProgress = false;
 	spec->recipeTags = {"mining"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
@@ -316,10 +418,10 @@ int main(int argc, char const *argv[]) {
 	};
 
 	{
-		Matrix state0 = MatrixIdentity();
+		Mat4 state0 = Mat4::identity;
 
 		for (int i = 0; i < 180; i++) {
-			Matrix state1 = MatrixRotateY((float)i*DEG2RAD);
+			Mat4 state1 = Mat4::rotateY((float)i*DEG2RAD);
 
 			spec->states.push_back({
 				state0,
@@ -488,6 +590,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("arm");
 	spec->collision = { w: 1, h: 2, d: 1 };
 	spec->arm = true;
+	spec->armOffset = 1.0f;
 	spec->rotate = true;
 	spec->parts = {
 		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0xff6600ff),
@@ -505,79 +608,167 @@ int main(int argc, char const *argv[]) {
 	// 360-n: parking
 
 	{
-		Matrix state0 = MatrixIdentity();
+		Mat4 state0 = Mat4::identity;
 
 		for (uint i = 0; i < 360; i++) {
-			Matrix state = MatrixRotateY((float)i*DEG2RAD);
+			Mat4 state = Mat4::rotateY((float)i*DEG2RAD);
 
 			float theta = (float)i;
 
-			float a3 = sin(theta*DEG2RAD)*0.9;
-			float b3 = cos(theta*DEG2RAD)*0.60;
-			float r3 = 0.9*0.60 / std::sqrt(a3*a3 + b3*b3);
+			float a = sin(theta*DEG2RAD)*1.0;
+			float b = cos(theta*DEG2RAD)*0.4;
+			float r = 1.0*0.4 / std::sqrt(a*a + b*b);
 
-			float a4 = sin(theta*DEG2RAD)*0.8;
-			float b4 = cos(theta*DEG2RAD)*0.25;
-			float r4 = 0.8*0.25 / std::sqrt(a4*a4 + b4*b4);
+			Point t1 = Point::North * (0.0f*r) - Point::North * 0.2f;
+			Point t2 = Point::North * (0.3f*r) - Point::North * 0.2f;
+			Point t3 = Point::North * (0.6f*r) - Point::North * 0.2f;
+			Point g  = Point::North * (0.6f*r) + Point::North * 0.2f;
 
-			float a5 = sin(theta*DEG2RAD)*0.8;
-			float b5 = cos(theta*DEG2RAD)*0.25;
-			float r5 = 0.8*0.25 / std::sqrt(a5*a5 + b5*b5);
-
-			Point t3 = Point::South * (1.0f-r3);
-			Point t4 = Point::South * (1.0f-r4);
-			Point t5 = Point::South * (1.0f-r5);
-
-			Matrix extend3 = MatrixMultiply(MatrixTranslate(t3.x, t3.y, t3.z), state);
-			Matrix extend4 = MatrixMultiply(MatrixTranslate(t4.x, t4.y, t4.z), state);
-			Matrix extend5 = MatrixMultiply(MatrixTranslate(t5.x, t5.y, t5.z), state);
+			Mat4 extend1 = Mat4::translate(t1.x, t1.y, t1.z) * state;
+			Mat4 extend2 = Mat4::translate(t2.x, t2.y, t2.z) * state;
+			Mat4 extend3 = Mat4::translate(t3.x, t3.y, t3.z) * state;
+			Mat4 extendG = Mat4::translate(g.x, g.y, g.z) * state;
 
 			spec->states.push_back({
 				state0,
 				state,
-				state,
+				extend1,
+				extend2,
 				extend3,
-				extend4,
-				extend5,
+				extendG,
 			});
 		}
 	}
 
 	{
-		Matrix state0 = MatrixIdentity();
+		Mat4 state0 = Mat4::identity;
 
 		for (uint i = 0; i < 90; i+=10) {
-			Matrix state = state0;
+			Mat4 state = state0;
 
 			float theta = (float)i;
 
-			float a3 = sin(theta*DEG2RAD)*0.9;
-			float b3 = cos(theta*DEG2RAD)*0.60;
-			float r3 = 0.9*0.60 / std::sqrt(a3*a3 + b3*b3);
+			float a = sin(theta*DEG2RAD)*1.0;
+			float b = cos(theta*DEG2RAD)*0.1;
+			float r = 1.0*0.1 / std::sqrt(a*a + b*b);
 
-			float a4 = sin(theta*DEG2RAD)*0.8;
-			float b4 = cos(theta*DEG2RAD)*0.25;
-			float r4 = 0.8*0.25 / std::sqrt(a4*a4 + b4*b4);
+			Point t1 = Point::North * (0.0f*r) - Point::North * 0.2f;
+			Point t2 = Point::North * (0.3f*r) - Point::North * 0.2f;
+			Point t3 = Point::North * (0.6f*r) - Point::North * 0.2f;
+			Point g  = Point::North * (0.6f*r) + Point::North * 0.2f;
 
-			float a5 = sin(theta*DEG2RAD)*0.8;
-			float b5 = cos(theta*DEG2RAD)*0.25;
-			float r5 = 0.8*0.25 / std::sqrt(a5*a5 + b5*b5);
-
-			Point t3 = Point::South * (1.0f-r3);
-			Point t4 = Point::South * (1.0f-r4);
-			Point t5 = Point::South * (1.0f-r5);
-
-			Matrix extend3 = MatrixMultiply(MatrixTranslate(t3.x, t3.y, t3.z), state);
-			Matrix extend4 = MatrixMultiply(MatrixTranslate(t4.x, t4.y, t4.z), state);
-			Matrix extend5 = MatrixMultiply(MatrixTranslate(t5.x, t5.y, t5.z), state);
+			Mat4 extend1 = Mat4::translate(t1.x, t1.y, t1.z) * state;
+			Mat4 extend2 = Mat4::translate(t2.x, t2.y, t2.z) * state;
+			Mat4 extend3 = Mat4::translate(t3.x, t3.y, t3.z) * state;
+			Mat4 extendG = Mat4::translate(g.x, g.y, g.z) * state;
 
 			spec->states.push_back({
 				state0,
 				state,
+				extend1,
+				extend2,
+				extend3,
+				extendG,
+			});
+		}
+	}
+
+	spec = new Spec("long-arm");
+	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->arm = true;
+	spec->armOffset = 2.0f;
+	spec->rotate = true;
+	spec->parts = {
+		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0xff0000ff),
+		(new Part(Thing("models/arm-pillar-hd.stl", "models/arm-pillar-ld.stl")))->translate(0,-1.0,0)->paint(0xff0000ff),
+		(new Part(Thing("models/arm-telescope1-hd.stl", "models/arm-telescope1-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/arm-telescope2-hd.stl", "models/arm-telescope2-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/arm-telescope3-hd.stl", "models/arm-telescope3-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/arm-telescope4-hd.stl", "models/arm-telescope4-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/arm-telescope5-hd.stl", "models/arm-telescope5-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
+		(new Part(Thing("models/arm-grip-hd.stl", "models/arm-grip-ld.stl")))->translate(0,-1.0,0)->paint(0xff0000ff),
+	};
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(10);
+
+	// Arm states:
+	// 0-359: rotation
+	// 360-n: parking
+
+	{
+		Mat4 state0 = Mat4::identity;
+
+		for (uint i = 0; i < 360; i++) {
+			Mat4 state = Mat4::rotateY((float)i*DEG2RAD);
+
+			float theta = (float)i;
+
+			float a = sin(theta*DEG2RAD)*1.0;
+			float b = cos(theta*DEG2RAD)*0.4;
+			float r = 1.0*0.4 / std::sqrt(a*a + b*b);
+
+			Point t1 = Point::North * (0.0f*r) - Point::North * 0.2f;
+			Point t2 = Point::North * (0.4f*r) - Point::North * 0.2f;
+			Point t3 = Point::North * (0.8f*r) - Point::North * 0.2f;
+			Point t4 = Point::North * (1.2f*r) - Point::North * 0.2f;
+			Point t5 = Point::North * (1.6f*r) - Point::North * 0.2f;
+			Point g  = Point::North * (1.6f*r) + Point::North * 0.2f;
+
+			Mat4 extend1 = Mat4::translate(t1.x, t1.y, t1.z) * state;
+			Mat4 extend2 = Mat4::translate(t2.x, t2.y, t2.z) * state;
+			Mat4 extend3 = Mat4::translate(t3.x, t3.y, t3.z) * state;
+			Mat4 extend4 = Mat4::translate(t4.x, t4.y, t4.z) * state;
+			Mat4 extend5 = Mat4::translate(t5.x, t5.y, t5.z) * state;
+			Mat4 extendG = Mat4::translate(g.x, g.y, g.z) * state;
+
+			spec->states.push_back({
+				state0,
 				state,
+				extend1,
+				extend2,
 				extend3,
 				extend4,
 				extend5,
+				extendG,
+			});
+		}
+	}
+
+	{
+		Mat4 state0 = Mat4::identity;
+
+		for (uint i = 0; i < 90; i+=10) {
+			Mat4 state = state0;
+
+			float theta = (float)i;
+
+			float a = sin(theta*DEG2RAD)*1.0;
+			float b = cos(theta*DEG2RAD)*0.1;
+			float r = 1.0*0.1 / std::sqrt(a*a + b*b);
+
+			Point t1 = Point::North * (0.0f*r) - Point::North * 0.2f;
+			Point t2 = Point::North * (0.4f*r) - Point::North * 0.2f;
+			Point t3 = Point::North * (0.8f*r) - Point::North * 0.2f;
+			Point t4 = Point::North * (1.2f*r) - Point::North * 0.2f;
+			Point t5 = Point::North * (1.6f*r) - Point::North * 0.2f;
+			Point g  = Point::North * (1.6f*r) + Point::North * 0.2f;
+
+			Mat4 extend1 = Mat4::translate(t1.x, t1.y, t1.z) * state;
+			Mat4 extend2 = Mat4::translate(t2.x, t2.y, t2.z) * state;
+			Mat4 extend3 = Mat4::translate(t3.x, t3.y, t3.z) * state;
+			Mat4 extend4 = Mat4::translate(t4.x, t4.y, t4.z) * state;
+			Mat4 extend5 = Mat4::translate(t5.x, t5.y, t5.z) * state;
+			Mat4 extendG = Mat4::translate(g.x, g.y, g.z) * state;
+
+			spec->states.push_back({
+				state0,
+				state,
+				extend1,
+				extend2,
+				extend3,
+				extend4,
+				extend5,
+				extendG,
 			});
 		}
 	}
@@ -598,14 +789,14 @@ int main(int argc, char const *argv[]) {
 	spec->energyConsume = Energy::kW(1);
 
 	{
-		Matrix state0 = MatrixIdentity();
+		Mat4 state0 = Mat4::identity;
 
 		for (int i = 20; i >= 0; i--) {
-			//Matrix stateT2 = MatrixTranslate(0.0f, -1.0f/(float)i/2.0f, 0.0f);
-			//Matrix stateT3 = MatrixTranslate(0.0f, -1.0f/(float)i, 0.0f);
-			Matrix stateT2 = MatrixTranslate(0.0f, -1.0f/20.0f*(float)i/2.0f, 0.0f);
-			Matrix stateT3 = MatrixTranslate(0.0f, -1.0f/20.0f*(float)i, 0.0f);
-			Matrix stateP = MatrixTranslate(0.0f, -1.0f/20.0f*(float)i, 0.0f);
+			//Mat4 stateT2 = Mat4::translate(0.0f, -1.0f/(float)i/2.0f, 0.0f);
+			//Mat4 stateT3 = Mat4::translate(0.0f, -1.0f/(float)i, 0.0f);
+			Mat4 stateT2 = Mat4::translate(0.0f, -1.0f/20.0f*(float)i/2.0f, 0.0f);
+			Mat4 stateT3 = Mat4::translate(0.0f, -1.0f/20.0f*(float)i, 0.0f);
+			Mat4 stateP = Mat4::translate(0.0f, -1.0f/20.0f*(float)i, 0.0f);
 
 			spec->states.push_back({
 				state0,
@@ -632,14 +823,14 @@ int main(int argc, char const *argv[]) {
 	};
 
 	{
-		Matrix state0 = MatrixIdentity();
+		Mat4 state0 = Mat4::identity;
 
 		for (int i = 15; i >= 0; i--) {
-			//Matrix stateT2 = MatrixTranslate(0.0f, -1.0f/(float)i/2.0f, 0.0f);
-			//Matrix stateT3 = MatrixTranslate(0.0f, -1.0f/(float)i, 0.0f);
-			Matrix stateT2 = MatrixTranslate(1.0f/15.0f*(float)i/2.0f, 0.0f, 0.0f);
-			Matrix stateT3 = MatrixTranslate(1.0f/15.0f*(float)i, 0.0f, 0.0f);
-			Matrix stateP = MatrixTranslate(1.0f/15.0f*(float)i, 0.0f, 0.0f);
+			//Mat4 stateT2 = Mat4::translate(0.0f, -1.0f/(float)i/2.0f, 0.0f);
+			//Mat4 stateT3 = Mat4::translate(0.0f, -1.0f/(float)i, 0.0f);
+			Mat4 stateT2 = Mat4::translate(1.0f/15.0f*(float)i/2.0f, 0.0f, 0.0f);
+			Mat4 stateT3 = Mat4::translate(1.0f/15.0f*(float)i, 0.0f, 0.0f);
+			Mat4 stateP = Mat4::translate(1.0f/15.0f*(float)i, 0.0f, 0.0f);
 
 			spec->states.push_back({
 				state0,
@@ -680,10 +871,10 @@ int main(int argc, char const *argv[]) {
 	spec->energyGenerate = Energy::MW(1);
 
 	{
-		Matrix state0 = MatrixIdentity();
+		Mat4 state0 = Mat4::identity;
 
 		for (int i = 0; i < 720; i++) {
-			Matrix state1 = MatrixRotateY((float)i*DEG2RAD*5.0f);
+			Mat4 state1 = Mat4::rotateY((float)i*DEG2RAD*5.0f);
 
 			spec->states.push_back({
 				state0,
@@ -816,7 +1007,7 @@ int main(int argc, char const *argv[]) {
 			});
 
 			for (uint i = 0; i < item->parts.size(); i++) {
-				item->parts[i]->draw(MatrixIdentity());
+				item->parts[i]->draw(Mat4::identity);
 			}
 
 			EndMode3D();
@@ -846,7 +1037,7 @@ int main(int argc, char const *argv[]) {
 			});
 
 			for (Part* part: recipe->parts) {
-				part->draw(MatrixIdentity());
+				part->draw(Mat4::identity);
 			}
 
 			EndMode3D();
@@ -876,7 +1067,7 @@ int main(int argc, char const *argv[]) {
 			});
 
 			for (Part* part: spec->parts) {
-				part->draw(MatrixIdentity());
+				part->draw(Mat4::identity);
 			}
 
 			EndMode3D();
@@ -1048,12 +1239,14 @@ int main(int argc, char const *argv[]) {
 			Point cameraTarget = camSec->pos;
 			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 			SetShaderValue(pshader, pshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
+			SetShaderValue(particleShader, particleShader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 
 			camSec->draw(secondary);
 
 			cameraTarget = camera->position;
 			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 			SetShaderValue(pshader, pshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
+			SetShaderValue(particleShader, particleShader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 
 			camera->draw();
 
@@ -1075,6 +1268,7 @@ int main(int argc, char const *argv[]) {
 
 	UnloadShader(shader);
 	UnloadShader(pshader);
+	UnloadShader(particleShader);
 
 	UnloadModel(cube);
 	UnloadModel(View::waterCube);

@@ -60,6 +60,6 @@ void TimeSeries::update(uint64_t t) {
 void TimeSeries::track(uint64_t t, std::function<void(void)> fn) {
 	double start = GetTime();
 	fn();
-	set(t, GetTime()-start);
+	set(t, (GetTime()-start)*1000.0f);
 	update(t);
 }

@@ -22,8 +22,6 @@ Spec::Spec(std::string name) {
 	pivot = false;
 	drone = false;
 	store = false;
-	crafter = false;
-	arm = false;
 	belt = false;
 	lift = false;
 	shunt = false;
@@ -59,6 +57,12 @@ Spec::Spec(std::string name) {
 
 	vehicle = false;
 	vehicleEnergy = 0;
+
+	crafter = false;
+	crafterProgress = false;
+
+	arm = false;
+	armOffset = 1.0f;
 }
 
 Spec::~Spec() {

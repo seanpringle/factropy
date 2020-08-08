@@ -1,10 +1,5 @@
 template
 port
-	belts
-	depot/drone
-	crafter
-		limit outputs
-	inserter
 	electricity
 		generic network class?
 ore
@@ -32,3 +27,5 @@ noise previewer
 ld models
 belt/lift transitions
 power/beam belt emitter
+
+pass pos+scale factor to particle shader in vec4

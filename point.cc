@@ -169,7 +169,7 @@ Point Point::scale(float s) const {
 }
 
 Point Point::pivot(Point target, float speed) const {
-	Matrix r;
+	Mat4 r;
 	target = target.normalize();
 	// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
 
@@ -177,18 +177,18 @@ Point Point::pivot(Point target, float speed) const {
 	Point behind = -ahead;
 
 	if (target == behind) {
-		r = MatrixRotate(Vector3Perpendicular(ahead), 180.0f*DEG2RAD);
+		r = Mat4::rotate(Vector3Perpendicular(ahead), 180.0f*DEG2RAD);
 	}
 	else
 	if (target == ahead) {
-		r = MatrixIdentity();
+		r = Mat4::identity;
 	}
 	else {
 		Point axis = ahead.cross(target);
 		float angle = std::acos(ahead.dot(target));
 		float sign = angle < 0 ? -1.0f: 1.0f;
 		float delta = std::abs(angle) < speed ? angle: speed*sign;
-		r = MatrixRotate(axis, delta);
+		r = Mat4::rotate(axis, delta);
 	}
 	return Point(Vector3Transform(*this, r));
 }
@@ -233,10 +233,10 @@ Point Point::rotateHorizontal() const {
 
 Point Point::randomHorizontal() const {
 	float angle = Sim::random()*360.0f*DEG2RAD;
-	return transform(MatrixRotateY(angle));
+	return transform(Mat4::rotateY(angle));
 }
 
-Point Point::transform(Matrix m) const {
+Point Point::transform(Mat4 m) const {
 	return Point(Vector3Transform(*this, m));
 }
 
@@ -244,22 +244,22 @@ float Point::length() const {
 	return Vector3Length(*this);
 }
 
-Matrix Point::rotation() {
-	Matrix r = MatrixIdentity();
+Mat4 Point::rotation() {
+	Mat4 r = Mat4::identity;
 	Point dir = *this;
 
 	// https://gamedev.stackexchange.com/questions/15070/orienting-a-model-to-face-a-target
 	if (dir == Point::North) {
-		r = MatrixRotate(Point::Up, 180.0f*DEG2RAD);
+		r = Mat4::rotate(Point::Up, 180.0f*DEG2RAD);
 	}
 	else
 	if (dir == Point::South) {
-		r = MatrixIdentity();
+		r = Mat4::identity;
 	}
 	else {
 		Point axis = Point::South.cross(dir);
 		float angle = std::acos(Point::South.dot(dir));
-		r = MatrixRotate(axis, angle);
+		r = Mat4::rotate(axis, angle);
 	}
 
 	return r;

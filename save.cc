@@ -9,6 +9,41 @@ using json = nlohmann::json;
 #include <filesystem>
 namespace fs = std::filesystem;
 
+namespace Save {
+	json timeSeriesSave(TimeSeries* ts) {
+		json state;
+		state["secondMax"] = ts->secondMax;
+		state["minuteMax"] = ts->minuteMax;
+		state["hourMax"] = ts->hourMax;
+
+		for (uint i = 0; i < 60; i++) {
+			state["seconds"][i] = ts->seconds[i];
+		}
+		for (uint i = 0; i < 60; i++) {
+			state["minutes"][i] = ts->minutes[i];
+		}
+		for (uint i = 0; i < 60; i++) {
+			state["hours"][i] = ts->hours[i];
+		}
+		return state;
+	}
+
+	void timeSeriesLoad(TimeSeries* ts, json state) {
+		ts->secondMax = state["secondMax"];
+		ts->minuteMax = state["minuteMax"];
+		ts->hourMax = state["hourMax"];
+		for (uint i = 0; i < 60; i++) {
+			ts->seconds[i] = state["seconds"][i];
+		}
+		for (uint i = 0; i < 60; i++) {
+			ts->minutes[i] = state["minutes"][i];
+		}
+		for (uint i = 0; i < 60; i++) {
+			ts->hours[i] = state["hours"][i];
+		}
+	}
+}
+
 namespace Sim {
 	void save(const char* name) {
 		auto path = std::string(name);
@@ -36,6 +71,29 @@ namespace Sim {
 		Crafter::saveAll(name);
 		Depot::saveAll(name);
 		Drone::saveAll(name);
+		Burner::saveAll(name);
+
+		{
+			auto out = std::ofstream(path + "/time-series.json");
+
+			json state;
+			state["statsElectricityDemand"] = Save::timeSeriesSave(&Sim::statsElectricityDemand);
+			state["statsElectricitySupply"] = Save::timeSeriesSave(&Sim::statsElectricitySupply);
+			state["statsEntity"] = Save::timeSeriesSave(&Sim::statsEntity);
+			state["statsStore"] = Save::timeSeriesSave(&Sim::statsStore);
+			state["statsArm"] = Save::timeSeriesSave(&Sim::statsArm);
+			state["statsCrafter"] = Save::timeSeriesSave(&Sim::statsCrafter);
+			state["statsPath"] = Save::timeSeriesSave(&Sim::statsPath);
+			state["statsVehicle"] = Save::timeSeriesSave(&Sim::statsVehicle);
+			state["statsBelt"] = Save::timeSeriesSave(&Sim::statsBelt);
+			state["statsLift"] = Save::timeSeriesSave(&Sim::statsLift);
+			state["statsShunt"] = Save::timeSeriesSave(&Sim::statsShunt);
+			state["statsDepot"] = Save::timeSeriesSave(&Sim::statsDepot);
+			state["statsDrone"] = Save::timeSeriesSave(&Sim::statsDrone);
+
+			out << state << "\n";
+			out.close();
+		}
 	}
 
 	void load(const char* name) {
@@ -60,8 +118,32 @@ namespace Sim {
 		Arm::loadAll(name);
 		Vehicle::loadAll(name);
 		Crafter::loadAll(name);
-		//Depot::loadAll(name);
-		//Drone::loadAll(name);
+		Depot::loadAll(name);
+		Drone::loadAll(name);
+		Burner::loadAll(name);
+
+		{
+			auto in = std::ifstream(path + "/time-series.json");
+
+			for (std::string line; std::getline(in, line);) {
+				auto state = json::parse(line);
+				Save::timeSeriesLoad(&Sim::statsElectricityDemand, state["statsElectricityDemand"]);
+				Save::timeSeriesLoad(&Sim::statsElectricitySupply, state["statsElectricitySupply"]);
+				Save::timeSeriesLoad(&Sim::statsEntity, state["statsEntity"]);
+				Save::timeSeriesLoad(&Sim::statsStore, state["statsStore"]);
+				Save::timeSeriesLoad(&Sim::statsArm, state["statsArm"]);
+				Save::timeSeriesLoad(&Sim::statsCrafter, state["statsCrafter"]);
+				Save::timeSeriesLoad(&Sim::statsPath, state["statsPath"]);
+				Save::timeSeriesLoad(&Sim::statsVehicle, state["statsVehicle"]);
+				Save::timeSeriesLoad(&Sim::statsBelt, state["statsBelt"]);
+				Save::timeSeriesLoad(&Sim::statsLift, state["statsLift"]);
+				Save::timeSeriesLoad(&Sim::statsShunt, state["statsShunt"]);
+				Save::timeSeriesLoad(&Sim::statsDepot, state["statsDepot"]);
+				Save::timeSeriesLoad(&Sim::statsDrone, state["statsDrone"]);
+			}
+
+			in.close();
+		}
 	}
 }
 
@@ -222,6 +304,11 @@ void Store::saveAll(const char* name) {
 			};
 		}
 
+		i = 0;
+		for (uint did: store.drones) {
+			state["drones"][i++] = did;
+		}
+
 		out << state << "\n";
 	}
 
@@ -252,6 +339,10 @@ void Store::loadAll(const char* name) {
 				promised: level[3],
 				reserved: level[4],
 			});
+		}
+
+		for (uint did: state["drones"]) {
+			store.drones.insert(did);
 		}
 	}
 
@@ -543,7 +634,6 @@ void Depot::loadAll(const char* name) {
 	in.close();
 }
 
-
 void Drone::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/drones.json");
@@ -584,3 +674,85 @@ void Drone::loadAll(const char* name) {
 
 	in.close();
 }
+
+void Burner::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/burners.json");
+
+	for (auto& burner: all) {
+
+		json state;
+		state["id"] = burner.id;
+		state["energy"] = burner.energy.value;
+		state["buffer"] = burner.buffer.value;
+
+		state["store"]["activity"] = burner.store.activity;
+
+		int i = 0;
+		for (Stack stack: burner.store.stacks) {
+			state["store"]["stacks"][i++] = {
+				Item::get(stack.iid)->name,
+				stack.size,
+			};
+		}
+
+		i = 0;
+		for (auto level: burner.store.levels) {
+			state["store"]["levels"][i++] = {
+				Item::get(level.iid)->name,
+				level.lower,
+				level.upper,
+				level.promised,
+				level.reserved,
+			};
+		}
+
+		i = 0;
+		for (uint did: burner.store.drones) {
+			state["store"]["drones"][i++] = did;
+		}
+
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Burner::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/burners.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Burner& burner = get(state["id"]);
+		burner.energy.value = state["energy"];
+		burner.buffer.value = state["buffer"];
+
+		burner.store.activity = state["store"]["activity"];
+
+		for (auto stack: state["store"]["stacks"]) {
+			burner.store.stacks.push_back({
+				Item::byName(stack[0])->id,
+				stack[1],
+			});
+		}
+
+		for (auto level: state["store"]["levels"]) {
+			burner.store.levels.push_back({
+				iid: Item::byName(level[0])->id,
+				lower: level[1],
+				upper: level[2],
+				promised: level[3],
+				reserved: level[4],
+			});
+		}
+
+		for (uint did: state["drones"]) {
+			burner.store.drones.insert(did);
+		}
+	}
+
+	in.close();
+}
+
+

@@ -37,26 +37,26 @@ namespace {
 Thing::Thing() {
 	ZERO(meshHD);
 	ZERO(meshLD);
-	ZERO(transform);
+	transform = Mat4::identity;
 }
 
 Thing::Thing(std::string hd) {
 	meshHD = loadSTL(hd);
 	meshLD = meshHD;
-	transform = MatrixRotateX(90.0f*DEG2RAD);
+	transform = Mat4::rotateX(90.0f*DEG2RAD);
 	notef("%s is missing a low-detail mesh!", hd);
 }
 
 Thing::Thing(std::string hd, std::string ld) {
 	meshHD = loadSTL(hd);
 	meshLD = loadSTL(ld);
-	transform = MatrixRotateX(90.0f*DEG2RAD);
+	transform = Mat4::rotateX(90.0f*DEG2RAD);
 }
 
 Thing::Thing(Mesh mesh) {
 	meshHD = mesh;
 	meshLD = mesh;
-	transform = MatrixIdentity();
+	transform = Mat4::identity;
 }
 
 Mesh Thing::loadSTL(std::string stl) {
@@ -148,7 +148,7 @@ Thing& Thing::smooth() {
 	return *this;
 }
 
-void Thing::drawBatch(Color color, float specular, bool hd, int count, Matrix *trx) {
+void Thing::drawBatch(Color color, float specular, bool hd, int count, Mat4 *trx) {
 	Part::material.shader = Part::shader;
 	Part::material.maps[MAP_DIFFUSE].color = color;
 	uint specShine  = GetShaderLocation(Part::shader, "specShine");
@@ -160,7 +160,19 @@ void Thing::drawBatch(Color color, float specular, bool hd, int count, Matrix *t
 	SetShaderValue(Part::shader, specShine, &specular, UNIFORM_FLOAT);
 }
 
-void Thing::drawGhostBatch(Color color, bool hd, int count, Matrix *trx) {
+void Thing::drawParticleBatch(Color color, float specular, bool hd, Mat4 trx, int count, Point *set) {
+	Part::material.shader = Part::particleShader;
+	Part::material.maps[MAP_DIFFUSE].color = color;
+	uint specShine  = GetShaderLocation(Part::particleShader, "specShine");
+
+	SetShaderValue(Part::particleShader, specShine, &specular, UNIFORM_FLOAT);
+	rlDrawParticles(hd ? meshHD: meshLD, Part::material, trx, count, (Vector3*)set);
+
+	specular = 0.0f;
+	SetShaderValue(Part::particleShader, specShine, &specular, UNIFORM_FLOAT);
+}
+
+void Thing::drawGhostBatch(Color color, bool hd, int count, Mat4 *trx) {
 	Part::material.shader = GetShaderDefault();
 	Part::material.maps[MAP_DIFFUSE].color = (Color){
 		color.r,
@@ -241,16 +253,31 @@ void Part::terrainNormals(Mesh *mesh) {
 	rlUpdateMesh(*mesh, 2, mesh->vertexCount);
 }
 
+Part::Part() {
+	drawHD = true;
+	ZERO(meshHD);
+	drawLD = true;
+	ZERO(meshLD);
+	transform = Mat4::identity;
+	s = Mat4::identity;
+	r = Mat4::identity;
+	t = Mat4::identity;
+	srt = Mat4::identity;
+	color = WHITE;
+	specular = 0.0f;
+	all.insert(this);
+}
+
 Part::Part(Thing thing) {
 	drawHD = true;
 	meshHD = thing.meshHD;
 	drawLD = true;
 	meshLD = thing.meshLD;
 	transform = thing.transform;
-	s = MatrixIdentity();
-	r = MatrixIdentity();
-	t = MatrixIdentity();
-	srt = MatrixIdentity();
+	s = Mat4::identity;
+	r = Mat4::identity;
+	t = Mat4::identity;
+	srt = Mat4::identity;
 	color = WHITE;
 	specular = 0.0f;
 	all.insert(this);
@@ -275,33 +302,33 @@ Part* Part::gloss(float shine) {
 }
 
 Part* Part::rotate(Point axis, float degrees) {
-	r = MatrixRotate(axis, degrees*DEG2RAD);
-	srt = MatrixMultiply(MatrixMultiply(s, r), t);
+	r = Mat4::rotate(axis, degrees*DEG2RAD);
+	srt = (s * r) * t;
 	return this;
 }
 
 Part* Part::scale(float x, float y, float z) {
-	s = MatrixScale(x, y, z);
-	srt = MatrixMultiply(MatrixMultiply(s, r), t);
+	s = Mat4::scale(x, y, z);
+	srt = (s * r) * t;
 	return this;
 }
 
 Part* Part::translate(float x, float y, float z) {
-	t = MatrixTranslate(x, y, z);
-	srt = MatrixMultiply(MatrixMultiply(s, r), t);
+	t = Mat4::translate(x, y, z);
+	srt = (s * r) * t;
 	return this;
 }
 
 void Part::update() {
-	srt = MatrixMultiply(MatrixMultiply(s, r), t);
+	srt = (s * r) * t;
 }
 
-void Part::draw(Matrix trx) {
-	Matrix m = MatrixMultiply(MatrixMultiply(transform, srt), trx);
+void Part::draw(Mat4 trx) {
+	Mat4 m = transform * srt * trx;
 	drawBatch(color, specular, true, 1, &m);
 }
 
-Matrix Part::specInstanceState(Spec* spec, uint slot, uint state) {
+Mat4 Part::specInstanceState(Spec* spec, uint slot, uint state) {
 	if (spec->states.size() == 0) {
 		ensure(state == 0);
 	}
@@ -311,25 +338,25 @@ Matrix Part::specInstanceState(Spec* spec, uint slot, uint state) {
 		return spec->states[state][slot];
 	}
 
-	return MatrixIdentity();
+	return Mat4::identity;
 }
 
-Matrix Part::specInstance(Spec* spec, uint slot, uint state, Matrix trx) {
-	Matrix i = specInstanceState(spec, slot, state);
-	Matrix m = MatrixMultiply(MatrixMultiply(transform, i), srt);
-	return MatrixMultiply(m, trx);
+Mat4 Part::specInstance(Spec* spec, uint slot, uint state, Mat4 trx) {
+	Mat4 i = specInstanceState(spec, slot, state);
+	Mat4 m = (transform * i) * srt;
+	return m * trx;
 }
 
-Matrix Part::instance(Matrix trx) {
-	return MatrixMultiply(MatrixMultiply(transform, srt), trx);
+Mat4 Part::instance(Mat4 trx) {
+	return (transform * srt) * trx;
 }
 
-void Part::drawInstanced(bool hd, int count, Matrix* trx) {
+void Part::drawInstanced(bool hd, int count, Mat4* trx) {
 	if (!hd && !drawLD) return;
 	drawBatch(color, specular, hd, count, trx);
 }
 
-void Part::drawGhostInstanced(bool hd, int count, Matrix* trx) {
+void Part::drawGhostInstanced(bool hd, int count, Mat4* trx) {
 	if (!hd && !drawLD) return;
 	drawGhostBatch(color, hd, count, trx);
 }
@@ -338,8 +365,8 @@ PartSpinner::PartSpinner(Thing thing, float sspeed) : Part(thing) {
 	speed = sspeed;
 }
 
-Matrix PartSpinner::specInstance(Spec* spec, uint slot, uint state, Matrix trx) {
-	Matrix i = specInstanceState(spec, slot, state);
+Mat4 PartSpinner::specInstance(Spec* spec, uint slot, uint state, Mat4 trx) {
+	Mat4 i = specInstanceState(spec, slot, state);
 	float noise = 0.0f;
 	noise += trx.m0;
 	noise += trx.m4;
@@ -357,9 +384,9 @@ Matrix PartSpinner::specInstance(Spec* spec, uint slot, uint state, Matrix trx) 
 	noise += trx.m7;
 	noise += trx.m11;
 	noise += trx.m15;
-	Matrix spin = MatrixMultiply(transform, MatrixRotateY((Sim::tick%360*speed)*DEG2RAD + noise));
-	Matrix m = MatrixMultiply(MatrixMultiply(spin, i), srt);
-	return MatrixMultiply(m, trx);
+	Mat4 spin = transform * Mat4::rotateY((Sim::tick%360*speed)*DEG2RAD + noise);
+	Mat4 m = (spin * i) * srt;
+	return m * trx;
 }
 
 PartCycle::PartCycle(Thing thing, uint sstep) : Part(thing) {
@@ -370,11 +397,85 @@ void PartCycle::update() {
 	Part::update();
 	float inc = 0.01 * (float)step;
 	uint mod = 100/step;
-	shunt = MatrixMultiply(transform, MatrixTranslate(0, 0, (float)(Sim::tick%mod)*inc));
+	shunt = transform * Mat4::translate(0, 0, (float)(Sim::tick%mod)*inc);
 }
 
-Matrix PartCycle::specInstance(Spec* spec, uint slot, uint state, Matrix trx) {
-	Matrix i = specInstanceState(spec, slot, state);
-	Matrix m = MatrixMultiply(MatrixMultiply(shunt, i), srt);
-	return MatrixMultiply(m, trx);
+Mat4 PartCycle::specInstance(Spec* spec, uint slot, uint state, Mat4 trx) {
+	Mat4 i = specInstanceState(spec, slot, state);
+	Mat4 m = (shunt * i) * srt;
+	return m * trx;
+}
+
+PartSmoke::PartSmoke(int pm, int ppt, float pr, float er, float sf, float th, float tv, float td, uint ll, uint lu) : Part() {
+	particlesMax = pm;
+	particlesPerTick = ppt;
+	particleRadius = pr;
+	emitRadius = er;
+	spreadFactor = sf;
+	tickDH = th;
+	tickDV = tv;
+	tickDecay = td;
+	lifeLower = ll;
+	lifeUpper = lu;
+
+	meshHD = GenMeshSphere(particleRadius,6,6);
+
+	meshLD = meshHD;
+	drawLD = false;
+
+	meshes.push_back(meshHD);
+
+	ensure(all.count(this) > 0);
+
+	paint(0x444444ff);
+
+	for (int i = 0; i < particlesMax; i++) {
+		particles.push_back({
+			offset: Point::Zero,
+			spread: Point::Zero,
+			tickDV: 0,
+			life: 0,
+		});
+	}
+}
+
+void PartSmoke::update() {
+	Part::update();
+
+	int create = particlesPerTick;
+	uint lifeRange = lifeUpper - lifeLower;
+
+	for (Particle& p: particles) {
+		if (p.life < Sim::tick && create > 0) {
+			p.life = Sim::tick + lifeLower + std::round(Sim::random() * (float)lifeRange);
+			p.offset = (Point::South * emitRadius * std::sqrt(Sim::random())).randomHorizontal();
+			p.spread = p.offset * spreadFactor;
+			p.tickDV = tickDV;
+			create--;
+		}
+		if (p.life > Sim::tick) {
+			p.offset += p.spread;
+			p.offset += (Point::South * (Sim::random()*tickDH)).randomHorizontal();
+			p.offset += (Point::Up * ((Sim::random()*0.5+0.5)*p.tickDV));
+			p.tickDV *= tickDecay;
+		}
+	}
+}
+
+void PartSmoke::drawInstanced(bool hd, int count, Mat4* trx) {
+	if (!hd && !drawLD) return;
+
+	std::vector<Point> batch;
+
+	for (int i = 0; i < count; i++) {
+		batch.clear();
+		for (Particle& p: particles) {
+			if (p.life > Sim::tick) {
+				batch.push_back(p.offset);
+			}
+		}
+		if (batch.size() > 0) {
+			drawParticleBatch(color, specular, hd, trx[i], batch.size(), batch.data());
+		}
+	}
 }

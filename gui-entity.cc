@@ -6,7 +6,7 @@ GuiEntity::GuiEntity() {
 	spec = NULL;
 	pos = {0,0,0};
 	dir = Point::South;
-	transform = MatrixIdentity();
+	transform = Mat4::identity;
 }
 
 GuiEntity::GuiEntity(uint id) {
@@ -32,9 +32,9 @@ Point GuiEntity::ground() {
 }
 
 void GuiEntity::updateTransform() {
-	Matrix r = dir.rotation();
-	Matrix t = MatrixTranslate(pos.x, pos.y, pos.z);
-	transform = MatrixMultiply(r, t);
+	Mat4 r = dir.rotation();
+	Mat4 t = Mat4::translate(pos.x, pos.y, pos.z);
+	transform = r * t;
 }
 
 // GuiFakeEntity

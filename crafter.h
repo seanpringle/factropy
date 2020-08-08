@@ -22,6 +22,7 @@ struct Crafter {
 	uint id;
 	bool working;
 	float progress;
+	float efficiency;
 	Recipe *recipe, *nextRecipe;
 	Energy energyUsed;
 

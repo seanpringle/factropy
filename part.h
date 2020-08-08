@@ -9,6 +9,7 @@ struct Thing;
 #include <map>
 #include "raylib.h"
 #include "raymath.h"
+#include "mat4.h"
 #include "spec.h"
 
 struct Thing {
@@ -16,7 +17,7 @@ struct Thing {
 
 	Mesh meshHD;
 	Mesh meshLD;
-	Matrix transform;
+	Mat4 transform;
 
 	Thing();
 	Thing(std::string);
@@ -25,8 +26,9 @@ struct Thing {
 	Mesh loadSTL(std::string);
 
 	Thing& smooth();
-	void drawBatch(Color color, float specular, bool hd, int count, Matrix *trx);
-	void drawGhostBatch(Color color, bool hd, int count, Matrix *trx);
+	void drawBatch(Color color, float specular, bool hd, int count, Mat4 *trx);
+	void drawParticleBatch(Color color, float specular, bool hd, Mat4 trx, int count, Point *set);
+	void drawGhostBatch(Color color, bool hd, int count, Mat4 *trx);
 };
 
 struct Part: Thing {
@@ -36,17 +38,19 @@ struct Part: Thing {
 	static void terrainNormals(Mesh *mesh);
 
 	static inline Shader shader;
+	static inline Shader particleShader;
 	static inline Material material;
 
+	Part();
 	Part(Thing thing);
 	virtual ~Part();
 
 	Color color;
 	float specular;
-	Matrix s;
-	Matrix r;
-	Matrix t;
-	Matrix srt;
+	Mat4 s;
+	Mat4 r;
+	Mat4 t;
+	Mat4 srt;
 	bool drawHD;
 	bool drawLD;
 
@@ -58,29 +62,56 @@ struct Part: Thing {
 	Part* translate(float x, float y, float z);
 	virtual void update();
 
-	void draw(Matrix trx);
-	void drawInstanced(bool hd, int count, Matrix* trx);
-	void drawGhostInstanced(bool hd, int count, Matrix* trx);
+	void draw(Mat4 trx);
+	virtual void drawInstanced(bool hd, int count, Mat4* trx);
+	void drawGhostInstanced(bool hd, int count, Mat4* trx);
 
-	Matrix specInstanceState(Spec* spec, uint slot, uint state);
-	virtual Matrix specInstance(Spec* spec, uint slot, uint state, Matrix trx);
-	virtual Matrix instance(Matrix trx);
+	Mat4 specInstanceState(Spec* spec, uint slot, uint state);
+	virtual Mat4 specInstance(Spec* spec, uint slot, uint state, Mat4 trx);
+	virtual Mat4 instance(Mat4 trx);
 };
 
 struct PartSpinner : Part {
 	float speed;
 
 	PartSpinner(Thing thing, float speed);
-	virtual Matrix specInstance(Spec* spec, uint slot, uint state, Matrix trx);
+	virtual Mat4 specInstance(Spec* spec, uint slot, uint state, Mat4 trx);
 };
 
 struct PartCycle : Part {
 	uint step;
-	Matrix shunt;
+	Mat4 shunt;
 
 	PartCycle(Thing thing, uint step);
 	virtual void update();
-	virtual Matrix specInstance(Spec* spec, uint slot, uint state, Matrix trx);
+	virtual Mat4 specInstance(Spec* spec, uint slot, uint state, Mat4 trx);
+};
+
+struct PartSmoke : Part {
+
+	struct Particle {
+		Point offset;
+		Point spread;
+		float tickDV;
+		uint64_t life;
+	};
+
+	int particlesMax;
+	int particlesPerTick;
+	float particleRadius;
+	float emitRadius;
+	float spreadFactor;
+	float tickDH;
+	float tickDV;
+	float tickDecay;
+	uint lifeLower;
+	uint lifeUpper;
+	std::vector<Particle> particles;
+
+	PartSmoke(int particlesMax, int particlesPerTick, float particleRadius, float emitRadius, float spreadFactor, float tickDH, float tickDV, float tickDecay, uint lifeLower, uint lifeUpper);
+
+	virtual void update();
+	virtual void drawInstanced(bool hd, int count, Mat4* trx);
 };
 
 #endif

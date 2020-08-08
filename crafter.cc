@@ -16,6 +16,7 @@ Crafter& Crafter::create(uint id) {
 	crafter.id = id;
 	crafter.working = false;
 	crafter.progress = 0.0f;
+	crafter.efficiency = 0.0f;
 	crafter.recipe = NULL;
 	crafter.nextRecipe = NULL;
 	crafter.energyUsed = 0;
@@ -40,7 +41,14 @@ void Crafter::update() {
 	Entity& en = Entity::get(id);
 	if (en.isGhost()) return;
 
-	en.state = (uint)std::floor(progress * (float)en.spec->states.size());
+	if (en.spec->crafterProgress) {
+		en.state = (uint)std::floor(progress * (float)en.spec->states.size());
+	} else {
+		if (working) {
+			en.state = en.state + (efficiency > 0.5 ? 2: 1);
+			if (en.state >= en.spec->states.size()) en.state = 0;
+		}
+	}
 
 	Store& store = en.store();
 
@@ -72,6 +80,7 @@ void Crafter::update() {
 			working = false;
 			energyUsed = 0;
 			progress = 0.0f;
+			efficiency = 0.0f;
 		}
 	}
 
@@ -100,11 +109,13 @@ void Crafter::update() {
 			working = true;
 			energyUsed = 0;
 			progress = 0.0f;
+			efficiency = 0.0f;
 		}
 	}
 
 	if (working) {
 		energyUsed += en.consume(en.spec->energyConsume);
+		efficiency = energyUsed.portion(en.spec->energyConsume);
 		progress = energyUsed.portion(recipe->energyUsage);
 	}
 
@@ -121,5 +132,6 @@ void Crafter::update() {
 		working = false;
 		energyUsed = 0;
 		progress = 0.0f;
+		efficiency = 0.0f;
 	}
 }

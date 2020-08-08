@@ -5,6 +5,7 @@
 
 struct Point;
 #include "box.h"
+#include "mat4.h"
 #include "volume.h"
 #include <initializer_list>
 
@@ -50,9 +51,9 @@ struct Point : Vector3 {
 	Point roundCardinal() const;
 	Point rotateHorizontal() const;
 	Point randomHorizontal() const;
-	Point transform(Matrix) const;
+	Point transform(Mat4) const;
 	float length() const;
-	Matrix rotation();
+	Mat4 rotation();
 };
 
 #endif
