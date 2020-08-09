@@ -104,7 +104,7 @@ int main(int argc, char const *argv[]) {
 	);
 
 	particleShader.locs[LOC_MATRIX_MVP] = GetShaderLocation(particleShader, "mvp");
-	particleShader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(particleShader, "transform");
+	particleShader.locs[LOC_MATRIX_MODEL] = GetShaderAttribLocation(particleShader, "particle");
 	particleShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(particleShader, "viewPos");
 
   SetShaderValue(particleShader, GetShaderLocation(particleShader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
@@ -361,7 +361,7 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/furnace-hd.stl", "models/furnace-ld.stl")))->paint(0xcc6600ff),
 		(new Part(Thing("models/furnace-fire-hd.stl", "models/furnace-fire-ld.stl")))->paint(0x000000ff),
 		(new Part(Thing("models/furnace-smoke-hd.stl", "models/furnace-smoke-ld.stl")))->paint(0x000000ff),
-		(new PartSmoke(1800, 20, 0.01, 0.5f, 0.01f, 0.005f, 0.1f, 0.99f, 60, 180))->translate(0,2,0),
+		(new PartSmoke(2400, 20, 0.01, 0.5f, 0.01f, 0.005f, 0.1f, 0.99f, 60, 180))->translate(0,2,0),
 	};
 	spec->store = true;
 	spec->capacity = Mass::kg(100);
@@ -1225,10 +1225,8 @@ int main(int argc, char const *argv[]) {
 			camera->popup->update();
 		}
 
-		for (auto spec: Spec::all) {
-			for (auto part: spec.second->parts) {
-				part->update();
-			}
+		for (auto part: Part::all) {
+			part->update();
 		}
 
 		BeginDrawing();

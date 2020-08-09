@@ -3,6 +3,7 @@
 #include "part.h"
 #include "rlgl.h"
 #include <vector>
+#include <array>
 #include <fstream>
 #include <regex>
 
@@ -160,13 +161,13 @@ void Thing::drawBatch(Color color, float specular, bool hd, int count, Mat4 *trx
 	SetShaderValue(Part::shader, specShine, &specular, UNIFORM_FLOAT);
 }
 
-void Thing::drawParticleBatch(Color color, float specular, bool hd, Mat4 trx, int count, Point *set) {
+void Thing::drawParticleBatch(Color color, float specular, bool hd, int count, Vector4 *set) {
 	Part::material.shader = Part::particleShader;
 	Part::material.maps[MAP_DIFFUSE].color = color;
 	uint specShine  = GetShaderLocation(Part::particleShader, "specShine");
 
 	SetShaderValue(Part::particleShader, specShine, &specular, UNIFORM_FLOAT);
-	rlDrawParticles(hd ? meshHD: meshLD, Part::material, trx, count, (Vector3*)set);
+	rlDrawParticles(hd ? meshHD: meshLD, Part::material, count, (Vector4*)set);
 
 	specular = 0.0f;
 	SetShaderValue(Part::particleShader, specShine, &specular, UNIFORM_FLOAT);
@@ -262,7 +263,8 @@ Part::Part() {
 	s = Mat4::identity;
 	r = Mat4::identity;
 	t = Mat4::identity;
-	srt = Mat4::identity;
+	srt = (s * r) * t;
+	tsrt = transform * srt;
 	color = WHITE;
 	specular = 0.0f;
 	all.insert(this);
@@ -277,7 +279,8 @@ Part::Part(Thing thing) {
 	s = Mat4::identity;
 	r = Mat4::identity;
 	t = Mat4::identity;
-	srt = Mat4::identity;
+	srt = (s * r) * t;
+	tsrt = transform * srt;
 	color = WHITE;
 	specular = 0.0f;
 	all.insert(this);
@@ -304,27 +307,31 @@ Part* Part::gloss(float shine) {
 Part* Part::rotate(Point axis, float degrees) {
 	r = Mat4::rotate(axis, degrees*DEG2RAD);
 	srt = (s * r) * t;
+	tsrt = transform * srt;
 	return this;
 }
 
 Part* Part::scale(float x, float y, float z) {
 	s = Mat4::scale(x, y, z);
 	srt = (s * r) * t;
+	tsrt = transform * srt;
 	return this;
 }
 
 Part* Part::translate(float x, float y, float z) {
 	t = Mat4::translate(x, y, z);
 	srt = (s * r) * t;
+	tsrt = transform * srt;
 	return this;
 }
 
 void Part::update() {
 	srt = (s * r) * t;
+	tsrt = transform * srt;
 }
 
 void Part::draw(Mat4 trx) {
-	Mat4 m = transform * srt * trx;
+	Mat4 m = tsrt * trx;
 	drawBatch(color, specular, true, 1, &m);
 }
 
@@ -342,13 +349,15 @@ Mat4 Part::specInstanceState(Spec* spec, uint slot, uint state) {
 }
 
 Mat4 Part::specInstance(Spec* spec, uint slot, uint state, Mat4 trx) {
-	Mat4 i = specInstanceState(spec, slot, state);
-	Mat4 m = (transform * i) * srt;
-	return m * trx;
+	if (spec->states.size() > 0) {
+		Mat4 i = specInstanceState(spec, slot, state);
+		return ((transform * i) * srt) * trx;
+	}
+	return tsrt * trx;
 }
 
 Mat4 Part::instance(Mat4 trx) {
-	return (transform * srt) * trx;
+	return tsrt * trx;
 }
 
 void Part::drawInstanced(bool hd, int count, Mat4* trx) {
@@ -398,12 +407,15 @@ void PartCycle::update() {
 	float inc = 0.01 * (float)step;
 	uint mod = 100/step;
 	shunt = transform * Mat4::translate(0, 0, (float)(Sim::tick%mod)*inc);
+	ssrt = shunt * srt;
 }
 
 Mat4 PartCycle::specInstance(Spec* spec, uint slot, uint state, Mat4 trx) {
-	Mat4 i = specInstanceState(spec, slot, state);
-	Mat4 m = (shunt * i) * srt;
-	return m * trx;
+	if (spec->states.size() > 0) {
+		Mat4 i = specInstanceState(spec, slot, state);
+		return ((shunt * i) * srt) * trx;
+	}
+	return ssrt * trx;
 }
 
 PartSmoke::PartSmoke(int pm, int ppt, float pr, float er, float sf, float th, float tv, float td, uint ll, uint lu) : Part() {
@@ -418,7 +430,8 @@ PartSmoke::PartSmoke(int pm, int ppt, float pr, float er, float sf, float th, fl
 	lifeLower = ll;
 	lifeUpper = lu;
 
-	meshHD = GenMeshSphere(particleRadius,6,6);
+	//meshHD = GenMeshSphere(particleRadius,6,6);
+	meshHD = GenMeshCube(particleRadius*2.0f,particleRadius*2.0f,particleRadius*2.0f);
 
 	meshLD = meshHD;
 	drawLD = false;
@@ -465,17 +478,30 @@ void PartSmoke::update() {
 void PartSmoke::drawInstanced(bool hd, int count, Mat4* trx) {
 	if (!hd && !drawLD) return;
 
-	std::vector<Point> batch;
+	Vector4* batch = new Vector4[count*particlesMax];
+	int used = 0;
 
 	for (int i = 0; i < count; i++) {
-		batch.clear();
+		Matrix m = trx[i];
+		Point pos = Point::Zero.transform(m);
+		float s = Vector3Length((Vector3){m.m0, m.m4, m.m8});
+
 		for (Particle& p: particles) {
 			if (p.life > Sim::tick) {
-				batch.push_back(p.offset);
+				Point v = pos + p.offset;
+				batch[used++] = (Vector4) {
+					x: v.x,
+					y: v.y,
+					z: v.z,
+					w: s,
+				};
 			}
 		}
-		if (batch.size() > 0) {
-			drawParticleBatch(color, specular, hd, trx[i], batch.size(), batch.data());
-		}
 	}
+
+	if (used > 0) {
+		drawParticleBatch(color, specular, hd, used, batch);
+	}
+
+	delete batch;
 }

@@ -27,7 +27,7 @@ struct Thing {
 
 	Thing& smooth();
 	void drawBatch(Color color, float specular, bool hd, int count, Mat4 *trx);
-	void drawParticleBatch(Color color, float specular, bool hd, Mat4 trx, int count, Point *set);
+	void drawParticleBatch(Color color, float specular, bool hd, int count, Vector4 *set);
 	void drawGhostBatch(Color color, bool hd, int count, Mat4 *trx);
 };
 
@@ -51,6 +51,7 @@ struct Part: Thing {
 	Mat4 r;
 	Mat4 t;
 	Mat4 srt;
+	Mat4 tsrt;
 	bool drawHD;
 	bool drawLD;
 
@@ -81,6 +82,7 @@ struct PartSpinner : Part {
 struct PartCycle : Part {
 	uint step;
 	Mat4 shunt;
+	Mat4 ssrt;
 
 	PartCycle(Thing thing, uint step);
 	virtual void update();

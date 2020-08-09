@@ -445,33 +445,110 @@ void MainCamera::draw() {
 			std::map<Part*,std::vector<Mat4>> ghosts_ld;
 			std::map<Part*,std::vector<Mat4>> ghosts_hd;
 
+			std::vector<Mat4> belt_pillars;
+			std::set<BeltSegment*> belt_segments;
+			std::map<Part*,std::vector<Mat4>> item_transforms;
+
 			for (auto ge: entities) {
+				bool hd = ge->pos.distance(position) < 100;
+
 				for (uint i = 0; i < ge->spec->parts.size(); i++) {
 					Part *part = ge->spec->parts[i];
-					bool hd = ge->pos.distance(position) < 100;
 					Mat4 instance = part->specInstance(ge->spec, i, ge->state, ge->transform);
 					(ge->ghost ? (hd ? ghosts_hd: ghosts_ld): (hd ? extant_hd: extant_ld))[part].push_back(instance);
 				}
+
+				Entity& en = Entity::get(ge->id);
+
+				if (ge->spec->vehicle) {
+					Vehicle& vehicle = en.vehicle();
+					Point p = en.pos;
+					for (auto n: vehicle.path) {
+						DrawSphere(n, 0.25f, RED);
+						DrawLine3D(p, n, RED);
+						p = n;
+					}
+				}
+
+				if (ge->spec->belt) {
+					Belt& belt = en.belt();
+					belt_segments.insert(belt.segment);
+
+					if (en.ground().y < 0.01f && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
+						belt_pillars.push_back(View::beltPillar1->instance(Mat4::translate(en.pos.x, en.pos.y, en.pos.z)));
+					}
+				}
+
+				if (ge->spec->lift) {
+					Lift& lift = en.lift();
+
+					if (lift.iid && hd) {
+						Entity& en = Entity::get(lift.id);
+						Point p = en.pos;
+						Mat4 m = Mat4::translate(p.x, p.y+1.0f, p.z);
+						Item* item = Item::get(lift.iid);
+						for (uint i = 0; i < item->parts.size(); i++) {
+							Part* part = item->parts[i];
+							item_transforms[part].push_back(part->instance(en.spec->states[en.state][4] * m));
+						}
+					}
+				}
+
+				if (ge->spec->arm) {
+					Arm& arm = en.arm();
+
+					if (arm.iid && hd) {
+						Item* item = Item::get(arm.iid);
+						uint grip = en.spec->states[0].size()-1;
+						for (uint i = 0; i < item->parts.size(); i++) {
+							Part* part = item->parts[i];
+							Mat4 o = en.spec->parts[grip]->specInstance(en.spec, grip, en.state, en.dir.rotation());
+							Point p = Point::Zero.transform(o) + ge->pos + Point::Up;
+							Mat4 t = Mat4::translate(p.x, p.y+0.2, p.z);
+							item_transforms[part].push_back(part->instance(t));
+						}
+					}
+				}
 			}
 
-			for (auto pair: extant_ld) {
-				Part *part = pair.first;
-				part->drawInstanced(false, pair.second.size(), pair.second.data());
+			for (BeltSegment* segment: belt_segments) {
+				Point spot = segment->front();
+				Point step = segment->step();
+				for (auto beltItem: segment->items) {
+					Item* item = Item::get(beltItem.iid);
+					spot += step * (float)beltItem.offset;
+					Point p = spot + (step * ((float)BeltSegment::slot/2.0f));
+					Mat4 m = Mat4::translate(p.x, p.y, p.z);
+					for (uint i = 0; i < item->parts.size(); i++) {
+						Part* part = item->parts[i];
+						item_transforms[part].push_back(part->instance(m));
+					}
+					spot += step * (float)BeltSegment::slot;
+				}
 			}
 
-			for (auto pair: extant_hd) {
-				Part *part = pair.first;
-				part->drawInstanced(true, pair.second.size(), pair.second.data());
+			for (auto [part,batch]: extant_ld) {
+				part->drawInstanced(false, batch.size(), batch.data());
 			}
 
-			for (auto pair: ghosts_ld) {
-				Part *part = pair.first;
-				part->drawGhostInstanced(false, pair.second.size(), pair.second.data());
+			for (auto [part,batch]: extant_hd) {
+				part->drawInstanced(true, batch.size(), batch.data());
 			}
 
-			for (auto pair: ghosts_hd) {
-				Part *part = pair.first;
-				part->drawGhostInstanced(true, pair.second.size(), pair.second.data());
+			for (auto [part,batch]: ghosts_ld) {
+				part->drawGhostInstanced(false, batch.size(), batch.data());
+			}
+
+			for (auto [part,batch]: ghosts_hd) {
+				part->drawGhostInstanced(true, batch.size(), batch.data());
+			}
+
+			if (belt_pillars.size() > 0) {
+				View::beltPillar1->drawInstanced(false, belt_pillars.size(), belt_pillars.data());
+			}
+
+			for (auto [part,batch]: item_transforms) {
+				part->drawInstanced(false, batch.size(), batch.data());
 			}
 
 			if (hovering) {
@@ -522,107 +599,6 @@ void MainCamera::draw() {
 				if (greens.size() > 0)
 					rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
 			}
-
-			for (auto ge: entities) {
-				if (ge->spec->vehicle) {
-					Entity& en = Entity::get(ge->id);
-					Vehicle& vehicle = en.vehicle();
-					Point p = en.pos;
-					for (auto n: vehicle.path) {
-						DrawSphere(n, 0.25f, RED);
-						DrawLine3D(p, n, RED);
-						p = n;
-					}
-				}
-			}
-
-			Sim::locked([&]() {
-
-				std::vector<Mat4> pillars1;
-				std::vector<Mat4> pillars2;
-
-				for (auto ge: entities) {
-					if (ge->spec->belt) {
-						Entity& en = Entity::get(ge->id);
-						Belt& belt = en.belt();
-
-						if (en.ground().y < 0.01f && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
-							pillars1.push_back(View::beltPillar1->instance(Mat4::translate(en.pos.x, en.pos.y, en.pos.z)));
-						}
-					}
-				}
-
-				if (pillars1.size() > 0)
-					View::beltPillar1->drawInstanced(false, pillars1.size(), pillars1.data());
-
-				if (pillars2.size() > 0)
-					View::beltPillar2->drawInstanced(false, pillars2.size(), pillars2.data());
-
-				std::map<Part*,std::vector<Mat4>> belt_transforms;
-
-				for (BeltSegment* segment: BeltSegment::all) {
-					Point spot = segment->front();
-					Point step = segment->step();
-					for (auto beltItem: segment->items) {
-						spot += step * (float)beltItem.offset;
-						Point p = spot + (step * ((float)BeltSegment::slot/2.0f));
-						Mat4 m = Mat4::translate(p.x, p.y, p.z);
-						Item* item = Item::get(beltItem.iid);
-						for (uint i = 0; i < item->parts.size(); i++) {
-							Part* part = item->parts[i];
-							belt_transforms[part].push_back(part->instance(m));
-						}
-						spot += step * (float)BeltSegment::slot;
-					}
-				}
-
-				for (auto [part,transforms]: belt_transforms) {
-					part->drawInstanced(false, transforms.size(), transforms.data());
-				}
-
-				std::map<Part*,std::vector<Mat4>> lift_transforms;
-
-				for (auto pair: Lift::all) {
-					Lift& lift = pair.second;
-					if (lift.iid) {
-						Entity& en = Entity::get(lift.id);
-						Point p = en.pos;
-						Mat4 m = Mat4::translate(p.x, p.y+1.0f, p.z);
-						Item* item = Item::get(lift.iid);
-						for (uint i = 0; i < item->parts.size(); i++) {
-							Part* part = item->parts[i];
-							lift_transforms[part].push_back(part->instance(en.spec->states[en.state][4] * m));
-						}
-					}
-				}
-
-				for (auto [part,transforms]: lift_transforms) {
-					part->drawInstanced(false, transforms.size(), transforms.data());
-				}
-
-				std::map<Part*,std::vector<Mat4>> arm_transforms;
-
-				for (auto ge: entities) {
-					if (ge->spec->arm) {
-						Entity& en = Entity::get(ge->id);
-						if (en.arm().iid) {
-							Item* item = Item::get(en.arm().iid);
-							uint grip = en.spec->states[0].size()-1;
-							for (uint i = 0; i < item->parts.size(); i++) {
-								Part* part = item->parts[i];
-								Mat4 o = en.spec->parts[grip]->specInstance(en.spec, grip, en.state, en.dir.rotation());
-								Point p = Point::Zero.transform(o) + ge->pos + Point::Up;
-								Mat4 t = Mat4::translate(p.x, p.y+0.2, p.z);
-								arm_transforms[part].push_back(part->instance(t));
-							}
-						}
-					}
-				}
-
-				for (auto [part,transforms]: arm_transforms) {
-					part->drawInstanced(false, transforms.size(), transforms.data());
-				}
-			});
 
 		EndMode3D();
 
