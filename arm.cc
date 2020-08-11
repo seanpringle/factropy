@@ -13,6 +13,7 @@ void Arm::tick() {
 }
 
 Arm& Arm::create(uint id) {
+	ensuref(!all.count(id), "double-create arm %d", id);
 	Arm& arm = all[id];
 	arm.id = id;
 	arm.iid = 0;
@@ -74,6 +75,47 @@ void Arm::updateProximity() {
 	}
 }
 
+Stack Arm::transferStoreToStore(Store& dst, Store& src) {
+	Entity& de = Entity::get(dst.id);
+	Entity& se = Entity::get(src.id);
+
+	Stack stack = src.overflowTo(dst);
+	if (!stack.iid) {
+		stack = dst.supplyFrom(src);
+	}
+	if (!stack.iid) {
+		if (de.spec->loadPriority && !se.spec->loadPriority) {
+			stack = dst.forceSupplyFrom(src);
+		}
+	}
+	if (!stack.iid) {
+		for (Stack& ss: src.stacks) {
+			if ((dst.isAccepting(ss.iid) || de.spec->loadAnything) && (src.isProviding(ss.iid) || se.spec->unloadAnything || src.level(ss.iid) == NULL)) {
+				stack = {ss.iid,1};
+				break;
+			}
+		}
+	}
+	return stack;
+}
+
+Stack Arm::transferStoreToBelt(Store& src) {
+	Stack stack = {src.wouldRemoveAny(),1};
+	if (!stack.iid) {
+		for (Stack& ss: src.stacks) {
+			if (src.isActiveProviding(ss.iid)) {
+				return {ss.iid, 1};
+			}
+		}
+		for (Stack& ss: src.stacks) {
+			if (src.isProviding(ss.iid)) {
+				return {ss.iid, 1};
+			}
+		}
+	}
+	return stack;
+}
+
 bool Arm::updateReady() {
 	updateProximity();
 
@@ -84,10 +126,7 @@ bool Arm::updateReady() {
 
 		for (Store* si: ei.stores()) {
 			for (Store* so: eo.stores()) {
-				Stack stack = so->supplyFrom(*si);
-				if (!stack.iid || !stack.size) {
-					stack = si->overflowTo(*so);
-				}
+				Stack stack = transferStoreToStore(*so, *si);
 				if (stack.iid && stack.size) {
 					return true;
 				}
@@ -96,8 +135,8 @@ bool Arm::updateReady() {
 
 		if (eo.spec->belt) {
 			for (Store* si: ei.stores()) {
-				uint iid = si->wouldRemoveAny();
-				if (iid) {
+				Stack stack = transferStoreToBelt(*si);
+				if (stack.iid && stack.size) {
 					return true;
 				}
 			}
@@ -132,14 +171,16 @@ bool Arm::updateInput() {
 
 		Entity& ei = Entity::get(inputId);
 		Entity& eo = Entity::get(outputId);
+		inputStoreId = 0;
+		outputStoreId = 0;
 
 		for (Store* si: ei.stores()) {
 			for (Store* so: eo.stores()) {
-				Stack stack = so->supplyFrom(*si);
-				if (!stack.iid || !stack.size) {
-					stack = si->overflowTo(*so);
-				}
+				Stack stack = transferStoreToStore(*so, *si);
 				if (stack.iid && stack.size) {
+					outputStoreId = so->sid;
+					so->promise({stack.iid,1});
+					so->arms.insert(id);
 					si->remove({stack.iid,1});
 					iid = stack.iid;
 					stage = ToOutput;
@@ -150,8 +191,9 @@ bool Arm::updateInput() {
 
 		if (eo.spec->belt) {
 			for (Store* si: ei.stores()) {
-				Stack stack = si->removeAny(1);
+				Stack stack = transferStoreToBelt(*si);
 				if (stack.iid && stack.size) {
+					si->remove({stack.iid,1});
 					iid = stack.iid;
 					stage = ToOutput;
 					return true;
@@ -164,6 +206,9 @@ bool Arm::updateInput() {
 			if (biid) {
 				for (Store* so: eo.stores()) {
 					if (so->isAccepting(biid)) {
+						outputStoreId = so->sid;
+						so->promise({biid,1});
+						so->arms.insert(id);
 						ei.belt().remove(biid, BeltAny);
 						iid = biid;
 						stage = ToOutput;
@@ -193,14 +238,19 @@ void Arm::updateOutput() {
 	if (outputId) {
 		Entity& eo = Entity::get(outputId);
 
-		for (Store* so: eo.stores()) {
-			if (so->isAccepting(iid)) {
-				if (so->insert({iid,1}).size == 0) {
-					iid = 0;
-					stage = ToInput;
-					return;
+		if (eo.spec->store || eo.spec->consumeChemical) {
+			for (Store* so: eo.stores()) {
+				if (so->sid == outputStoreId || eo.spec->loadAnything) {
+					if (so->insert({iid,1}).size == 0) {
+						so->arms.erase(id);
+						break;
+					}
 				}
 			}
+			outputStoreId = 0;
+			iid = 0;
+			stage = ToInput;
+			return;
 		}
 
 		if (eo.spec->belt) {

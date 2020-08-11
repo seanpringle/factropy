@@ -11,6 +11,12 @@ void Store::tick() {
 	for (Store& store: all) {
 		store.update();
 	}
+	for (Burner& burner: Burner::all) {
+		burner.store.update();
+	}
+	for (auto& pair: Ghost::all) {
+		pair.second.store.update();
+	}
 }
 
 void Store::update() {
@@ -42,26 +48,58 @@ void Store::update() {
 	for (uint did: remove) {
 		drones.erase(did);
 	}
+
+	remove.clear();
+
+	for (uint aid: arms) {
+		if (!Entity::exists(aid)) {
+			remove.push_back(aid);
+			continue;
+		}
+
+		Entity& ae = Entity::get(aid);
+		Arm& arm = ae.arm();
+
+		if (arm.inputId != id && arm.outputId != id) {
+			remove.push_back(aid);
+			continue;
+		}
+
+		if (arm.inputId == id) {
+			reserve({arm.iid,1});
+		}
+
+		if (arm.outputId == id) {
+			promise({arm.iid,1});
+		}
+	}
+
+	for (uint aid: remove) {
+		arms.erase(aid);
+	}
 }
 
-Store& Store::create(uint id, Mass cap) {
+Store& Store::create(uint id, uint sid, Mass cap) {
 	Store& store = all.ref(id);
 	store.id = id;
+	store.sid = sid;
 	store.activity = 0;
 	store.capacity = cap;
 	store.fuel = false;
 	return store;
 }
 
-void Store::ghostInit(uint id) {
-	id = id;
+void Store::ghostInit(uint gid, uint gsid) {
+	id = gid;
+	sid = gsid;
 	activity = 0;
 	capacity = Mass::Inf;
 	fuel = false;
 }
 
-void Store::burnerInit(uint id, Mass cap) {
-	id = id;
+void Store::burnerInit(uint bid, uint bsid, Mass cap) {
+	id = bid;
+	sid = bsid;
 	activity = 0;
 	capacity = cap;
 	fuel = true;
@@ -87,19 +125,20 @@ void Store::burnerDestroy() {
 }
 
 Stack Store::insert(Stack istack) {
-	uint size = std::min(limit() - usage(), Item::get(istack.iid)->mass * istack.size);
+	Mass space = limit() - usage();
+	uint count = std::min(istack.size, space.items(istack.iid));
 
 	for (auto it = stacks.begin(); it != stacks.end(); it++) {
 		if (it->iid == istack.iid) {
-			it->size += size;
-			istack.size -= size;
-			size = 0;
+			it->size += count;
+			istack.size -= count;
+			count = 0;
 			break;
 		}
 	}
-	if (size > 0) {
-		stacks.push_back({istack.iid, size});
-		istack.size -= size;
+	if (count > 0) {
+		stacks.push_back({istack.iid, count});
+		istack.size -= count;
 	}
 	return istack;
 }
@@ -151,10 +190,10 @@ Stack Store::removeAny(uint size) {
 	return {0,0};
 }
 
-Stack Store::removeFuel(uint size) {
+Stack Store::removeFuel(std::string category, uint size) {
 	for (auto it = stacks.begin(); it != stacks.end(); it++) {
-		if (fuel && Item::get(it->iid)->fuel.category == fuelCategory) {
-			return remove({it->iid, size});
+		if (Item::get(it->iid)->fuel.category == category) {
+			return remove({it->iid, std::min(size, it->size)});
 		}
 	}
 	return {0,0};
@@ -249,13 +288,13 @@ uint Store::count(uint iid) {
 uint Store::countNet(uint iid) {
 	uint n = count(iid);
 	Level* lvl = level(iid);
-	return lvl ? n - lvl->reserved + lvl->promised: n;
+	return lvl ? n - std::min(n, lvl->reserved) + lvl->promised: n;
 }
 
 uint Store::countAvailable(uint iid) {
 	uint n = count(iid);
 	Level* lvl = level(iid);
-	return lvl ? n - lvl->reserved: n;
+	return lvl ? n - std::min(n, lvl->reserved): n;
 }
 
 uint Store::countExpected(uint iid) {
@@ -328,6 +367,13 @@ Stack Store::forceSupplyFrom(Store& src) {
 			return {dl.iid, 1};
 		}
 	}
+	if (fuel && !isFull()) {
+		for (Stack& ss: src.stacks) {
+			if (Item::get(ss.iid)->fuel.category == fuelCategory) {
+				return {ss.iid, 1};
+			}
+		}
+	}
 	return {0,0};
 }
 
@@ -337,8 +383,12 @@ Stack Store::supplyFrom(Store& src) {
 		if (isRequesting(dl.iid) && src.isProviding(dl.iid)) {
 			return {dl.iid, 1};
 		}
-		if (fuel && Item::get(dl.iid)->fuel.category == fuelCategory) {
-			return {dl.iid, 1};
+	}
+	if (fuel && !isFull()) {
+		for (Stack& ss: src.stacks) {
+			if (Item::get(ss.iid)->fuel.category == fuelCategory && src.isProviding(ss.iid)) {
+				return {ss.iid, 1};
+			}
 		}
 	}
 	return {0,0};
@@ -367,7 +417,7 @@ Stack Store::overflowTo(Store& dst) {
 }
 
 // active provider to default overflow
-Stack Store::overflowDefaulTo(Store& dst) {
+Stack Store::overflowDefaultTo(Store& dst) {
 	for (Level& sl: levels) {
 		if (dst.isOverflowDefault(sl.iid) && isActiveProviding(sl.iid)) {
 			return {sl.iid, 1};

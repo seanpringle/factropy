@@ -85,6 +85,7 @@ struct MainCamera : View {
 	Rectangle selection;
 
 	GuiEntity* hovering;
+	GuiEntity* directing;
 	GuiFakeEntity* placing;
 	bool placingFits;
 	std::vector<GuiEntity*> entities;

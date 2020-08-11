@@ -40,6 +40,8 @@ Item::Item(uint id, std::string name) {
 	names[name] = this;
 	ids[id] = this;
 	mass = Mass::kg(1);
+	beltV = 0;
+	armV = 0;
 
 	ZERO(image);
 	ZERO(texture);

@@ -15,6 +15,7 @@ void Drone::tick() {
 Drone& Drone::create(uint id) {
 	Drone& drone = all.ref(id);
 	drone.id = id;
+	drone.iid = 0;
 	drone.dep = 0;
 	drone.src = 0;
 	drone.dst = 0;
@@ -40,6 +41,8 @@ bool Drone::travel(uint eid) {
 	Entity& en = Entity::get(id);
 	Entity& te = Entity::get(eid);
 	Point tp = te.pos + Point::Up*2;
+
+	en.lookAt({tp.x, en.pos.y, tp.z});
 
 	if (en.pos.distance(tp) < 0.11) {
 		en.move(tp);
@@ -68,6 +71,7 @@ void Drone::update() {
 				store.remove(stack);
 				store.drones.erase(id);
 				stage = ToDst;
+				iid = stack.iid;
 				break;
 			}
 
@@ -86,6 +90,7 @@ void Drone::update() {
 				store.insert(stack);
 				store.drones.erase(id);
 				stage = ToDep;
+				iid = 0;
 				break;
 			}
 

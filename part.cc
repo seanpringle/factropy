@@ -54,9 +54,21 @@ Thing::Thing(std::string hd, std::string ld) {
 	transform = Mat4::rotateX(90.0f*DEG2RAD);
 }
 
+Thing::Thing(std::string hd, Mesh ld) {
+	meshHD = loadSTL(hd);
+	meshLD = ld;
+	transform = Mat4::rotateX(90.0f*DEG2RAD);
+}
+
 Thing::Thing(Mesh mesh) {
 	meshHD = mesh;
 	meshLD = mesh;
+	transform = Mat4::identity;
+}
+
+Thing::Thing(Mesh hd, Mesh ld) {
+	meshHD = hd;
+	meshLD = ld;
 	transform = Mat4::identity;
 }
 

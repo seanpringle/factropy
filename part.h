@@ -22,7 +22,9 @@ struct Thing {
 	Thing();
 	Thing(std::string);
 	Thing(std::string, std::string);
+	Thing(std::string, Mesh ld);
 	Thing(Mesh hd);
+	Thing(Mesh hd, Mesh ld);
 	Mesh loadSTL(std::string);
 
 	Thing& smooth();

@@ -31,7 +31,9 @@ struct Arm {
 	uint id;
 	uint iid;
 	uint inputId;
+	uint inputStoreId;
 	uint outputId;
+	uint outputStoreId;
 	float orientation;
 	enum Stage stage;
 	uint64_t pause;
@@ -46,6 +48,8 @@ struct Arm {
 	Point output();
 	uint source();
 	uint target();
+	Stack transferStoreToStore(Store& dst, Store& src);
+	Stack transferStoreToBelt(Store& src);
 };
 
 #endif

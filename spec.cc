@@ -57,6 +57,7 @@ Spec::Spec(std::string name) {
 
 	vehicle = false;
 	vehicleEnergy = 0;
+	vehicleWaitActivity = false;
 
 	crafter = false;
 	crafterProgress = false;

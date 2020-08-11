@@ -260,8 +260,8 @@ void Entity::loadAll(const char* name) {
 
 		en.index();
 
-		if (en.isGhost()) {
-			Ghost::create(en.id);
+		if (!en.isGhost()) {
+			en.ghost().destroy();
 		}
 
 		if (en.isConstruction()) {
@@ -283,6 +283,7 @@ void Store::saveAll(const char* name) {
 	for (Store& store: all) {
 		json state;
 		state["id"] = store.id;
+		state["sid"] = store.sid;
 		state["activity"] = store.activity;
 
 		int i = 0;
@@ -322,6 +323,7 @@ void Store::loadAll(const char* name) {
 	for (std::string line; std::getline(in, line);) {
 		auto state = json::parse(line);
 		Store& store = get(state["id"]);
+		store.sid = state["sid"];
 		store.activity = state["activity"];
 
 		for (auto stack: state["stacks"]) {
@@ -686,6 +688,7 @@ void Burner::saveAll(const char* name) {
 		state["energy"] = burner.energy.value;
 		state["buffer"] = burner.buffer.value;
 
+		state["store"]["sid"] = burner.store.sid;
 		state["store"]["activity"] = burner.store.activity;
 
 		int i = 0;
@@ -728,6 +731,7 @@ void Burner::loadAll(const char* name) {
 		burner.energy.value = state["energy"];
 		burner.buffer.value = state["buffer"];
 
+		burner.store.sid = state["store"]["sid"];
 		burner.store.activity = state["store"]["activity"];
 
 		for (auto stack: state["store"]["stacks"]) {

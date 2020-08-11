@@ -17,7 +17,6 @@ shadows
 specular
 	cache uniform id
 roughness
-smoke
 wind power
 	wind noise
 power
@@ -27,5 +26,6 @@ noise previewer
 ld models
 belt/lift transitions
 power/beam belt emitter
-
-pass pos+scale factor to particle shader in vec4
+turrets
+enemies
+	drones

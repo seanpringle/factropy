@@ -12,7 +12,7 @@ struct Burner {
 	static void loadAll(const char* name);
 
 	static inline SparseArray<Burner> all = (MaxEntity);
-	static Burner& create(uint id);
+	static Burner& create(uint id, uint sid);
 	static Burner& get(uint id);
 
 	uint id;

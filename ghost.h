@@ -14,7 +14,7 @@ struct Ghost {
 	static void loadAll(const char* name);
 
 	static inline std::map<uint,Ghost> all;
-	static Ghost& create(uint id);
+	static Ghost& create(uint id, uint sid);
 	static Ghost& get(uint id);
 
 	uint id;

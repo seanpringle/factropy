@@ -95,6 +95,7 @@ struct Spec {
 
 	bool vehicle;
 	Energy vehicleEnergy;
+	bool vehicleWaitActivity;
 
 	Spec(std::string name);
 	~Spec();

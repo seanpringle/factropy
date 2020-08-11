@@ -24,6 +24,7 @@ struct Drone {
 	};
 
 	uint id;
+	uint iid;
 	uint dep;
 	uint src;
 	uint dst;

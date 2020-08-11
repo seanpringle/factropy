@@ -14,10 +14,10 @@ void Ghost::tick() {
 	}
 }
 
-Ghost& Ghost::create(uint id) {
+Ghost& Ghost::create(uint id, uint sid) {
 	Ghost& ghost = all[id];
 	ghost.id = id;
-	ghost.store.ghostInit(id);
+	ghost.store.ghostInit(id, sid);
 	return ghost;
 }
 

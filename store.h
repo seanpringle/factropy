@@ -16,7 +16,7 @@ struct Store {
 	static void loadAll(const char* name);
 
 	static inline SparseArray<Store> all = (MaxEntity);
-	static Store& create(uint id, Mass cap);
+	static Store& create(uint id, uint sid, Mass cap);
 	static Store& get(uint id);
 
 	struct Level {
@@ -28,25 +28,27 @@ struct Store {
 	};
 
 	uint id;
+	uint sid;
 	uint64_t activity;
 	Mass capacity;
 	std::vector<Stack> stacks;
 	std::vector<Level> levels;
 	std::set<uint> drones;
+	std::set<uint> arms;
 	bool fuel;
 	std::string fuelCategory;
 
 	void destroy();
 	void update();
-	void ghostInit(uint id);
+	void ghostInit(uint id, uint sid);
 	void ghostDestroy();
-	void burnerInit(uint id, Mass cap);
+	void burnerInit(uint id, uint sid, Mass cap);
 	void burnerDestroy();
 	Stack insert(Stack stack);
 	Stack remove(Stack stack);
 	Stack removeAny(uint size);
 	uint wouldRemoveAny();
-	Stack removeFuel(uint size);
+	Stack removeFuel(std::string chemical, uint size);
 	Stack overflowAny(uint size);
 	void promise(Stack stack);
 	void reserve(Stack stack);
@@ -71,7 +73,7 @@ struct Store {
 	Stack supplyFrom(Store& src);
 	Stack forceOverflowTo(Store& dst);
 	Stack overflowTo(Store& dst);
-	Stack overflowDefaulTo(Store& dst);
+	Stack overflowDefaultTo(Store& dst);
 };
 
 #endif

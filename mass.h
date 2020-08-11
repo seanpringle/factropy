@@ -30,6 +30,7 @@ struct Mass {
 	std::string format();
 
 	float portion(Mass o);
+	uint items(uint iid);
 };
 
 #endif

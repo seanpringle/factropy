@@ -59,10 +59,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 	en.state = 0;
 
 	en.flags = GHOST;
-	Ghost::create(id);
+	Ghost::create(id, Entity::next());
 
 	if (spec->store) {
-		Store::create(id, spec->capacity);
+		Store::create(id, Entity::next(), spec->capacity);
 	}
 
 	if (spec->crafter) {
@@ -94,7 +94,7 @@ Entity& Entity::create(uint id, Spec *spec) {
 	}
 
 	if (spec->consumeChemical) {
-		Burner::create(id);
+		Burner::create(id, Entity::next());
 	}
 
 	if (spec->consumeElectricity) {
@@ -315,7 +315,7 @@ Entity& Entity::unmanage() {
 Entity& Entity::construct() {
 
 	if (!isGhost()) {
-		Ghost::create(id);
+		Ghost::create(id, Entity::next());
 	}
 
 	unmanage();
@@ -333,7 +333,7 @@ Entity& Entity::construct() {
 Entity& Entity::deconstruct() {
 
 	if (!isGhost()) {
-		Ghost::create(id);
+		Ghost::create(id, Entity::next());
 	}
 
 	unmanage();

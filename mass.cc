@@ -76,3 +76,6 @@ float Mass::portion(Mass o) {
 	return std::max(0.0f, std::min(1.0f, (float)value / (float)o.value));
 }
 
+uint Mass::items(uint iid) {
+	return value > 0 ? value / Item::get(iid)->mass.value: 0;
+}

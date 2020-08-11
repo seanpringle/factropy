@@ -49,6 +49,8 @@ struct Item {
 	Fuel fuel;
 	std::vector<Part*> parts;
 	RenderTexture texture;
+	float beltV;
+	float armV;
 
 	Item(uint id, std::string name);
 	~Item();

@@ -6,12 +6,12 @@ void Burner::reset() {
 	all.clear();
 }
 
-Burner& Burner::create(uint id) {
+Burner& Burner::create(uint id, uint sid) {
 	Burner& burner = all.ref(id);
 	burner.id = id;
 	burner.energy = 0;
 	burner.buffer = Energy::MJ(1);
-	burner.store.burnerInit(id, Mass::kg(3));
+	burner.store.burnerInit(id, sid, Mass::kg(3));
 	return burner;
 }
 
@@ -27,7 +27,14 @@ void Burner::destroy() {
 
 Energy Burner::consume(Energy e) {
 	if (e > energy) {
-		Stack stack = store.removeFuel(1);
+		Stack stack = store.removeFuel(store.fuelCategory, 1);
+		if (!stack.iid) {
+			Entity& en = Entity::get(id);
+			if (en.spec->store) {
+				stack = en.store().removeFuel(store.fuelCategory, 1);
+				notef("%d", stack.iid);
+			}
+		}
 		if (stack.iid && stack.size) {
 			buffer = Item::get(stack.iid)->fuel.energy;
 			energy += buffer;

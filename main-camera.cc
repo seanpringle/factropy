@@ -52,6 +52,7 @@ MainCamera::MainCamera(Point pos, Point dir) {
 
 	hovering = NULL;
 	placing = NULL;
+	directing = NULL;
 
 	popup = NULL;
 	buildPopup = NULL;
@@ -335,6 +336,17 @@ void MainCamera::update() {
 			}
 
 			placingFits = !placing || Entity::fits(placing->spec, placing->pos, placing->dir);
+
+			if (directing && !Entity::exists(directing->id)) {
+				delete directing;
+				directing = NULL;
+			}
+
+			if (directing) {
+				uint id = directing->id;
+				delete directing;
+				directing = new GuiEntity(id);
+			}
 		});
 
 		if (worldFocused) {
@@ -436,7 +448,7 @@ void MainCamera::draw() {
 			for (auto [iid,transforms]: resource_transforms) {
 				Item* item = Item::get(iid);
 				for (uint i = 0; i < item->parts.size(); i++) {
-					item->parts[i]->drawInstanced(false, transforms.size(), transforms.data());
+					item->parts[i]->drawInstanced(true, transforms.size(), transforms.data());
 				}
 			}
 
@@ -447,7 +459,8 @@ void MainCamera::draw() {
 
 			std::vector<Mat4> belt_pillars;
 			std::set<BeltSegment*> belt_segments;
-			std::map<Part*,std::vector<Mat4>> item_transforms;
+			std::map<Part*,std::vector<Mat4>> items_hd;
+			std::map<Part*,std::vector<Mat4>> items_ld;
 
 			for (auto ge: entities) {
 				bool hd = ge->pos.distance(position) < 100;
@@ -460,7 +473,7 @@ void MainCamera::draw() {
 
 				Entity& en = Entity::get(ge->id);
 
-				if (ge->spec->vehicle) {
+				if (!ge->ghost && ge->spec->vehicle) {
 					Vehicle& vehicle = en.vehicle();
 					Point p = en.pos;
 					for (auto n: vehicle.path) {
@@ -470,16 +483,19 @@ void MainCamera::draw() {
 					}
 				}
 
-				if (ge->spec->belt) {
+				if (!ge->ghost && ge->spec->belt) {
 					Belt& belt = en.belt();
-					belt_segments.insert(belt.segment);
+
+					if (belt.segment) {
+						belt_segments.insert(belt.segment);
+					}
 
 					if (en.ground().y < 0.01f && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
 						belt_pillars.push_back(View::beltPillar1->instance(Mat4::translate(en.pos.x, en.pos.y, en.pos.z)));
 					}
 				}
 
-				if (ge->spec->lift) {
+				if (!ge->ghost && ge->spec->lift) {
 					Lift& lift = en.lift();
 
 					if (lift.iid && hd) {
@@ -489,12 +505,12 @@ void MainCamera::draw() {
 						Item* item = Item::get(lift.iid);
 						for (uint i = 0; i < item->parts.size(); i++) {
 							Part* part = item->parts[i];
-							item_transforms[part].push_back(part->instance(en.spec->states[en.state][4] * m));
+							(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(en.spec->states[en.state][4] * m));
 						}
 					}
 				}
 
-				if (ge->spec->arm) {
+				if (!ge->ghost && ge->spec->arm) {
 					Arm& arm = en.arm();
 
 					if (arm.iid && hd) {
@@ -504,8 +520,22 @@ void MainCamera::draw() {
 							Part* part = item->parts[i];
 							Mat4 o = en.spec->parts[grip]->specInstance(en.spec, grip, en.state, en.dir.rotation());
 							Point p = Point::Zero.transform(o) + ge->pos + Point::Up;
-							Mat4 t = Mat4::translate(p.x, p.y+0.2, p.z);
-							item_transforms[part].push_back(part->instance(t));
+							Mat4 t = Mat4::translate(p.x, p.y + item->armV, p.z);
+							(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(t));
+						}
+					}
+				}
+
+				if (!ge->ghost && ge->spec->drone) {
+					Drone& drone = en.drone();
+
+					if (drone.iid && hd) {
+						Item* item = Item::get(drone.iid);
+						Point p = ge->pos - (Point::Up*0.75f);
+						Mat4 t = Mat4::translate(p.x, p.y + item->armV, p.z);
+						for (uint i = 0; i < item->parts.size(); i++) {
+							Part* part = item->parts[i];
+							(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(t));
 						}
 					}
 				}
@@ -514,15 +544,19 @@ void MainCamera::draw() {
 			for (BeltSegment* segment: belt_segments) {
 				Point spot = segment->front();
 				Point step = segment->step();
+
 				for (auto beltItem: segment->items) {
 					Item* item = Item::get(beltItem.iid);
+
 					spot += step * (float)beltItem.offset;
 					Point p = spot + (step * ((float)BeltSegment::slot/2.0f));
-					Mat4 m = Mat4::translate(p.x, p.y, p.z);
+
+					Mat4 m = Mat4::translate(p.x, p.y + item->beltV, p.z);
 					for (uint i = 0; i < item->parts.size(); i++) {
 						Part* part = item->parts[i];
-						item_transforms[part].push_back(part->instance(m));
+						(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(m));
 					}
+
 					spot += step * (float)BeltSegment::slot;
 				}
 			}
@@ -547,7 +581,11 @@ void MainCamera::draw() {
 				View::beltPillar1->drawInstanced(false, belt_pillars.size(), belt_pillars.data());
 			}
 
-			for (auto [part,batch]: item_transforms) {
+			for (auto [part,batch]: items_hd) {
+				part->drawInstanced(true, batch.size(), batch.data());
+			}
+
+			for (auto [part,batch]: items_ld) {
 				part->drawInstanced(false, batch.size(), batch.data());
 			}
 
@@ -575,6 +613,12 @@ void MainCamera::draw() {
 				Box box = placing->box();
 				Point bounds = {box.w, box.h, box.d};
 				DrawCubeWiresV(placing->pos, bounds + 0.01f, placingFits ? GREEN: RED);
+			}
+
+			if (directing) {
+				Box box = directing->box();
+				Point bounds = {box.w, box.h, box.d};
+				DrawCubeWiresV(directing->pos, bounds + 0.01f, ORANGE);
 			}
 
 			if (Path::jobs.size() > 0) {

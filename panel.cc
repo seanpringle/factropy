@@ -709,6 +709,8 @@ void EntityPopup::build() {
 						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
 						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
 						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
+						nk_layout_row_template_push_static(&nuklear->ctx, tilePix);
 					nk_layout_row_template_end(&nuklear->ctx);
 
 					for (Store::Level level: store.levels) {
@@ -718,6 +720,8 @@ void EntityPopup::build() {
 						nk_label(&nuklear->ctx, fmtc("%d", store.count(level.iid)), NK_TEXT_CENTERED);
 						nk_label(&nuklear->ctx, fmtc("%d", level.lower), NK_TEXT_CENTERED);
 						nk_label(&nuklear->ctx, fmtc("%d", level.upper), NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, fmtc("%d", level.reserved), NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, fmtc("%d", level.promised), NK_TEXT_CENTERED);
 					}
 
 					for (Stack stack: store.stacks) {
@@ -727,6 +731,8 @@ void EntityPopup::build() {
 						nk_image(&nuklear->ctx, nk_img("item"+item->name, item->image));
 						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
 						nk_label(&nuklear->ctx, fmtc("%d", store.count(stack.iid)), NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
+						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
 						nk_label(&nuklear->ctx, "--", NK_TEXT_CENTERED);
 					}
 				}
