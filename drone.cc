@@ -40,7 +40,7 @@ void Drone::destroy() {
 bool Drone::travel(uint eid) {
 	Entity& en = Entity::get(id);
 	Entity& te = Entity::get(eid);
-	Point tp = te.pos + Point::Up*2;
+	Point tp = te.pos + (Point::Up * te.spec->collision.h);
 
 	en.lookAt({tp.x, en.pos.y, tp.z});
 

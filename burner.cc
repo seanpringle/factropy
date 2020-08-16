@@ -32,7 +32,6 @@ Energy Burner::consume(Energy e) {
 			Entity& en = Entity::get(id);
 			if (en.spec->store) {
 				stack = en.store().removeFuel(store.fuelCategory, 1);
-				notef("%d", stack.iid);
 			}
 		}
 		if (stack.iid && stack.size) {
@@ -41,6 +40,6 @@ Energy Burner::consume(Energy e) {
 		}
 	}
 	Energy c = energy < e ? energy: e;
-	energy -= c;
+	energy = std::max(Energy(0), energy-c);
 	return c;
 }

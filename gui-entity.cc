@@ -6,10 +6,22 @@ GuiEntity::GuiEntity() {
 	spec = NULL;
 	pos = {0,0,0};
 	dir = Point::South;
+	state = 0;
+	ghost = false;
 	transform = Mat4::identity;
+
+	burner.energy = 0;
+	burner.buffer = 0;
+
+	store.limit = 0;
+	store.usage = 0;
+
+	crafter.recipe = NULL;
+	crafter.progress = 0.0f;
+	crafter.inputsProgress = 0.0f;
 }
 
-GuiEntity::GuiEntity(uint id) {
+GuiEntity::GuiEntity(uint id) : GuiEntity() {
 	Entity& en = Entity::get(id);
 	this->id = id;
 	spec = en.spec;
@@ -18,6 +30,22 @@ GuiEntity::GuiEntity(uint id) {
 	state = en.state;
 	ghost = en.isGhost();
 	updateTransform();
+
+	if (spec->consumeChemical) {
+		burner.energy = en.burner().energy;
+		burner.buffer = en.burner().buffer;
+	}
+
+	if (spec->store) {
+		store.limit = en.store().limit();
+		store.usage = en.store().usage();
+	}
+
+	if (spec->crafter) {
+		crafter.recipe = en.crafter().recipe;
+		crafter.progress = en.crafter().progress;
+		crafter.inputsProgress = en.crafter().inputsProgress();
+	}
 }
 
 GuiEntity::~GuiEntity() {
@@ -25,6 +53,10 @@ GuiEntity::~GuiEntity() {
 
 Box GuiEntity::box() {
 	return spec->box(pos, dir);
+}
+
+Box GuiEntity::miningBox() {
+	return box().grow(0.5f);
 }
 
 Point GuiEntity::ground() {

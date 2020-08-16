@@ -61,6 +61,10 @@ MainCamera::MainCamera(Point pos, Point dir) {
 	popupFocused = false;
 	worldFocused = true;
 
+	info = NULL;
+	entityInfo = NULL;
+	ghostInfo = NULL;
+
 	buildLevel = 0.0f;
 
 	statsUpdate.clear();
@@ -82,7 +86,10 @@ void MainCamera::build(Spec* spec) {
 	delete placing;
 	placing = NULL;
 	if (spec) {
-		placing = new GuiFakeEntity(spec);
+		placing = new Plan(Point::Zero);
+		auto ge = new GuiFakeEntity(spec);
+		ge->floor(buildLevel);
+		placing->add(ge);
 	}
 }
 
@@ -323,7 +330,8 @@ void MainCamera::update() {
 		if (worldFocused) {
 			if (placing) {
 				RayHitInfo hit = GetCollisionRayGround(mouse.ray, buildLevel);
-				placing->move(Point(hit.position))->floor(buildLevel);
+				placing->move(Point(hit.position));
+				placing->floor(buildLevel);
 			}
 		}
 
@@ -335,7 +343,7 @@ void MainCamera::update() {
 				entities.push_back(new GuiEntity(id));
 			}
 
-			placingFits = !placing || Entity::fits(placing->spec, placing->pos, placing->dir);
+			placingFits = !placing || placing->fits();
 
 			if (directing && !Entity::exists(directing->id)) {
 				delete directing;
@@ -419,9 +427,8 @@ void MainCamera::draw() {
 				Chunk *chunk = pair.second;
 				float x = chunk->x;
 				float y = chunk->y;
-				if (!chunk->generated) {
+				if (chunk->regenerate) {
 					chunk->genHeightMap();
-					chunk->generated = true;
 				}
 				chunk_meshes.push_back(chunk->heightmap);
 				chunk_transforms.push_back(chunk->transform);
@@ -604,15 +611,17 @@ void MainCamera::draw() {
 			}
 
 			if (placing) {
-				for (uint i = 0; i < placing->spec->parts.size(); i++) {
-					Part *part = placing->spec->parts[i];
-					Mat4 instance = part->specInstance(placing->spec, i, placing->state, placing->transform);
-					part->drawGhostInstanced(true, 1, &instance);
-				}
+				for (auto te: placing->entities) {
+					for (uint i = 0; i < te->spec->parts.size(); i++) {
+						Part *part = te->spec->parts[i];
+						Mat4 instance = part->specInstance(te->spec, i, te->state, te->transform);
+						part->drawGhostInstanced(true, 1, &instance);
+					}
 
-				Box box = placing->box();
-				Point bounds = {box.w, box.h, box.d};
-				DrawCubeWiresV(placing->pos, bounds + 0.01f, placingFits ? GREEN: RED);
+					Box box = te->box();
+					Point bounds = {box.w, box.h, box.d};
+					DrawCubeWiresV(te->pos, bounds + 0.01f, placingFits ? GREEN: RED);
+				}
 			}
 
 			if (directing) {
@@ -652,6 +661,10 @@ void MainCamera::draw() {
 
 		if (popup) {
 			popup->draw();
+		}
+
+		if (info) {
+			info->draw();
 		}
 	});
 }

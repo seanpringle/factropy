@@ -11,7 +11,7 @@ struct BeltSegment;
 
 struct BeltSegment {
 	static inline std::set<BeltSegment*> all;
-	static const int slot = 50;
+	static const int slot = 30;
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
@@ -30,7 +30,9 @@ struct BeltSegment {
 	std::list<BeltItem>::iterator shrinkGap;
 
 	uint64_t pauseOffload;
+	uint offloadId;
 	uint64_t pauseLoad;
+	uint loadId;
 
 	BeltSegment();
 	~BeltSegment();

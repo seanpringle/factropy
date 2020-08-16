@@ -95,6 +95,6 @@ std::string Energy::formatRate() const {
 }
 
 float Energy::portion(Energy o) {
-	if (o.value == 0) return 1.0f;
+	if (o.value == 0) return 0.0f;
 	return std::max(0.0f, std::min(1.0f, (float)value / (float)o.value));
 }

@@ -12,6 +12,8 @@ struct Area {
 	Area(float w, float d);
 
 	operator bool() const;
+
+	Area direction(Point dir);
 };
 
 #endif

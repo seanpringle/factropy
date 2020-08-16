@@ -79,6 +79,34 @@ Stack Arm::transferStoreToStore(Store& dst, Store& src) {
 	Entity& de = Entity::get(dst.id);
 	Entity& se = Entity::get(src.id);
 
+	if (de.isGhost() || se.isGhost()) {
+		return {0,0};
+	}
+
+	if (filter.size()) {
+		Stack stack = src.overflowTo(dst, filter);
+		if (!stack.iid) {
+			stack = dst.supplyFrom(src, filter);
+		}
+		if (!stack.iid) {
+			if (de.spec->loadPriority && !se.spec->loadPriority) {
+				stack = dst.forceSupplyFrom(src, filter);
+			}
+		}
+		if (!stack.iid) {
+			for (Stack& ss: src.stacks) {
+				bool allow = filter.count(ss.iid) > 0;
+				bool dstOk = dst.isAccepting(ss.iid) || de.spec->loadAnything;
+				bool srcOk = !src.fuel && (src.isProviding(ss.iid) || se.spec->unloadAnything || src.level(ss.iid) == NULL);
+				if (allow && dstOk && srcOk) {
+					stack = {ss.iid,1};
+					break;
+				}
+			}
+		}
+		return stack;
+	}
+
 	Stack stack = src.overflowTo(dst);
 	if (!stack.iid) {
 		stack = dst.supplyFrom(src);
@@ -90,7 +118,9 @@ Stack Arm::transferStoreToStore(Store& dst, Store& src) {
 	}
 	if (!stack.iid) {
 		for (Stack& ss: src.stacks) {
-			if ((dst.isAccepting(ss.iid) || de.spec->loadAnything) && (src.isProviding(ss.iid) || se.spec->unloadAnything || src.level(ss.iid) == NULL)) {
+			bool dstOk = dst.isAccepting(ss.iid) || de.spec->loadAnything;
+			bool srcOk = !src.fuel && (src.isProviding(ss.iid) || se.spec->unloadAnything || src.level(ss.iid) == NULL);
+			if (dstOk && srcOk) {
 				stack = {ss.iid,1};
 				break;
 			}
@@ -100,6 +130,29 @@ Stack Arm::transferStoreToStore(Store& dst, Store& src) {
 }
 
 Stack Arm::transferStoreToBelt(Store& src) {
+	Entity& se = Entity::get(src.id);
+
+	if (se.isGhost()) {
+		return {0,0};
+	}
+
+	if (filter.size()) {
+		Stack stack = {src.wouldRemoveAny(filter),1};
+		if (!stack.iid) {
+			for (Stack& ss: src.stacks) {
+				if (filter.count(ss.iid) && src.isActiveProviding(ss.iid)) {
+					return {ss.iid, 1};
+				}
+			}
+			for (Stack& ss: src.stacks) {
+				if (filter.count(ss.iid) && src.isProviding(ss.iid)) {
+					return {ss.iid, 1};
+				}
+			}
+		}
+		return stack;
+	}
+
 	Stack stack = {src.wouldRemoveAny(),1};
 	if (!stack.iid) {
 		for (Stack& ss: src.stacks) {
@@ -262,7 +315,7 @@ void Arm::updateOutput() {
 		}
 	}
 
-	pause = Sim::tick+10;
+	pause = Sim::tick+5;
 }
 
 // Expected states:
@@ -317,10 +370,10 @@ void Arm::update() {
 		}
 
 		case ToInput: {
-			float speed = std::max(en.consumeRate(en.spec->energyConsume) * 0.01f, 0.001f);
+			float speed = std::max(en.consumeRate(en.spec->energyConsume) * en.spec->armSpeed, 0.001f);
 
 			orientation = std::min(1.0f, orientation+speed);
-			if (std::abs(orientation-1.0f) < 0.01f) {
+			if (std::abs(orientation-1.0f) < en.spec->armSpeed) {
 				orientation = 0.0f;
 				stage = Input;
 			}
@@ -335,10 +388,10 @@ void Arm::update() {
 		}
 
 		case ToOutput: {
-			float speed = std::max(en.consumeRate(en.spec->energyConsume) * 0.01f, 0.001f);
+			float speed = std::max(en.consumeRate(en.spec->energyConsume) * en.spec->armSpeed, 0.001f);
 
 			orientation = std::min(0.5f, orientation+speed);
-			if (std::abs(orientation-0.5f) < 0.01) {
+			if (std::abs(orientation-0.5f) < en.spec->armSpeed) {
 				orientation = 0.5f;
 				stage = Output;
 			}

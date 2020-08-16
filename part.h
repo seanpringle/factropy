@@ -82,11 +82,11 @@ struct PartSpinner : Part {
 };
 
 struct PartCycle : Part {
-	uint step;
+	uint ticks;
 	Mat4 shunt;
 	Mat4 ssrt;
 
-	PartCycle(Thing thing, uint step);
+	PartCycle(Thing thing, uint ticks);
 	virtual void update();
 	virtual Mat4 specInstance(Spec* spec, uint slot, uint state, Mat4 trx);
 };

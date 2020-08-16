@@ -1,7 +1,10 @@
 #ifndef _H_mat4
 #define _H_mat4
 
+struct Mat4;
+
 #include "raymath.h"
+#include "point.h"
 #include <initializer_list>
 
 struct Mat4 : Matrix {
@@ -21,6 +24,7 @@ struct Mat4 : Matrix {
 	static Mat4 rotateY(float radians);
 	static Mat4 rotateZ(float radians);
 	static Mat4 translate(float x, float y, float z);
+	static Mat4 translate(Point p);
 };
 
 #endif

@@ -5,6 +5,7 @@ struct Recipe;
 
 #include "raylib.h"
 #include "item.h"
+#include "currency.h"
 #include <map>
 #include <set>
 #include <vector>
@@ -28,10 +29,11 @@ struct Recipe {
 
 	std::set<std::string> tags;
 
-	bool mining;
-
 	std::map<uint,uint> inputItems;
 	std::map<uint,uint> outputItems;
+
+	uint mine;
+	Currency outputCurrency;
 
 	Energy energyUsage;
 

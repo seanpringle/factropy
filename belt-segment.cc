@@ -18,7 +18,9 @@ BeltSegment::BeltSegment() {
 	all.insert(this);
 	changed = true;
 	pauseOffload = 0;
+	offloadId = 0;
 	pauseLoad = 0;
+	loadId = 0;
 }
 
 BeltSegment::~BeltSegment() {
@@ -428,22 +430,34 @@ void BeltSegment::offload() {
 	if (pauseOffload > Sim::tick) return;
 
 	if (items.size() > 0 && items.front().offset == 0) {
-		Entity& en = Entity::get(belts.front()->id);
 
-		uint tid = Entity::at(en.pos + en.dir);
+		Entity& first = Entity::get(belts.front()->id);
 
-		if (tid) {
-			Entity& te = Entity::get(tid);
+		if (offloadId && (!Entity::exists(offloadId) || !Entity::get(offloadId).box().contains(first.pos + first.dir))) {
+			offloadId = 0;
+		}
+
+		if (!offloadId) {
+			offloadId = Entity::at(first.pos + first.dir);
+		}
+
+		if (offloadId) {
+			Entity& target = Entity::get(offloadId);
 			uint iid = items.front().iid;
 
-			if (te.spec->belt && te.belt().insert(iid, te.belt().offset > 0 ? BeltFront: BeltMiddle)) {
+			if (target.spec->belt && target.belt().insert(iid, target.belt().offset > 0 ? BeltFront: BeltMiddle)) {
 				removeAny(0, BeltFront);
 				return;
 			}
 
-			if (te.spec->lift && te.lift().insert(iid, en.pos.y)) {
+			if (target.spec->lift && target.lift().insert(iid, first.pos.y)) {
 				removeAny(0, BeltFront);
 				return;
+			}
+
+			if (target.spec->lift) {
+				uint64_t predict = target.lift().insertPredict();
+				pauseOffload = predict ? predict: Sim::tick+10;
 			}
 		}
 
@@ -504,25 +518,32 @@ void BeltSegment::load() {
 	if (pauseLoad > Sim::tick) return;
 
 	if (items.size() < belts.size()) {
-		Entity& en = Entity::get(belts.back()->id);
 
-		uint sid = Entity::at(en.pos - en.dir);
+		Entity& last = Entity::get(belts.back()->id);
 
-		if (sid) {
-			Entity& se = Entity::get(sid);
+		if (loadId && (!Entity::exists(loadId) || !Entity::get(loadId).box().contains(last.pos - last.dir))) {
+			loadId = 0;
+		}
 
-			if (se.spec->lift) {
-				uint iid = se.lift().removeAny(en.pos.y);
+		if (!loadId) {
+			loadId = Entity::at(last.pos - last.dir);
+		}
+
+		if (loadId) {
+			Entity& source = Entity::get(loadId);
+
+			if (source.spec->lift) {
+				uint iid = source.lift().removeAny(last.pos.y);
 				if (iid) {
 					insert(belts.back()->offset, iid, BeltBack);
 				}
 
-				uint64_t predict = se.lift().removeAnyPredict();
+				uint64_t predict = source.lift().removePredict();
 				pauseLoad = predict ? predict: Sim::tick+10;
 				return;
 			}
 		}
 	}
 
-	pauseLoad = Sim::tick+30;
+	pauseLoad = Sim::tick+15;
 }

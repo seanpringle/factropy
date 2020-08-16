@@ -75,6 +75,7 @@ Chunk* Chunk::get(int x, int y) {
 					mineral : mineral,
 				};
 
+				// minables visible on hills
 				if (elevation > 0.01f && mineral != 0 && hint > 0.99) {
 					chunk->minerals.push_back({tx,ty});
 				}
@@ -130,14 +131,64 @@ bool Chunk::isHill(Box b) {
 	return false;
 }
 
-Stack Chunk::mine(Box b) {
+Stack Chunk::mine(Box b, uint iid) {
+	Stack stack = {0,0};
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
-		if (tile && tile->elevation > 0.001f) {
-			return {tile->mineral,1};
+		if (tile && tile->elevation > 0.001f && tile->mineral == iid && tile->resource > 0.0f) {
+			tile->resource = std::max(0.0f, tile->resource-0.01f);
+			stack = {iid,1};
+			break;
 		}
 	}
-	return {0,0};
+	return stack;
+}
+
+bool Chunk::canMine(Box b, uint iid) {
+	for (auto [x,y]: walkTiles(b)) {
+		Tile *tile = tileTryGet(x, y);
+		if (tile && tile->elevation > 0.001f && tile->mineral == iid && tile->resource > 0.0f) {
+			return true;
+		}
+	}
+	return false;
+}
+
+uint Chunk::countMine(Box b, uint iid) {
+	uint n = 0;
+	for (auto [x,y]: walkTiles(b)) {
+		Tile *tile = tileTryGet(x, y);
+		if (tile && tile->elevation > 0.001f && (iid == 0 || tile->mineral == iid) && tile->resource > 0.0f) {
+			n += (int)(tile->resource*100.0f);
+		}
+	}
+	return n;
+}
+
+void Chunk::flatten(Box b) {
+	for (auto [x,y]: walkTiles(b)) {
+		Tile *tile = tileTryGet(x, y);
+		if (tile && tile->elevation > 0.0f) {
+			tile->elevation = 0.0f;
+			auto co = Coords(x, y);
+			Chunk::get(co.cx, co.cy)->regenerate = true;
+		}
+	}
+}
+
+std::vector<Stack> Chunk::minables(Box b) {
+	std::map<uint,uint> res;
+	for (auto [x,y]: walkTiles(b)) {
+		Tile *tile = tileTryGet(x, y);
+		if (tile && tile->elevation > 0.001f && tile->mineral && tile->resource > 0.0f) {
+			res[tile->mineral] += (int)(tile->resource*100.0f);
+		}
+	}
+	std::vector<Stack> counts;
+	for (auto [iid,count]: res) {
+		counts.push_back({iid,count});
+	}
+	return counts;
 }
 
 void Chunk::reset() {
@@ -151,6 +202,7 @@ Chunk::Chunk(int cx, int cy) {
 	y = cy;
 	XY xy = {x,y};
 	all[xy] = this;
+	regenerate = true;
 	ZERO(heightmap);
 }
 
@@ -168,13 +220,7 @@ Image Chunk::heightImage() {
 			*pixel = BLANK;
 			Tile *tile = tileTryGet(this->x*size+x, this->y*size+y);
 			if (tile != NULL) {
-
-				float elevation = tile->elevation;
-				//if (elevation < 0.00001f && elevation > -0.00001f) {
-				//	elevation += Sim::random()*0.003f;
-				//}
-
-				uint8_t intensity = std::clamp(elevation+(0.5f), 0.0f, 1.0f)*255.0f;
+				uint8_t intensity = std::clamp(tile->elevation+(0.5f), 0.0f, 1.0f)*255.0f;
 				*pixel = (Color){intensity, intensity, intensity, 255};
 			}
 		}
@@ -197,6 +243,16 @@ void Chunk::genHeightMap() {
 	Part::terrainNormals(&heightmap);
 	transform = MatrixTranslate((float)(this->x*size)+0.5f, -49.82, (float)(this->y*size)+0.5f);
 	UnloadImage(heightImg);
+	regenerate = false;
+
+	for (auto it = minerals.begin(); it != minerals.end(); ) {
+		Tile* tile = &tiles[it->y][it->x];
+		if (tile->elevation < 0.01f) {
+			it = minerals.erase(it);
+		} else {
+			it++;
+		}
+	}
 }
 
 void Chunk::dropHeightMap() {

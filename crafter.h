@@ -25,10 +25,12 @@ struct Crafter {
 	float efficiency;
 	Recipe *recipe, *nextRecipe;
 	Energy energyUsed;
+	uint completed;
 
 	void destroy();
 	void update();
 	Point output();
+	float inputsProgress();
 };
 
 #endif

@@ -7,6 +7,7 @@ struct GuiFakeEntity;
 
 #include "sparse.h"
 #include "spec.h"
+#include "recipe.h"
 #include "chunk.h"
 #include "part.h"
 #include "mat4.h"
@@ -39,6 +40,7 @@ struct Entity {
 	static inline Energy electricityDemand = 0;
 	static inline Energy electricitySupply = 0;
 	static inline Energy electricityCapacity = 0;
+	static inline Energy electricityCapacityReady = 0;
 	static inline std::set<uint> electricityConsumers;
 	static inline std::set<uint> electricityGenerators;
 
@@ -75,6 +77,7 @@ struct Entity {
 	Entity& setDeconstruction(bool state);
 
 	Box box();
+	Box miningBox();
 	Point ground();
 	Entity& look(Point); // rel
 	Entity& lookAt(Point); // abs
@@ -86,6 +89,7 @@ struct Entity {
 	Entity& toggle();
 	void destroy();
 	void remove();
+	static void removeJunk(Box b);
 
 	Entity& index();
 	Entity& unindex();
@@ -122,11 +126,28 @@ struct GuiEntity {
 	bool ghost;
 	Mat4 transform;
 
+	struct Burner {
+		Energy energy;
+		Energy buffer;
+	} burner;
+
+	struct Store {
+		Mass limit;
+		Mass usage;
+	} store;
+
+	struct Crafter {
+		Recipe* recipe;
+		float progress;
+		float inputsProgress;
+	} crafter;
+
 	GuiEntity();
 	GuiEntity(uint id);
 	~GuiEntity();
 
 	Box box();
+	Box miningBox();
 	Point ground();
 	void updateTransform();
 };

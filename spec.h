@@ -52,6 +52,7 @@ struct Spec {
 	bool drone;
 	bool store;
 	bool rotate;
+	bool junk;
 
 	Volume collision;
 	EnergyUser electrical;
@@ -79,8 +80,11 @@ struct Spec {
 	bool crafterProgress;
 	std::set<std::string> recipeTags;
 
+	bool teleporter;
+
 	bool arm;
 	float armOffset;
+	float armSpeed;
 
 	bool depot;
 	uint drones;
@@ -101,7 +105,6 @@ struct Spec {
 	~Spec();
 	Point aligned(Point p, Point dir);
 	Box box(Point pos, Point dir);
-	Area electricalArea(Point pos, Point dir);
 	bool hasStore();
 };
 

@@ -37,6 +37,7 @@ struct Arm {
 	float orientation;
 	enum Stage stage;
 	uint64_t pause;
+	std::set<uint> filter;
 
 	void destroy();
 	void update();

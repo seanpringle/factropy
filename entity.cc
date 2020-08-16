@@ -25,16 +25,16 @@ void Entity::preTick() {
 
 	electricitySupply = 0;
 	electricityCapacity = 0;
+	electricityCapacityReady = 0;
 
 	for (uint eid: electricityGenerators) {
 		Entity& en = Entity::get(eid);
 		if (en.isGhost()) continue;
-		electricityCapacity += en.spec->energyGenerate;
 		en.generate();
 	}
 
-	electricityLoad = electricityDemand.portion(electricityCapacity);
-	electricitySatisfaction = electricityCapacity.portion(electricityDemand);
+	electricityLoad = electricityDemand.portion(electricityCapacityReady);
+	electricitySatisfaction = electricitySupply.portion(electricityDemand);
 	electricityDemand = 0;
 }
 
@@ -230,6 +230,15 @@ void Entity::remove() {
 	removing.insert(id);
 }
 
+void Entity::removeJunk(Box b) {
+	for (uint eid: intersecting(b)) {
+		Entity& ke = Entity::get(eid);
+		if (ke.spec->junk) {
+			ke.remove();
+		}
+	}
+}
+
 bool Entity::isGhost() {
 	return (flags & GHOST) != 0;
 }
@@ -259,6 +268,10 @@ Entity& Entity::setDeconstruction(bool state) {
 
 Box Entity::box() {
 	return spec->box(pos, dir);
+}
+
+Box Entity::miningBox() {
+	return box().grow(0.5f);
 }
 
 Entity& Entity::look(Point p) {
@@ -313,8 +326,9 @@ Entity& Entity::unmanage() {
 }
 
 Entity& Entity::construct() {
+	bool wasGhost = isGhost();
 
-	if (!isGhost()) {
+	if (!wasGhost) {
 		Ghost::create(id, Entity::next());
 	}
 
@@ -331,8 +345,9 @@ Entity& Entity::construct() {
 }
 
 Entity& Entity::deconstruct() {
+	bool wasGhost = isGhost();
 
-	if (!isGhost()) {
+	if (!wasGhost) {
 		Ghost::create(id, Entity::next());
 	}
 
@@ -343,7 +358,9 @@ Entity& Entity::deconstruct() {
 
 	Store& gstore = ghost().store;
 	for (Stack stack: spec->materials) {
-		gstore.insert(stack);
+		if (!wasGhost) {
+			gstore.insert(stack);
+		}
 		gstore.levelSet(stack.iid, 0, 0);
 	}
 
@@ -422,8 +439,11 @@ float Entity::consumeRate(Energy e) {
 
 void Entity::generate() {
 	if (spec->generateElectricity && spec->consumeChemical) {
-		Energy e = spec->energyGenerate * electricityLoad;
-		electricitySupply += burner().consume(e);
+
+		electricitySupply += burner().consume(spec->energyGenerate * electricityLoad);
+		if (!burner().store.isEmpty()) electricityCapacityReady += spec->energyGenerate;
+		electricityCapacity += spec->energyGenerate;
+
 		state = std::floor((float)burner().energy.value/(float)burner().buffer.value * (float)spec->states.size());
 	}
 }

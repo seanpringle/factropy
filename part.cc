@@ -410,15 +410,14 @@ Mat4 PartSpinner::specInstance(Spec* spec, uint slot, uint state, Mat4 trx) {
 	return m * trx;
 }
 
-PartCycle::PartCycle(Thing thing, uint sstep) : Part(thing) {
-	step = sstep;
+PartCycle::PartCycle(Thing thing, uint tticks) : Part(thing) {
+	ticks = tticks;
 }
 
 void PartCycle::update() {
 	Part::update();
-	float inc = 0.01 * (float)step;
-	uint mod = 100/step;
-	shunt = transform * Mat4::translate(0, 0, (float)(Sim::tick%mod)*inc);
+	float speed = 1.0f/(float)ticks;
+	shunt = transform * Mat4::translate(0, 0, (float)(Sim::tick%ticks)*speed);
 	ssrt = shunt * srt;
 }
 

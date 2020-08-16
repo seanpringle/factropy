@@ -22,6 +22,7 @@ extern "C" {
 struct Nuklear {
 	struct nk_context ctx;
 	struct nk_user_font *font;
+	struct nk_user_font *symbol;
 };
 
 namespace {
@@ -122,13 +123,14 @@ Panel::Panel(MainCamera *cam, int w, int h) {
 	texture = LoadTextureFromImage(canvas);
 	nuklear = new Nuklear;
 	nuklear->font = nk_cairo_ttf("font/Roboto-Regular.ttf", 18);
+	nuklear->symbol = nk_cairo_ttf("font/dejavu/DejaVuSans.ttf", 18);
 	nk_init_default(&nuklear->ctx, NULL);
 	nk_style_set_font(&nuklear->ctx, nuklear->font);
 	changed = true;
 	refresh = 0;
 	mx = 0;
 	my = 0;
-	center();
+	place();
 	ZERO(buttons);
 	ZERO(keys);
 }
@@ -140,7 +142,7 @@ Panel::~Panel() {
 	delete nuklear;
 }
 
-void Panel::center() {
+void Panel::place() {
 	x = (GetScreenWidth()-w)/2;
 	y = (GetScreenHeight()-h)/2;
 }
@@ -175,7 +177,7 @@ void Panel::update() {
 	}
 
 	input();
-	center();
+	place();
 
 	if (changed) {
 		build();
@@ -300,20 +302,24 @@ void EntityPopup::useEntity(uint ueid) {
 
 void EntityPopup::build() {
 	Sim::locked([&]() {
-		if (!eid || !Entity::exists(eid)) {
+		if (!eid || !Entity::exists(eid) || Entity::get(eid).isGhost()) {
 			eid = 0;
 			camera->popup = NULL;
 			return;
 		}
 
-		float tilePix = 64.0f;
 		Entity &en = Entity::get(eid);
 
 		nk_begin(&nuklear->ctx, en.spec->name.c_str(), nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER);
 
+		float tilePix = 64.0f;
+		struct nk_vec2 content = nk_window_get_content_region_size(&nuklear->ctx);
+		struct nk_vec2 spacing = nuklear->ctx.style.window.spacing;
+
 		if (en.spec->consumeChemical) {
 			Burner& burner = en.burner();
-			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 2);
+			nk_label(&nuklear->ctx, "Fuel", NK_TEXT_LEFT);
 			nk_prog(&nuklear->ctx, (int)(burner.energy.portion(burner.buffer)*100), 100, NK_FIXED);
 			for (Stack stack: burner.store.stacks) {
 				Item* item = Item::get(stack.iid);
@@ -334,13 +340,13 @@ void EntityPopup::build() {
 				camera->recipePopup->useEntity(eid);
 			}
 			nk_prog(&nuklear->ctx, (int)(crafter.progress*100), 100, NK_FIXED);
-		}
 
-		if (en.spec->store) {
-			Store& store = en.store();
-			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
-			for (Stack stack: store.stacks) {
-				nk_labelf(&nuklear->ctx, NK_TEXT_LEFT, "%s %u", Item::get(stack.iid)->name.c_str(), stack.size);
+			if (en.spec->recipeTags.count("mining")) {
+				auto minables = Chunk::minables(en.box());
+				nk_layout_row_dynamic(&nuklear->ctx, 0, minables.size());
+				for (Stack stack: minables) {
+					nk_label(&nuklear->ctx, fmtc("%s(%d)", Item::get(stack.iid)->name, stack.size), NK_TEXT_LEFT);
+				}
 			}
 		}
 
@@ -348,6 +354,28 @@ void EntityPopup::build() {
 			Arm& arm = en.arm();
 			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
 			nk_prog(&nuklear->ctx, (int)(arm.orientation*100), 100, NK_FIXED);
+
+			nk_layout_row_static(&nuklear->ctx, tilePix, tilePix, std::floor(content.x/(tilePix+spacing.x)));
+
+			for (uint iid: arm.filter) {
+				Item* item = Item::get(iid);
+				if (nk_button_image(&nuklear->ctx, nk_img("item"+item->name, item->image))) {
+					arm.filter.erase(iid);
+				}
+			}
+
+			if (nk_button_label(&nuklear->ctx, "+")) {
+				camera->itemPopup->revert = camera->popup;
+				camera->popup = camera->itemPopup;
+
+				camera->itemPopup->callback = [&](uint iid) {
+					Sim::locked([&]() {
+						if (eid && Entity::exists(eid)) {
+							arm.filter.insert(iid);
+						}
+					});
+				};
+			}
 		}
 
 		if (en.spec->lift) {
@@ -361,8 +389,8 @@ void EntityPopup::build() {
 							lift.stage == Lift::Raising ? "raising": "wtf"), NK_TEXT_LEFT);
 		}
 
-		if (en.spec->store || en.isGhost()) {
-			Store& store = en.isGhost() ? en.ghost().store: en.store();
+		if (en.spec->store) {
+			Store& store = en.store();
 
 			Mass usage = store.usage();
 			Mass limit = store.limit();
@@ -412,7 +440,7 @@ void EntityPopup::build() {
 
 						store.levelSet(level.iid, (uint)lower, (uint)upper);
 
-						//nk_style_push_font(&nuklear->ctx, p->fontSymbol);
+						nk_style_push_font(&nuklear->ctx, nuklear->symbol);
 
 						struct nk_style_button style = nuklear->ctx.style.button;
 						struct nk_color color = nk_rgb(0,128,0);
@@ -429,7 +457,7 @@ void EntityPopup::build() {
 						if (nk_button_label(&nuklear->ctx, "×")) {
 							clear = level.iid;
 						}
-						//nk_style_pop_font(&nuklear->ctx);
+						nk_style_pop_font(&nuklear->ctx);
 					}
 
 					for (Stack stack: store.stacks) {
@@ -520,7 +548,7 @@ void EntityPopup::build() {
 
 						store.levelSet(level.iid, lower, lower);
 
-						//nk_style_push_font(&nuklear->ctx, p->fontSymbol);
+						nk_style_push_font(&nuklear->ctx, nuklear->symbol);
 
 						struct nk_style_button style = nuklear->ctx.style.button;
 						struct nk_color color = nk_rgb(0,128,0);
@@ -538,7 +566,7 @@ void EntityPopup::build() {
 							clear = level.iid;
 						}
 
-						//nk_style_pop_font(&nuklear->ctx);
+						nk_style_pop_font(&nuklear->ctx);
 					}
 
 					for (Stack stack: store.stacks) {
@@ -626,7 +654,7 @@ void EntityPopup::build() {
 
 						store.levelSet(level.iid, 0, upper);
 
-						//nk_style_push_font(&nuklear->ctx, p->fontSymbol);
+						nk_style_push_font(&nuklear->ctx, nuklear->symbol);
 
 						struct nk_style_button style = nuklear->ctx.style.button;
 						struct nk_color color = nk_rgb(0,128,0);
@@ -644,7 +672,7 @@ void EntityPopup::build() {
 							clear = level.iid;
 						}
 
-						//nk_style_pop_font(&nuklear->ctx);
+						nk_style_pop_font(&nuklear->ctx);
 					}
 
 					for (Stack stack: store.stacks) {
@@ -738,18 +766,122 @@ void EntityPopup::build() {
 				}
 			}
 
-			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
-			nk_label(&nuklear->ctx, fmtc("logistic %d", en.spec->logistic), NK_TEXT_LEFT);
-			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
-			nk_label(&nuklear->ctx, fmtc("supplyPriority %d", en.spec->supplyPriority), NK_TEXT_LEFT);
-			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
-			nk_label(&nuklear->ctx, fmtc("loadPriority %d", en.spec->loadPriority), NK_TEXT_LEFT);
-			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
-			nk_label(&nuklear->ctx, fmtc("defaultOverflow %d", en.spec->defaultOverflow), NK_TEXT_LEFT);
-			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
-			nk_label(&nuklear->ctx, fmtc("loadAnything %d", en.spec->loadAnything), NK_TEXT_LEFT);
-			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
-			nk_label(&nuklear->ctx, fmtc("unloadAnything %d", en.spec->unloadAnything), NK_TEXT_LEFT);
+			//nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			//nk_label(&nuklear->ctx, fmtc("logistic %d", en.spec->logistic), NK_TEXT_LEFT);
+			//nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			//nk_label(&nuklear->ctx, fmtc("supplyPriority %d", en.spec->supplyPriority), NK_TEXT_LEFT);
+			//nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			//nk_label(&nuklear->ctx, fmtc("loadPriority %d", en.spec->loadPriority), NK_TEXT_LEFT);
+			//nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			//nk_label(&nuklear->ctx, fmtc("defaultOverflow %d", en.spec->defaultOverflow), NK_TEXT_LEFT);
+			//nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			//nk_label(&nuklear->ctx, fmtc("loadAnything %d", en.spec->loadAnything), NK_TEXT_LEFT);
+			//nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			//nk_label(&nuklear->ctx, fmtc("unloadAnything %d", en.spec->unloadAnything), NK_TEXT_LEFT);
+		}
+
+		nk_end(&nuklear->ctx);
+		refresh = 1;
+	});
+}
+
+EntityInfo::EntityInfo(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
+	eid = 0;
+}
+
+void EntityInfo::useEntity(uint ueid) {
+	eid = ueid;
+}
+
+void EntityInfo::place() {
+	x = GetScreenWidth()-w;
+	y = 0;
+}
+
+void EntityInfo::build() {
+	Sim::locked([&](){
+		if (!eid) return;
+		if (!Entity::exists(eid)) return;
+
+		Entity& en = Entity::get(eid);
+
+		nk_begin(&nuklear->ctx, fmtc("%s", en.spec->name), nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR);
+
+		//float tilePix = 128.0f;
+		//struct nk_vec2 content = nk_window_get_content_region_size(&nuklear->ctx);
+		//struct nk_vec2 spacing = nuklear->ctx.style.window.spacing;
+
+		if (en.spec->consumeChemical) {
+			Burner& burner = en.burner();
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 2);
+			nk_label(&nuklear->ctx, fmtc("Fuel"), NK_TEXT_LEFT);
+			nk_prog(&nuklear->ctx, (int)(burner.energy.portion(burner.buffer)*100), 100, NK_FIXED);
+		}
+
+		if (en.spec->consumeElectricity) {
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 2);
+			nk_label(&nuklear->ctx, fmtc("Electricity"), NK_TEXT_LEFT);
+			nk_prog(&nuklear->ctx, (int)(Entity::electricitySatisfaction*100), 100, NK_FIXED);
+		}
+
+		if (en.spec->generateElectricity) {
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 2);
+			nk_label(&nuklear->ctx, fmtc("Generator"), NK_TEXT_LEFT);
+			nk_prog(&nuklear->ctx, (int)(Entity::electricityLoad*100), 100, NK_FIXED);
+		}
+
+		if (en.spec->crafter) {
+			Crafter& crafter = en.crafter();
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 2);
+
+			nk_label(&nuklear->ctx, crafter.recipe ? crafter.recipe->name.c_str(): "(no recipe)", NK_TEXT_LEFT);
+			nk_prog(&nuklear->ctx, (int)(crafter.progress*100), 100, NK_FIXED);
+
+			if (en.spec->recipeTags.count("mining")) {
+				auto minables = Chunk::minables(en.box());
+				nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+				for (Stack stack: minables) {
+					nk_label(&nuklear->ctx, fmtc("%s(%d)", Item::get(stack.iid)->name, stack.size), NK_TEXT_LEFT);
+				}
+			}
+		}
+
+		nk_end(&nuklear->ctx);
+		refresh = 1;
+	});
+}
+
+GhostInfo::GhostInfo(MainCamera *cam, int w, int h) : Panel(cam, w, h) {
+	ge = NULL;
+}
+
+void GhostInfo::useGhost(GuiFakeEntity* gge) {
+	ge = gge;
+}
+
+void GhostInfo::place() {
+	x = GetScreenWidth()-w;
+	y = 0;
+}
+
+void GhostInfo::build() {
+	Sim::locked([&](){
+		if (!ge) return;
+
+		nk_begin(&nuklear->ctx, fmtc("%s", ge->spec->name), nk_rect(0, 0, w, h), NK_WINDOW_TITLE|NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR);
+
+		//float tilePix = 128.0f;
+		//struct nk_vec2 content = nk_window_get_content_region_size(&nuklear->ctx);
+		//struct nk_vec2 spacing = nuklear->ctx.style.window.spacing;
+
+		if (ge->spec->crafter) {
+			if (ge->spec->recipeTags.count("mining")) {
+				auto minables = Chunk::minables(ge->box());
+				nk_layout_row_dynamic(&nuklear->ctx, 0, minables.size());
+				for (Stack stack: minables) {
+					nk_label(&nuklear->ctx, fmtc("%s(%d)", Item::get(stack.iid)->name, stack.size), NK_TEXT_LEFT);
+				}
+			}
 		}
 
 		nk_end(&nuklear->ctx);

@@ -1,5 +1,6 @@
 #include "common.h"
 #include "crafter.h"
+#include "ledger.h"
 
 void Crafter::reset() {
 	all.clear();
@@ -20,6 +21,7 @@ Crafter& Crafter::create(uint id) {
 	crafter.recipe = NULL;
 	crafter.nextRecipe = NULL;
 	crafter.energyUsed = 0;
+	crafter.completed = 0;
 	return crafter;
 }
 
@@ -35,6 +37,20 @@ void Crafter::destroy() {
 Point Crafter::output() {
 	Entity& en = Entity::get(id);
 	return en.pos.floor(0.5f) + (en.dir * (en.spec->collision.d/2.0f+0.5f));
+}
+
+float Crafter::inputsProgress() {
+	Entity& en = Entity::get(id);
+	Store& store = en.store();
+	float avg = 0.0f;
+	float agg = 0.0f;
+	if (recipe) {
+		for (auto [iid,count]: recipe->inputItems) {
+			agg += std::min(1.0f, (float)store.count(iid)/float(count));
+		}
+		avg = agg/(float)recipe->inputItems.size();
+	}
+	return std::max(0.0f, std::min(1.0f, avg));
 }
 
 void Crafter::update() {
@@ -71,10 +87,8 @@ void Crafter::update() {
 				store.levelSet(iid, 0, 0);
 			}
 
-			if (recipe->mining) {
-				for (auto iid: Item::mining) {
-					store.levelSet(iid, 0, 1);
-				}
+			if (recipe->mine) {
+				store.levelSet(recipe->mine, 0, 1);
 			}
 
 			working = false;
@@ -98,9 +112,9 @@ void Crafter::update() {
 			outputReady = outputReady && store.count(iid) <= count;
 		}
 
-		bool miningReady = !recipe->mining || (Chunk::isHill(en.box()) && !store.isFull());
+		bool miningReady = !recipe->mine || Chunk::canMine(en.miningBox(), recipe->mine);
 
-		if (itemsReady && miningReady && outputReady) {
+		if (!store.isFull() && itemsReady && miningReady && outputReady) {
 
 			for (auto [iid,count]: recipe->inputItems) {
 				store.remove({iid,count});
@@ -111,6 +125,12 @@ void Crafter::update() {
 			progress = 0.0f;
 			efficiency = 0.0f;
 		}
+	}
+
+	// inactive miner on hill without resources
+	if (!working && recipe && recipe->mine && Chunk::countMine(en.miningBox(), 0) == 0) {
+		Chunk::flatten(en.miningBox());
+		Entity::removeJunk(en.miningBox().grow(0,100,0));
 	}
 
 	if (working) {
@@ -125,13 +145,24 @@ void Crafter::update() {
 			store.insert({iid,count});
 		}
 
-		if (recipe->mining) {
-			store.insert(Chunk::mine(en.box()));
+		if (recipe->mine) {
+			Stack stack = Chunk::mine(en.miningBox(), recipe->mine);
+			if (stack.iid) store.insert(stack);
+		}
+
+		if (recipe->outputCurrency) {
+			Ledger::transact(recipe->outputCurrency, recipe->name);
 		}
 
 		working = false;
 		energyUsed = 0;
 		progress = 0.0f;
 		efficiency = 0.0f;
+		completed++;
+
+		if (recipe && recipe->mine && Chunk::countMine(en.miningBox(), recipe->mine) == 0) {
+			Chunk::flatten(en.miningBox());
+			Entity::removeJunk(en.miningBox().grow(0,100,0));
+		}
 	}
 }

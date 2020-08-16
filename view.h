@@ -7,6 +7,7 @@ struct MainCamera;
 
 #include "raylib.h"
 #include "entity.h"
+#include "plan.h"
 #include "panel.h"
 #include "time-series.h"
 #include <vector>
@@ -86,7 +87,7 @@ struct MainCamera : View {
 
 	GuiEntity* hovering;
 	GuiEntity* directing;
-	GuiFakeEntity* placing;
+	Plan* placing;
 	bool placingFits;
 	std::vector<GuiEntity*> entities;
 	std::vector<GuiEntity*> hovered;
@@ -96,13 +97,17 @@ struct MainCamera : View {
 
 	float buildLevel;
 
-	Panel *popup;
-	BuildPopup *buildPopup;
-	EntityPopup *entityPopup;
-	RecipePopup *recipePopup;
-	ItemPopup *itemPopup;
-	StatsPopup *statsPopup;
+	Panel* popup;
+	BuildPopup* buildPopup;
+	EntityPopup* entityPopup;
+	RecipePopup* recipePopup;
+	ItemPopup* itemPopup;
+	StatsPopup* statsPopup;
 	bool popupFocused;
+
+	Panel* info;
+	EntityInfo *entityInfo;
+	GhostInfo *ghostInfo;
 
 	TimeSeries statsUpdate;
 	TimeSeries statsDraw;

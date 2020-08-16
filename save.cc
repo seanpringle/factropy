@@ -1,5 +1,6 @@
 #include "common.h"
 #include "sim.h"
+#include "ledger.h"
 #include "entity.h"
 
 #include "json.hpp"
@@ -73,6 +74,8 @@ namespace Sim {
 		Drone::saveAll(name);
 		Burner::saveAll(name);
 
+		Ledger::save(name);
+
 		{
 			auto out = std::ofstream(path + "/time-series.json");
 
@@ -122,6 +125,8 @@ namespace Sim {
 		Drone::loadAll(name);
 		Burner::loadAll(name);
 
+		Ledger::load(name);
+
 		{
 			auto in = std::ifstream(path + "/time-series.json");
 
@@ -145,6 +150,44 @@ namespace Sim {
 			in.close();
 		}
 	}
+}
+
+void Ledger::save(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/ledger.json");
+
+	json state;
+	state["balance"] = Ledger::balance.value;
+	out << state << "\n";
+
+	for (auto trx: Ledger::transactions) {
+		json state;
+		state["delta"] = trx.delta.value;
+		state["desc"] = trx.desc;
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Ledger::load(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/ledger.json");
+
+	std::string line;
+	std::getline(in, line);
+	auto state = json::parse(line);
+	Ledger::balance.value = state["balance"];
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Ledger::transactions.push_back({
+			delta: Currency(state["delta"]),
+			desc: state["desc"],
+		});
+	}
+
+	in.close();
 }
 
 void Chunk::saveAll(const char* name) {
@@ -542,6 +585,7 @@ void Arm::saveAll(const char* name) {
 		state["orientation"] = arm.orientation;
 		state["stage"] = arm.stage;
 		state["pause"] = arm.pause;
+		state["filter"] = arm.filter;
 
 		out << state << "\n";
 	}
@@ -560,6 +604,10 @@ void Arm::loadAll(const char* name) {
 		arm.orientation = state["orientation"];
 		arm.stage = state["stage"];
 		arm.pause = state["pause"];
+
+		for (uint iid: state["filter"]) {
+			arm.filter.insert(iid);
+		}
 	}
 
 	in.close();
@@ -576,6 +624,7 @@ void Crafter::saveAll(const char* name) {
 		state["id"] = crafter.id;
 		state["working"] = crafter.working;
 		state["progress"] = crafter.progress;
+		state["completed"] = crafter.completed;
 		if (crafter.recipe) state["recipe"] = crafter.recipe->name;
 
 		out << state << "\n";
@@ -593,6 +642,7 @@ void Crafter::loadAll(const char* name) {
 		Crafter& crafter = get(state["id"]);
 		crafter.working = state["working"];
 		crafter.progress = state["progress"];
+		crafter.completed = state["completed"];
 		crafter.recipe = state["recipe"].is_null() ? NULL: Recipe::byName(state["recipe"]);
 	}
 

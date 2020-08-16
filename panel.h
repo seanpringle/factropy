@@ -4,6 +4,8 @@
 class Panel;
 class BuildPopup;
 class EntityPopup;
+class EntityInfo;
+class GhostInfo;
 class RecipePopup;
 class ItemPopup;
 class StatsPopup;
@@ -37,7 +39,7 @@ public:
 
 	Panel(MainCamera *cam, int w, int h);
 	virtual ~Panel();
-	void center();
+	virtual void place();
 	void render();
 	void draw();
 	virtual void build();
@@ -69,6 +71,24 @@ public:
 	uint iidSelected;
 	EntityPopup(MainCamera *cam, int w, int h);
 	void useEntity(uint eid);
+	void build() override;
+};
+
+class EntityInfo : public Panel {
+public:
+	uint eid;
+	EntityInfo(MainCamera *cam, int w, int h);
+	void useEntity(uint eid);
+	void place() override;
+	void build() override;
+};
+
+class GhostInfo : public Panel {
+public:
+	GuiFakeEntity* ge;
+	GhostInfo(MainCamera *cam, int w, int h);
+	void useGhost(GuiFakeEntity* ge);
+	void place() override;
 	void build() override;
 };
 

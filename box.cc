@@ -91,12 +91,12 @@ bool Box::intersects(Box a) {
 }
 
 bool Box::contains(Point p) {
-	float xMin = x-w/2.0f - 0.000001;
-	float yMin = y-h/2.0f - 0.000001;
-	float zMin = z-d/2.0f - 0.000001;
-	float xMax = x+w/2.0f + 0.000001;
-	float yMax = y+h/2.0f + 0.000001;
-	float zMax = z+d/2.0f + 0.000001;
+	float xMin = x-w/2.0f - 0.000001f;
+	float yMin = y-h/2.0f - 0.000001f;
+	float zMin = z-d/2.0f - 0.000001f;
+	float xMax = x+w/2.0f + 0.000001f;
+	float yMax = y+h/2.0f + 0.000001f;
+	float zMax = z+d/2.0f + 0.000001f;
 
 	bool xc = xMin < p.x && xMax > p.x;
 	bool yc = yMin < p.y && yMax > p.y;

@@ -21,3 +21,7 @@ Area::Area(float ww, float dd) {
 Area::operator bool() const {
 	return Point(w, 0, d).length() > 0.01;
 }
+
+Area Area::direction(Point dir) {
+	return (dir == Point::West || dir == Point::East) ? Area(d,w): Area(w,d);
+}

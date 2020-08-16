@@ -5,7 +5,7 @@
 
 SiteCamera::SiteCamera(Point ppos, Point ddir) {
 	pos = ppos;
-	dir = ddir;
+	dir = ddir.normalize();
 	refresh = 60;
 }
 
@@ -16,6 +16,11 @@ SiteCamera::~SiteCamera() {
 	}
 }
 
+Point SiteCamera::groundTarget(float ground) {
+	RayHitInfo spot = GetCollisionRayGround((Ray){pos, dir}, ground);
+	return Point(spot.position);
+}
+
 void SiteCamera::update() {
 	if (Sim::tick%refresh != 0) return;
 
@@ -24,7 +29,7 @@ void SiteCamera::update() {
 		entities.pop_back();
 	}
 
-	Point target = pos + dir;
+	Point target = groundTarget(0.0f);
 	Box view = (Box){target.x, target.y, target.z, 500, 500, 500};
 
 	Sim::locked([&]() {
@@ -39,15 +44,15 @@ void SiteCamera::draw(RenderTexture canvas) {
 
 	Camera3D camera = {
 		position : pos,
-		target   : pos + dir,
-		up       : -Point::Up,
-		fovy     : -fovy,
+		target   : groundTarget(0.0f),
+		up       : Point::Up,
+		fovy     : fovy,
 		type     : CAMERA_PERSPECTIVE,
 	};
 
 	BeginTextureMode(canvas);
 
-		ClearBackground(GRAY);
+		ClearBackground(SKYBLUE);
 
 		BeginMode3D(camera);
 
@@ -87,9 +92,4 @@ void SiteCamera::draw(RenderTexture canvas) {
 		EndMode3D();
 
 	EndTextureMode();
-}
-
-Point SiteCamera::groundTarget(float ground) {
-	RayHitInfo spot = GetCollisionRayGround((Ray){pos, dir}, ground);
-	return Point(spot.position);
 }

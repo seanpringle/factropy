@@ -20,7 +20,8 @@ Recipe::Recipe(uint id, std::string name) {
 	names[name] = this;
 	ids[id] = this;
 
-	mining = false;
+	mine = 0;
+	outputCurrency = 0;
 	energyUsage = 0;
 	ZERO(image);
 	ZERO(texture);

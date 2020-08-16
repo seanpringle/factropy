@@ -48,6 +48,7 @@ struct Store {
 	Stack remove(Stack stack);
 	Stack removeAny(uint size);
 	uint wouldRemoveAny();
+	uint wouldRemoveAny(std::set<uint>& filter);
 	Stack removeFuel(std::string chemical, uint size);
 	Stack overflowAny(uint size);
 	void promise(Stack stack);
@@ -70,9 +71,12 @@ struct Store {
 	bool isAccepting(uint iid);
 	bool isOverflowDefault(uint iid);
 	Stack forceSupplyFrom(Store& src);
+	Stack forceSupplyFrom(Store& src, std::set<uint>& filter);
 	Stack supplyFrom(Store& src);
+	Stack supplyFrom(Store& src, std::set<uint>& filter);
 	Stack forceOverflowTo(Store& dst);
 	Stack overflowTo(Store& dst);
+	Stack overflowTo(Store& dst, std::set<uint>& filter);
 	Stack overflowDefaultTo(Store& dst);
 };
 

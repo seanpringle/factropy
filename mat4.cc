@@ -90,6 +90,10 @@ Mat4 Mat4::translate(float x, float y, float z) {
 	return MatrixTranslate(x, y, z);
 }
 
+Mat4 Mat4::translate(Point p) {
+	return translate(p.x, p.y, p.z);
+}
+
 float Mat4::determinant() const {
 	return
 		(m12 * m9 * m6  * m3 ) - (m8 * m13 * m6  * m3 ) - (m12 * m5 * m10 * m3 ) + (m4 * m13 * m10 * m3 ) +

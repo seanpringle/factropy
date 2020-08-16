@@ -7,6 +7,12 @@
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
+#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+#include "imgui/implot.h"
+
 #include "common.h"
 #include "panel.h"
 #include "mod.h"
@@ -18,6 +24,8 @@
 #include "view.h"
 #include "item.h"
 #include "recipe.h"
+#include "ledger.h"
+#include "popup.h"
 #include <ctime>
 
 const char* quotes[] = {
@@ -67,7 +75,7 @@ int main(int argc, char const *argv[]) {
 
   float fogDensity = 0.004f;
 	Vector4 fogColor = ColorNormalize(SKYBLUE);
-	Vector4 ambient = { 0.3f, 0.3f, 0.2f, 1.0f };
+	Vector4 ambient = { 0.2f, 0.2f, 0.1f, 1.0f };
 
 	Shader shader = LoadShader(
 		FormatText("shaders/glsl%i/base_lighting.vs", GLSL_VERSION),
@@ -175,6 +183,12 @@ int main(int argc, char const *argv[]) {
 		(new Part(thingIngot))->paint(0x888989ff),
 	};
 
+	item = new Item(Item::next(), "brick");
+	item->parts = {
+		(new Part(Thing("models/brick-hd.stl", "models/brick-ld.stl")))->paint(0x666666ff),
+	};
+	item->armV = 0.1f;
+
 	auto copperWireEnd = Thing("models/copper-wire-end-hd.stl", "models/copper-wire-end-ld.stl");
 
 	item = new Item(Item::next(), "copper-wire");
@@ -198,14 +212,44 @@ int main(int argc, char const *argv[]) {
 	//auto thingTruckChassisHauler = Thing("models/truck-chassis-hauler.stl");
 	auto thingTruckWheel = Thing("models/truck-wheel.stl");
 
-	Recipe* recipe = new Recipe(Recipe::next(), "mining1");
-	recipe->energyUsage = Energy::kJ(300);
-	recipe->tags = {"mining"};
-	recipe->mining = true;
-	recipe->parts = {
-		(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
-		(new Part(thingGear))->paint(0xccccccff)->scale(0.3f,0.3f,0.3f)->rotate(Point::East, 90)->translate(0,0,0.15),
+	item = new Item(Item::next(), "gear-wheel");
+	item->parts = {
+		(new Part(thingGear))->paint(0x666666ff)->scale(0.8,0.8,0.8),
 	};
+	item->armV = 0.45f;
+
+	auto thingBatteryTerminal = Thing("models/battery-terminal-hd.stl", "models/battery-terminal-ld.stl");
+
+	item = new Item(Item::next(), "battery");
+	item->parts = {
+		(new Part(Thing("models/battery-body-hd.stl", "models/battery-body-ld.stl")))->paint(0xcc6600ff),
+		(new Part(Thing("models/battery-cap-hd.stl", "models/battery-cap-ld.stl")))->paint(0x666666ff),
+		(new Part(thingBatteryTerminal))->paint(0x660000ff)->translate(0,0,-0.1),
+		(new Part(thingBatteryTerminal))->paint(0x004400ff)->translate(0,0,0.1),
+	};
+
+	item = new Item(Item::next(), "electric-motor");
+	item->parts = {
+		(new Part(Thing("models/electric-motor-body-hd.stl", "models/electric-motor-body-ld.stl")))->paint(0x992222ff),
+		(new Part(Thing("models/electric-motor-foot-hd.stl", "models/electric-motor-foot-ld.stl")))->paint(0x661111ff),
+		(new Part(Thing("models/electric-motor-shaft-hd.stl", "models/electric-motor-shaft-ld.stl")))->paint(0x444444ff),
+	};
+
+	Recipe* recipe;
+
+	for (auto iid: Item::mining) {
+		Item* item = Item::get(iid);
+		Recipe* recipe = new Recipe(Recipe::next(), "mine-" + item->name);
+		recipe->energyUsage = Energy::kJ(200);
+		recipe->tags = {"mining"};
+		recipe->mine = iid;
+		recipe->parts = {
+			(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
+		};
+		for (auto part: item->parts) {
+			recipe->parts.push_back(part);
+		}
+	}
 
 	recipe = new Recipe(Recipe::next(), "iron-smelting1");
 	recipe->energyUsage = Energy::kJ(300);
@@ -246,6 +290,17 @@ int main(int argc, char const *argv[]) {
 		(new Part(thingIngot))->paint(0x888989ff),
 	};
 
+	recipe = new Recipe(Recipe::next(), "brick-smelting1");
+	recipe->energyUsage = Energy::kJ(300);
+	recipe->tags = {"smelting"};
+	recipe->inputItems = {
+		{ Item::byName("stone")->id, 2 },
+	};
+	recipe->outputItems = {
+		{ Item::byName("brick")->id, 1 },
+	};
+	recipe->parts = Item::byName("brick")->parts;
+
 	recipe = new Recipe(Recipe::next(), "copper-wire");
 	recipe->energyUsage = Energy::kJ(300);
 	recipe->tags = {"crafting"};
@@ -268,6 +323,42 @@ int main(int argc, char const *argv[]) {
 		{ Item::byName("circuit-board")->id, 2 },
 	};
 	recipe->parts = Item::byName("circuit-board")->parts;
+
+	recipe = new Recipe(Recipe::next(), "gear-wheel");
+	recipe->energyUsage = Energy::kJ(600);
+	recipe->tags = {"crafting"};
+	recipe->inputItems = {
+		{ Item::byName("iron-ingot")->id, 1 },
+	};
+	recipe->outputItems = {
+		{ Item::byName("gear-wheel")->id, 1 },
+	};
+	recipe->parts = Item::byName("gear-wheel")->parts;
+
+	recipe = new Recipe(Recipe::next(), "battery");
+	recipe->energyUsage = Energy::kJ(900);
+	recipe->tags = {"crafting"};
+	recipe->inputItems = {
+		{ Item::byName("iron-ingot")->id, 1 },
+		{ Item::byName("copper-ingot")->id, 1 },
+	};
+	recipe->outputItems = {
+		{ Item::byName("battery")->id, 1 },
+	};
+	recipe->parts = Item::byName("battery")->parts;
+
+	recipe = new Recipe(Recipe::next(), "electric-motor");
+	recipe->energyUsage = Energy::kJ(900);
+	recipe->tags = {"crafting"};
+	recipe->inputItems = {
+		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("circuit-board")->id, 1 },
+		{ Item::byName("gear-wheel")->id, 1 },
+	};
+	recipe->outputItems = {
+		{ Item::byName("electric-motor")->id, 1 },
+	};
+	recipe->parts = Item::byName("electric-motor")->parts;
 
 	Spec* spec = new Spec("provider-container");
 	spec->collision = { w: 2, h: 2, d: 5 };
@@ -395,12 +486,14 @@ int main(int argc, char const *argv[]) {
 	spec->capacity = Mass::kg(100);
 	spec->rotate = true;
 	spec->crafter = true;
+	spec->loadPriority = true;
 	spec->crafterProgress = true;
 	spec->recipeTags = {"smelting"};
 	spec->consumeChemical = true;
 	spec->energyConsume = Energy::kW(60);
 	spec->materials = {
 		{ Item::byName("copper-ingot")->id, 3 },
+		{ Item::byName("brick")->id, 3 },
 	};
 
 	for (uint i = 0; i < 10; i++) {
@@ -474,7 +567,7 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0),
 		(new Part(Thing("models/belt-surface-hd.stl", "models/belt-surface-ld.stl")))->paint(0x000000ff)->translate(0,-0.5,0),
-		(new PartCycle(Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl"), 2))->paint(0xcccc00ff)->translate(0,-0.5,0)->ld(false),
+		(new PartCycle(Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl"), BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-0.5,0)->ld(false),
 	};
 
 	View::beltPillar1 = (new Part(Thing("models/belt-pillar-hd.stl", "models/belt-pillar-hd.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0);
@@ -489,8 +582,12 @@ int main(int argc, char const *argv[]) {
 		spec = new Spec(name);
 		spec->collision = { w: 2, h: 1, d: 2 };
 		spec->pivot = true;
+		spec->junk = true;
 		spec->parts = {
 			(new Part(Thing(part)))->paint(0x666666ff),
+		};
+		spec->materials = {
+			{Item::byName("stone")->id, 1},
 		};
 
 		rocks.push_back(spec);
@@ -524,8 +621,12 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("tree1");
 	spec->collision = { w: 2, h: 5, d: 2 };
 	spec->pivot = true;
+	spec->junk = true;
 	spec->parts = {
 		(new Part(Thing("models/tree1.stl").smooth()))->paint(0x224400ff)->translate(0,-2.5,0),
+	};
+	spec->materials = {
+		{Item::byName("log")->id, 1},
 	};
 
 	trees.push_back(spec);
@@ -533,8 +634,12 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("tree2");
 	spec->collision = { w: 2, h: 6, d: 2 };
 	spec->pivot = true;
+	spec->junk = true;
 	spec->parts = {
 		(new Part(Thing("models/tree2.stl").smooth()))->paint(0x006600ff)->translate(-5,-3,0),
+	};
+	spec->materials = {
+		{Item::byName("log")->id, 1},
 	};
 
 	trees.push_back(spec);
@@ -583,12 +688,21 @@ int main(int argc, char const *argv[]) {
 	spec->enableSetLower = true;
 	spec->enableSetUpper = true;
 	spec->consumeChemical = true;
+	spec->generateElectricity = true;
+	spec->energyGenerate = Energy::kW(100);
 
 	spec->depot = true;
 	spec->drones = 10;
 
 	spec->costGreedy = 1.3;
 	spec->clearance = 1.5;
+
+	spec->materials = {
+		{ Item::byName("electric-motor")->id, 2 },
+		{ Item::byName("steel-ingot")->id, 2 },
+		{ Item::byName("gear-wheel")->id, 2 },
+		{ Item::byName("circuit-board")->id, 2 },
+	};
 
 	spec = new Spec("truck-hauler");
 	spec->collision = { w: 2, h: 2, d: 3 };
@@ -603,9 +717,17 @@ int main(int argc, char const *argv[]) {
 	};
 	spec->align = false;
 	spec->vehicle = true;
+	spec->vehicleEnergy = Energy::kW(50);
 	spec->store = true;
 	spec->capacity = Mass::kg(1000);
 	spec->enableSetUpper = true;
+	spec->consumeChemical = true;
+
+	spec->materials = {
+		{ Item::byName("electric-motor")->id, 2 },
+		{ Item::byName("steel-ingot")->id, 2 },
+		{ Item::byName("gear-wheel")->id, 2 },
+	};
 
 	spec = new Spec("truck-stop");
 	spec->collision = { w: 3, h: 0.1, d: 3 };
@@ -614,13 +736,14 @@ int main(int argc, char const *argv[]) {
 	};
 	spec->pivot = true;
 
+	auto thingDroneChassis = Thing("models/drone-chassis-hd.stl", "models/drone-chassis-ld.stl");
 	auto thingDroneSpars = Thing("models/drone-spars-hd.stl", "models/drone-spars-ld.stl");
 	auto thingDroneRotor = Thing("models/drone-rotor-hd.stl", "models/drone-rotor-ld.stl");
 
 	spec = new Spec("drone");
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->parts = {
-		(new Part(Thing("models/drone-chassis-hd.stl", "models/drone-chassis-ld.stl")))->paint(0x660000ff),
+		(new Part(thingDroneChassis))->paint(0x660000ff),
 		(new Part(thingDroneSpars))->paint(0x444444ff)->rotate(Point::Up, 45),
 		(new PartSpinner(thingDroneRotor, 45))->paint(0x999999ff)->translate(0.3,0.02,0.3),
 		(new PartSpinner(thingDroneRotor, 45))->paint(0x999999ff)->translate(0.3,0.02,-0.3),
@@ -634,6 +757,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 1, h: 2, d: 1 };
 	spec->arm = true;
 	spec->armOffset = 1.0f;
+	spec->armSpeed = 1.0f/60.0f;
 	spec->rotate = true;
 	spec->parts = {
 		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0xff6600ff),
@@ -724,6 +848,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 1, h: 2, d: 1 };
 	spec->arm = true;
 	spec->armOffset = 2.0f;
+	spec->armSpeed =1.0f/60.0f;
 	spec->rotate = true;
 	spec->parts = {
 		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0xff0000ff),
@@ -845,13 +970,14 @@ int main(int argc, char const *argv[]) {
 
 	{
 		Mat4 state0 = Mat4::identity;
+		int steps = 10;
 
-		for (int i = 20; i >= 0; i--) {
+		for (int i = steps; i >= 0; i--) {
 			//Mat4 stateT2 = Mat4::translate(0.0f, -1.0f/(float)i/2.0f, 0.0f);
 			//Mat4 stateT3 = Mat4::translate(0.0f, -1.0f/(float)i, 0.0f);
-			Mat4 stateT2 = Mat4::translate(0.0f, -1.0f/20.0f*(float)i/2.0f, 0.0f);
-			Mat4 stateT3 = Mat4::translate(0.0f, -1.0f/20.0f*(float)i, 0.0f);
-			Mat4 stateP = Mat4::translate(0.0f, -1.0f/20.0f*(float)i, 0.0f);
+			Mat4 stateT2 = Mat4::translate(0.0f, -1.0f/(float)steps * (float)i / 2.0f, 0.0f);
+			Mat4 stateT3 = Mat4::translate(0.0f, -1.0f/(float)steps * (float)i, 0.0f);
+			Mat4 stateP = Mat4::translate(0.0f, -1.0f/(float)steps * (float)i, 0.0f);
 
 			spec->states.push_back({
 				state0,
@@ -912,6 +1038,62 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
+	spec = new Spec("teleporter");
+	spec->store = true;
+	spec->capacity = Mass::kg(10000);
+	spec->loadPriority = true;
+	spec->rotate = true;
+	spec->crafter = true;
+	spec->crafterProgress = false;
+	spec->recipeTags = {"teleporting"};
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::MW(10);
+	spec->collision = { w: 8, h: 8, d: 8 };
+	spec->parts = {
+		(new Part(Thing("models/teleporter-base-hd.stl")))->paint(0x0044ccff)->translate(0,-2.5,0),
+		(new Part(Thing("models/teleporter-ring1-hd.stl")))->paint(0xd4af37ff)->gloss(64),
+		(new Part(Thing("models/teleporter-ring2-hd.stl")))->paint(0xd4af37ff)->gloss(64),
+		(new Part(Thing("models/teleporter-ring3-hd.stl")))->paint(0xd4af37ff)->gloss(64),
+	};
+	spec->materials = {
+		{ Item::byName("steel-ingot")->id, 5 },
+	};
+
+	{
+		Mat4 state0 = Mat4::identity;
+
+		for (int i = 0; i < 360; i+=2) {
+			Mat4 state1 = Mat4::rotateY((float)i*DEG2RAD);
+			Mat4 state2 = Mat4::rotateX((float)i*DEG2RAD);
+			Mat4 state3 = Mat4::rotateZ((float)i*DEG2RAD);
+
+			spec->states.push_back({
+				state0,
+				state1,
+				state2,
+				state3,
+			});
+		}
+	}
+
+	recipe = new Recipe(Recipe::next(), "sell-iron-ingots1");
+	recipe->energyUsage = Energy::MJ(100);
+	recipe->tags = {"teleporting"};
+	recipe->inputItems = {
+		{ Item::byName("iron-ingot")->id, 1000 },
+	};
+	recipe->outputCurrency = 1000;
+	recipe->parts = Item::byName("iron-ingot")->parts;
+
+	recipe = new Recipe(Recipe::next(), "sell-copper-ingots1");
+	recipe->energyUsage = Energy::MJ(100);
+	recipe->tags = {"teleporting"};
+	recipe->inputItems = {
+		{ Item::byName("copper-ingot")->id, 1000 },
+	};
+	recipe->outputCurrency = 1000;
+	recipe->parts = Item::byName("copper-ingot")->parts;
+
 	spec = new Spec("block");
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->parts = {
@@ -939,13 +1121,16 @@ int main(int argc, char const *argv[]) {
 
 	if (loadSave) {
 		Sim::load("autosave");
+		for (auto pair: Chunk::all) {
+			pair.second->genHeightMap();
+		}
 	}
 
 	if (!loadSave) {
 		int horizon = 4;
 		for (int cy = -horizon; cy < horizon; cy++) {
 			for (int cx = -horizon; cx < horizon; cx++) {
-				Chunk::get(cx,cy);
+				Chunk::get(cx,cy)->genHeightMap();
 			}
 		}
 
@@ -955,6 +1140,7 @@ int main(int argc, char const *argv[]) {
 		en.store().insert({Item::byName("copper-ingot")->id, 100});
 		en.store().insert({Item::byName("steel-ingot")->id, 100});
 		en.store().insert({Item::byName("circuit-board")->id, 100});
+		en.store().insert({Item::byName("gear-wheel")->id, 100});
 	}
 
 	Panels::init();
@@ -963,6 +1149,28 @@ int main(int argc, char const *argv[]) {
 	camera->recipePopup = new RecipePopup(camera, 800, 800);
 	camera->itemPopup = new ItemPopup(camera, 800, 800);
 	camera->statsPopup = new StatsPopup(camera, 800, 800);
+
+	camera->info = NULL;
+	camera->entityInfo = new EntityInfo(camera, 300, 300);
+	camera->ghostInfo = new GhostInfo(camera, 300, 300);
+
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)GetWindowHandle(), true);
+	ImGui_ImplOpenGL3_Init(NULL);
+
+	//ImPlot::CreateContext();
+
+	auto& imGuiIO = ImGui::GetIO();
+	auto& imGuiStyle = ImGui::GetStyle();
+
+	imGuiStyle.WindowRounding = 0.0f;
+
+	//auto font =
+	imGuiIO.Fonts->AddFontFromFileTTF("font/Roboto-Regular.ttf", 24);
+
+	Popup* popup = NULL;
+	StatsPopup2* statsPopup = new StatsPopup2();
 
 	Mod* mod = new Mod("base");
 	mod->load();
@@ -1108,13 +1316,12 @@ int main(int argc, char const *argv[]) {
 
 	for (auto pair: Chunk::all) {
 		Chunk *chunk = pair.second;
-		if (!chunk->generated) {
+		if (chunk->regenerate) {
 			chunk->genHeightMap();
-			chunk->generated = true;
 		}
 	}
 
-	RenderTexture secondary = LoadRenderTexture(GetScreenWidth()/4, GetScreenHeight()/4);
+	RenderTexture secondary = LoadRenderTexture(400-imGuiStyle.WindowPadding.x*2, 270-imGuiStyle.WindowPadding.y*2);
 
 	while (!WindowShouldClose()) {
 		Sim::locked(Sim::update);
@@ -1123,21 +1330,48 @@ int main(int argc, char const *argv[]) {
 		camera->update();
 		camSec->update();
 
+		camera->worldFocused = !camera->popupFocused && !ImGui::GetIO().WantCaptureMouse && !ImGui::GetIO().WantCaptureKeyboard;
+
 		if (camera->worldFocused) {
 
 			if (IsKeyReleased(KEY_ONE) && camera->hovering && camera->hovering->spec->belt) {
 				Sim::locked([&]() {
 					Entity& en = Entity::get(camera->hovering->id);
-					notef("%d", en.belt().insert(Item::byName("iron-ore")->id, BeltAny));
+					en.belt().insert(Item::byName("iron-ore")->id, BeltAny);
 				});
 			}
 
 			if (IsKeyReleased(KEY_F1)) {
-				camera->popup = camera->statsPopup;
+				popup = statsPopup;
+			}
+
+			if (IsKeyReleased(KEY_F2)) {
+				camSec->pos = camera->position;
+				camSec->dir = camera->direction;
 			}
 
 			if (IsKeyReleased(KEY_Q)) {
-				camera->build(camera->hovering ? camera->hovering->spec: NULL);
+				if (camera->selecting && camera->selected.size()) {
+					Sim::locked([&]() {
+						delete camera->placing;
+						camera->placing = new Plan(camera->selected[0]->pos);
+						for (auto se: camera->selected) {
+							auto ge = new GuiFakeEntity(se->spec);
+							ge->move(se->pos);
+							ge->dir = se->dir;
+							camera->placing->add(ge);
+						}
+					});
+					camera->selection = {0,0,0,0};
+					camera->selecting = false;
+				}
+				else
+				if (camera->hovering) {
+					camera->build(camera->hovering->spec);
+				}
+				else {
+					camera->build(NULL);
+				}
 			}
 
 			if (IsKeyReleased(KEY_R)) {
@@ -1166,22 +1400,12 @@ int main(int argc, char const *argv[]) {
 				}
 			}
 
-			if (IsKeyReleased(KEY_PAGE_UP) && camera->hovering && camera->hovering->spec->belt) {
-				Sim::locked([&]() {
-					if (Entity::exists(camera->hovering->id)) {
-						Entity& en = Entity::get(camera->hovering->id);
-						en.floor(std::min(3.0f, std::floor(en.pos.y)+1.0f));
-					}
-				});
+			if (IsKeyReleased(KEY_PAGE_UP)) {
+				camera->buildLevel = std::min(5.0f, std::round(camera->buildLevel+1.0f));
 			}
 
-			if (IsKeyReleased(KEY_PAGE_DOWN) && camera->hovering && camera->hovering->spec->belt) {
-				Sim::locked([&]() {
-					if (Entity::exists(camera->hovering->id)) {
-						Entity& en = Entity::get(camera->hovering->id);
-						en.floor(std::max(0.0f, std::floor(en.pos.y)-1.0f));
-					}
-				});
+			if (IsKeyReleased(KEY_PAGE_DOWN)) {
+				camera->buildLevel = std::max(0.0f, std::round(camera->buildLevel-1.0f));
 			}
 
 			if (IsKeyReleased(KEY_E)) {
@@ -1210,11 +1434,14 @@ int main(int argc, char const *argv[]) {
 
 			if (camera->mouse.left.clicked && camera->placing && !IsKeyDown(KEY_LEFT_SHIFT)) {
 				Sim::locked([&]() {
-					if (Entity::fits(camera->placing->spec, camera->placing->pos, camera->placing->dir)) {
-						Entity::create(Entity::next(), camera->placing->spec)
-							.construct()
-							.look(camera->placing->dir)
-							.move(camera->placing->pos);
+					if (camera->placing->fits()) {
+						for (uint i = 0; i < camera->placing->entities.size(); i++) {
+							auto te = camera->placing->entities[i];
+							Entity::create(Entity::next(), te->spec)
+								.construct()
+								.look(te->dir)
+								.move(camera->placing->position + camera->placing->offsets[i]);
+						}
 					}
 				});
 			}
@@ -1226,13 +1453,25 @@ int main(int argc, char const *argv[]) {
 				});
 			}
 
-			if (IsKeyReleased(KEY_DELETE) && camera->hovering) {
-				Sim::locked([&]() {
-					int id = camera->hovering->id;
-					if (Entity::exists(id)) {
-						Entity::get(id).deconstruct();
-					}
-				});
+			if (IsKeyReleased(KEY_DELETE)) {
+				if (camera->selected.size()) {
+					Sim::locked([&]() {
+						for (auto te: camera->selected) {
+							int id = te->id;
+							if (Entity::exists(id)) {
+								Entity::get(id).deconstruct();
+							}
+						}
+					});
+				}
+				if (camera->hovering) {
+					Sim::locked([&]() {
+						int id = camera->hovering->id;
+						if (Entity::exists(id)) {
+							Entity::get(id).deconstruct();
+						}
+					});
+				}
 			}
 
 			if (IsKeyReleased(KEY_ESCAPE)) {
@@ -1240,24 +1479,39 @@ int main(int argc, char const *argv[]) {
 					camera->popup = NULL;
 				}
 				else
+				if (popup) {
+					popup = NULL;
+				}
+				else
 				if (camera->placing) {
 					delete camera->placing;
 					camera->placing = NULL;
+					camera->ghostInfo->useGhost(NULL);
 				}
 			}
 
 			if (IsKeyReleased(KEY_F5)) {
 				Sim::save("autosave");
 			}
+
+			camera->info = NULL;
 		}
 
 		if (camera->popup) {
 			camera->popup->update();
 		}
 
+		if (camera->info) {
+			camera->info->update();
+		}
+
 		for (auto part: Part::all) {
 			part->update();
 		}
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
 
 		BeginDrawing();
 
@@ -1278,19 +1532,133 @@ int main(int argc, char const *argv[]) {
 
 			camera->draw();
 
-			DrawTexturePro(secondary.texture,
-				(Rectangle){0,0,(float)secondary.texture.width,(float)-secondary.texture.height},
-				(Rectangle){0,0,(float)secondary.texture.width,(float)secondary.texture.height},
-				(Vector2){0,0}, 0.0f, WHITE
-			);
+			ImGui::Begin("hudV", NULL, ImGuiWindowFlags_NoDecoration);
+			ImGui::SetWindowSize({(float)400,0.0f}, ImGuiCond_Always);
+			ImGui::SetWindowPos({(float)(GetScreenWidth()-400),0}, ImGuiCond_Always);
 
-			DrawFPS(10,10);
+			ImGui::Print(fmt("%d FPS", GetFPS()));
+
+			ImGui::Image(secondary.texture.id, ImVec2(secondary.texture.width, secondary.texture.height), ImVec2(0,1), ImVec2(1,0));
+
+			ImGui::Print("Electricity Network Load"); ImGui::SameLine();
+			ImGui::PrintRight(Entity::electricityDemand.formatRate());
+			ImGui::OverflowBar(Entity::electricitySupply.portion(Entity::electricityCapacityReady));
+
+//			{
+//				std::vector<float> plot;
+//				for (uint i = 59; i >= 1; i--) {
+//					Energy e = (i*60) > Sim::tick ? 0: Sim::statsElectricityDemand.minutes[Sim::statsElectricityDemand.minute(Sim::tick-(i*60))];
+//					plot.push_back(e.portion(Entity::electricityCapacity));
+//				}
+//				ImGui::PushItemWidth(-1);
+//				ImGui::PlotLines(
+//					"##electricitySatisfaction",
+//					plot.data(),
+//					plot.size()
+//				);
+//				ImGui::PopItemWidth();
+//			}
+
+			ImGui::Print(fmt("Ledger::balance %s", Ledger::balance.format()));
+
+			if (camera->hovering) {
+				GuiEntity* ge = camera->hovering;
+
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Print(ge->spec->name);
+
+				ImGui::GetWindowDrawList()->AddRectFilled(
+					ImGui::GetCursorScreenPos(),
+					ImVec2(ImGui::GetCursorScreenPos().x + ImGui::GetWindowContentRegionWidth(), ImGui::GetCursorScreenPos().y + ge->spec->texture.texture.height),
+					ImColor(0.5f, 0.5f, 0.5f, 1.0f)
+				);
+
+				ImGui::SetCursorPosX((ImGui::GetWindowWidth() - (float)ge->spec->texture.texture.width) * 0.5f);
+				ImGui::Image(ge->spec->texture.texture.id,
+					ImVec2(ge->spec->texture.texture.width, ge->spec->texture.texture.height),
+					ImVec2(0,0)
+				);
+
+				if (ge->spec->consumeChemical) {
+					ImGui::Print("Fuel");
+					ImGui::LevelBar(ge->burner.energy.portion(ge->burner.buffer));
+				}
+
+				if (ge->spec->crafter) {
+					Recipe* recipe = ge->crafter.recipe;
+
+					if (ge->spec->recipeTags.count("mining")) {
+						if (recipe && recipe->mine) {
+							ImGui::Print(fmtc("Mining: %s(%d)", Item::get(recipe->mine)->name, Chunk::countMine(ge->miningBox(), recipe->mine)));
+						} else {
+							ImGui::Print("Mining: (nothing)");
+						}
+						ImGui::LevelBar(ge->crafter.progress);
+					}
+
+					if (ge->spec->recipeTags.count("smelting")) {
+						ImGui::Print(fmtc("Smelting: %s", recipe ? recipe->name: "(nothing)"));
+						ImGui::LevelBar(ge->crafter.progress);
+					}
+
+					if (ge->spec->recipeTags.count("teleporting")) {
+						ImGui::Print(fmtc("Teleporting: %s", recipe ? recipe->name: "(nothing)"));
+						ImGui::LevelBar(ge->crafter.progress);
+						ImGui::Print("Shipment");
+						ImGui::LevelBar(ge->crafter.inputsProgress);
+					}
+
+					if (ge->spec->recipeTags.count("crafting")) {
+						ImGui::Print(fmtc("Crafting: %s", recipe ? recipe->name: "(nothing)"));
+						ImGui::LevelBar(ge->crafter.progress);
+					}
+
+				}
+
+				if (ge->spec->store) {
+					ImGui::Print("Storage");
+					ImGui::LevelBar(ge->store.usage.portion(ge->store.limit));
+				}
+			}
+
+			if (camera->placing) {
+				for (auto ge: camera->placing->entities) {
+					ImGui::Spacing();
+					ImGui::Separator();
+					ImGui::Print(ge->spec->name);
+
+					if (ge->spec->recipeTags.count("mining")) {
+						auto minables = Chunk::minables(ge->box());
+						for (Stack stack: minables) {
+							ImGui::Print(fmtc(fmtc("%s(%d)", Item::get(stack.iid)->name, stack.size)));
+						}
+					}
+				}
+			}
+
+			ImGui::End();
+
+			if (popup) {
+				popup->draw();
+			}
+
+			rlglDraw();
+
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 		EndDrawing();
 
 		camera->statsFrame.set(camera->frame, GetFrameTime());
 		camera->statsFrame.update(camera->frame);
 		camera->frame++;
 	}
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	//ImPlot::DestroyContext();
+	ImGui::DestroyContext();
 
 	UnloadRenderTexture(secondary);
 

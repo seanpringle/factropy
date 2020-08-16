@@ -182,6 +182,32 @@ uint Store::wouldRemoveAny() {
 	return 0;
 }
 
+uint Store::wouldRemoveAny(std::set<uint>& filter) {
+	for (auto it = stacks.begin(); it != stacks.end(); it++) {
+		if (filter.count(it->iid) && isActiveProviding(it->iid)) {
+			return it->iid;
+		}
+	}
+	for (auto it = stacks.begin(); it != stacks.end(); it++) {
+		if (filter.count(it->iid) && isProviding(it->iid)) {
+			return it->iid;
+		}
+	}
+	for (auto it = stacks.begin(); it != stacks.end(); it++) {
+		if (!filter.count(it->iid)) {
+			continue;
+		}
+		if (fuel && Item::get(it->iid)->fuel.category == fuelCategory) {
+			continue;
+		}
+		Level *lvl = level(it->iid);
+		if (!lvl) {
+			return it->iid;
+		}
+	}
+	return 0;
+}
+
 Stack Store::removeAny(uint size) {
 	uint iid = wouldRemoveAny();
 	if (iid) {
@@ -377,6 +403,22 @@ Stack Store::forceSupplyFrom(Store& src) {
 	return {0,0};
 }
 
+Stack Store::forceSupplyFrom(Store& src, std::set<uint>& filter) {
+	for (Level& dl: levels) {
+		if (filter.count(dl.iid) && isRequesting(dl.iid) && src.countAvailable(dl.iid) > 0) {
+			return {dl.iid, 1};
+		}
+	}
+	if (fuel && !isFull()) {
+		for (Stack& ss: src.stacks) {
+			if (filter.count(ss.iid) && Item::get(ss.iid)->fuel.category == fuelCategory) {
+				return {ss.iid, 1};
+			}
+		}
+	}
+	return {0,0};
+}
+
 // any provider or overflow to requester
 Stack Store::supplyFrom(Store& src) {
 	for (Level& dl: levels) {
@@ -387,6 +429,22 @@ Stack Store::supplyFrom(Store& src) {
 	if (fuel && !isFull()) {
 		for (Stack& ss: src.stacks) {
 			if (Item::get(ss.iid)->fuel.category == fuelCategory && src.isProviding(ss.iid)) {
+				return {ss.iid, 1};
+			}
+		}
+	}
+	return {0,0};
+}
+
+Stack Store::supplyFrom(Store& src, std::set<uint>& filter) {
+	for (Level& dl: levels) {
+		if (filter.count(dl.iid) && isRequesting(dl.iid) && src.isProviding(dl.iid)) {
+			return {dl.iid, 1};
+		}
+	}
+	if (fuel && !isFull()) {
+		for (Stack& ss: src.stacks) {
+			if (filter.count(ss.iid) && Item::get(ss.iid)->fuel.category == fuelCategory && src.isProviding(ss.iid)) {
 				return {ss.iid, 1};
 			}
 		}
@@ -410,6 +468,15 @@ Stack Store::forceOverflowTo(Store& dst) {
 Stack Store::overflowTo(Store& dst) {
 	for (Level& sl: levels) {
 		if (dst.isAccepting(sl.iid) && isActiveProviding(sl.iid)) {
+			return {sl.iid, 1};
+		}
+	}
+	return {0,0};
+}
+
+Stack Store::overflowTo(Store& dst, std::set<uint>& filter) {
+	for (Level& sl: levels) {
+		if (filter.count(sl.iid) && dst.isAccepting(sl.iid) && isActiveProviding(sl.iid)) {
 			return {sl.iid, 1};
 		}
 	}

@@ -25,6 +25,7 @@ Spec::Spec(std::string name) {
 	belt = false;
 	lift = false;
 	shunt = false;
+	junk = false;
 
 	magic = false;
 	capacity = 0;
@@ -61,6 +62,8 @@ Spec::Spec(std::string name) {
 
 	crafter = false;
 	crafterProgress = false;
+
+	teleporter = false;
 
 	arm = false;
 	armOffset = 1.0f;
@@ -108,7 +111,6 @@ Point Spec::aligned(Point p, Point dir) {
 Box Spec::box(Point pos, Point dir) {
 
 	float ww = collision.w;
-	//float hh = h;
 	float dd = collision.d;
 
 	if (dir == Point::West || dir == Point::East) {
@@ -117,19 +119,5 @@ Box Spec::box(Point pos, Point dir) {
 	}
 
 	return {pos.x, pos.y, pos.z, ww, collision.h, dd};
-}
-
-Area Spec::electricalArea(Point pos, Point dir) {
-
-	float ww = electrical.area.w;
-	//float hh = h;
-	float dd = electrical.area.d;
-
-	if (dir == Point::West || dir == Point::East) {
-		ww = electrical.area.d;
-		dd = electrical.area.w;
-	}
-
-	return {ww, dd};
 }
 

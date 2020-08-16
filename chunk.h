@@ -108,18 +108,23 @@ struct Chunk {
 	static bool isLand(Box b);
 	static bool isWater(Box b);
 	static bool isHill(Box b);
-	static Stack mine(Box b);
+	static Stack mine(Box b, uint iid);
+	static bool canMine(Box b, uint iid);
+	static uint countMine(Box b, uint iid);
+	static void flatten(Box b);
+	static std::vector<Stack> minables(Box b);
 
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 	static void reset();
 
+	static inline Material material;
+
 	int x, y;
 	Tile tiles[size][size];
-	bool generated = false;
+	bool regenerate = false;
 	Mesh heightmap;
 	Matrix transform;
-	static inline Material material;
 	std::vector<XY> minerals;
 
 	Chunk(int cx, int cy);
