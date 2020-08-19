@@ -766,6 +766,13 @@ void EntityPopup::build() {
 				}
 			}
 
+			if (en.spec->vehicle) {
+				int patrol = en.vehicle().patrol;
+				nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+				nk_checkbox_label(&nuklear->ctx, fmtc("patrol %d", patrol), &patrol);
+				en.vehicle().patrol = patrol;
+			}
+
 			//nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
 			//nk_label(&nuklear->ctx, fmtc("logistic %d", en.spec->logistic), NK_TEXT_LEFT);
 			//nk_layout_row_dynamic(&nuklear->ctx, 0, 1);

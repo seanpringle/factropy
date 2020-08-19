@@ -128,6 +128,10 @@ Stack Store::insert(Stack istack) {
 	Mass space = limit() - usage();
 	uint count = std::min(istack.size, space.items(istack.iid));
 
+	if (count > 0) {
+		activity = Sim::tick;
+	}
+
 	for (auto it = stacks.begin(); it != stacks.end(); it++) {
 		if (it->iid == istack.iid) {
 			it->size += count;
@@ -152,6 +156,7 @@ Stack Store::remove(Stack rstack) {
 			} else {
 				it->size -= rstack.size;
 			}
+			activity = Sim::tick;
 			return rstack;
 		}
 	}

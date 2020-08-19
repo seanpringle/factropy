@@ -480,13 +480,19 @@ void MainCamera::draw() {
 
 				Entity& en = Entity::get(ge->id);
 
-				if (!ge->ghost && ge->spec->vehicle) {
+				if (!ge->ghost && ge->spec->vehicle && hovering && ge->id == hovering->id) {
 					Vehicle& vehicle = en.vehicle();
 					Point p = en.pos;
 					for (auto n: vehicle.path) {
 						DrawSphere(n, 0.25f, RED);
 						DrawLine3D(p, n, RED);
 						p = n;
+					}
+					p = en.pos;
+					for (auto n: vehicle.waypoints) {
+						DrawSphere(n.position, 0.25f, BLUE);
+						DrawLine3D(p, n.position, BLUE);
+						p = n.position;
 					}
 				}
 
@@ -498,7 +504,7 @@ void MainCamera::draw() {
 					}
 
 					if (en.ground().y < 0.01f && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
-						belt_pillars.push_back(View::beltPillar1->instance(Mat4::translate(en.pos.x, en.pos.y, en.pos.z)));
+						belt_pillars.push_back(View::beltPillar1->instance(Mat4::translate(en.pos.x, 0.5f, en.pos.z)));
 					}
 				}
 

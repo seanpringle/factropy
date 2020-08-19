@@ -418,7 +418,7 @@ Box BeltSegment::box() {
 
 Point BeltSegment::front() {
 	Entity& en = Entity::get(belts.front()->id);
-	return en.pos + (Point::Up*0.5f) + (en.dir*0.5f);
+	return en.ground() + Point::Up + (en.dir*0.5f);
 }
 
 Point BeltSegment::step() {
@@ -441,7 +441,17 @@ void BeltSegment::offload() {
 			offloadId = Entity::at(first.pos + first.dir);
 		}
 
-		if (offloadId) {
+		if (offloadId && first.spec->loader && belts.size() > 1) {
+			Entity& target = Entity::get(offloadId);
+			uint iid = items.front().iid;
+
+			if (target.spec->store && target.store().isAccepting(iid) && target.store().insert({iid,1}).size == 0) {
+				removeAny(0, BeltFront);
+				return;
+			}
+		}
+
+		if (offloadId && !first.spec->loader) {
 			Entity& target = Entity::get(offloadId);
 			uint iid = items.front().iid;
 
@@ -457,11 +467,12 @@ void BeltSegment::offload() {
 
 			if (target.spec->lift) {
 				uint64_t predict = target.lift().insertPredict();
-				pauseOffload = predict ? predict: Sim::tick+10;
+				pauseOffload = predict ? predict: Sim::tick+5;
+				return;
 			}
 		}
 
-		pauseOffload = Sim::tick+15;
+		pauseOffload = Sim::tick+5;
 	}
 }
 
@@ -539,11 +550,21 @@ void BeltSegment::load() {
 				}
 
 				uint64_t predict = source.lift().removePredict();
-				pauseLoad = predict ? predict: Sim::tick+10;
+				pauseLoad = predict ? predict: Sim::tick+5;
+				return;
+			}
+
+			if (source.spec->store && last.spec->loader && belts.size() > 1) {
+				Stack stack = source.store().removeAny(1);
+				if (stack.iid) {
+					insert(belts.back()->offset, stack.iid, BeltBack);
+				}
+
+				pauseLoad = Sim::tick+5;
 				return;
 			}
 		}
 	}
 
-	pauseLoad = Sim::tick+15;
+	pauseLoad = Sim::tick+5;
 }

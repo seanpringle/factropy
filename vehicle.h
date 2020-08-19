@@ -20,6 +20,10 @@ struct Vehicle {
 		virtual bool rayCast(Point,Point);
 	};
 
+	struct Waypoint {
+		Point position;
+	};
+
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
@@ -31,9 +35,11 @@ struct Vehicle {
 
 	int id = 0;
 	std::list<Point> path;
-	std::list<Point> legs;
+	std::list<Waypoint> waypoints;
+	Waypoint waypoint;
 	Route *pathRequest = NULL;
 	uint64_t pause = 0;
+	bool patrol;
 
 	void destroy();
 	void update();

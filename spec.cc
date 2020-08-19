@@ -23,6 +23,7 @@ Spec::Spec(std::string name) {
 	drone = false;
 	store = false;
 	belt = false;
+	loader = false;
 	lift = false;
 	shunt = false;
 	junk = false;

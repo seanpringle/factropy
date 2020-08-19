@@ -15,6 +15,10 @@ void Vehicle::tick() {
 Vehicle& Vehicle::create(int id) {
 	Vehicle& vehicle = all.ref(id);
 	vehicle.id = id;
+	vehicle.pause = 0;
+	vehicle.patrol = false;
+	vehicle.pathRequest = NULL;
+	vehicle.waypoint.position = Point::Zero;
 	return vehicle;
 }
 
@@ -37,15 +41,30 @@ void Vehicle::update() {
 	if (en.isGhost()) return;
 	if (pause > Sim::tick) return;
 
+	if (patrol && path.empty() && en.spec->store) {
+		pause = std::max(pause, en.store().activity + 120);
+	}
+
+	if (pause > Sim::tick) return;
+
 	// check an existing pathfinding request for completion
 	if (pathRequest && pathRequest->done) {
+		ensure(waypoints.size());
+
+		waypoint = waypoints.front();
+		waypoints.pop_front();
+
+		if (patrol) {
+			waypoints.push_back(waypoint);
+		}
 
 		if (pathRequest->success) {
 			notef("path success");
 			for (Point point: pathRequest->result) {
 				path.push_back(point);
 			}
-		} else {
+		}
+		else {
 			notef("path failure");
 		}
 
@@ -54,12 +73,10 @@ void Vehicle::update() {
 	}
 
 	// request pathfinding for the next leg of our route
-	if (!pathRequest && path.empty() && !legs.empty()) {
-
+	if (!pathRequest && path.empty() && !waypoints.empty()) {
 		pathRequest = new Route(this);
 		pathRequest->origin = Point(en.pos.x, 0.0f, en.pos.z).tileCentroid();
-		pathRequest->target = legs.front();
-		legs.pop_front();
+		pathRequest->target = waypoints.front().position;
 		pathRequest->submit();
 		notef("send path request");
 		return;
@@ -98,9 +115,13 @@ void Vehicle::update() {
 }
 
 void Vehicle::addWaypoint(Point p) {
-	path.clear(); // temp
+	if (!patrol) {
+		path.clear();
+	}
 	p.y = 0.0f;
-	legs.push_back(p.tileCentroid());
+	waypoints.push_back({
+		position: p.tileCentroid(),
+	});
 }
 
 Vehicle::Route::Route(Vehicle *v) : Path() {

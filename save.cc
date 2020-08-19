@@ -535,14 +535,15 @@ void Vehicle::saveAll(const char* name) {
 		json state;
 		state["id"] = vehicle.id;
 		state["pause"] = vehicle.pause;
+		state["patrol"] = vehicle.patrol;
 
 		int i = 0;
 		for (Point point: vehicle.path) {
 			state["path"][i++] = {point.x, point.y, point.z};
 		}
 
-		for (Point point: vehicle.legs) {
-			state["legs"][i++] = {point.x, point.y, point.z};
+		for (auto wp: vehicle.waypoints) {
+			state["waypoints"][i++] = {wp.position.x, wp.position.y, wp.position.z};
 		}
 
 		out << state << "\n";
@@ -559,13 +560,16 @@ void Vehicle::loadAll(const char* name) {
 		auto state = json::parse(line);
 		Vehicle& vehicle = get(state["id"]);
 		vehicle.pause = state["pause"];
+		vehicle.patrol = state["patrol"];
 
 		for (auto array: state["path"]) {
 			vehicle.path.push_back(Point(array[0], array[1], array[2]));
 		}
 
-		for (auto array: state["legs"]) {
-			vehicle.legs.push_back(Point(array[0], array[1], array[2]));
+		for (auto array: state["waypoints"]) {
+			vehicle.waypoints.push_back({
+				position: Point(array[0], array[1], array[2]),
+			});
 		}
 	}
 

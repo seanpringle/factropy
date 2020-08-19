@@ -1,10 +1,3 @@
-template
-port
-	electricity
-		generic network class?
-ore
-	hill removal
-	miner screw
 water
 	waves
 trees
@@ -23,7 +16,6 @@ power
 	pylons/lines
 ghost draw order?
 noise previewer
-ld models
 belt/lift transitions
 power/beam belt emitter
 turrets
@@ -35,5 +27,4 @@ plastic
 drum
 fluid tank
 splitter
-loader
 combinators

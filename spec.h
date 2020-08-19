@@ -47,6 +47,7 @@ struct Spec {
 	bool align;
 	bool pivot;
 	bool belt;
+	bool loader;
 	bool lift;
 	bool shunt;
 	bool drone;

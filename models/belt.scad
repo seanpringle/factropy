@@ -7,6 +7,13 @@ module base() {
 	}
 }
 
+module loaderBase() {
+	difference() {
+		translate([0,0,1.25]) box([1.0, 1.0, 0.7]);
+		translate([0,0,1.25]) box([0.9, 1.1, 0.6]);
+	}
+}
+
 module pillar() {
 	translate([0,0,0.45]) box([0.5, 0.5, 0.9]);
 }
@@ -21,7 +28,9 @@ module ridge() {
 
 //fillet(0.01, $fn=12) base();
 //base();
-fillet(0.01, $fn=12) pillar();
+//fillet(0.01, $fn=12) loaderBase();
+loaderBase();
+//fillet(0.01, $fn=12) pillar();
 //pillar();
 //belt();
 //ridge();

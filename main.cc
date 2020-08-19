@@ -557,6 +557,9 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
+	auto beltSurface = Thing("models/belt-surface-hd.stl", "models/belt-surface-ld.stl");
+	auto beltRidge = Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl");
+
 	spec = new Spec("belt");
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->rotate = true;
@@ -566,12 +569,26 @@ int main(int argc, char const *argv[]) {
 
 	spec->parts = {
 		(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0),
-		(new Part(Thing("models/belt-surface-hd.stl", "models/belt-surface-ld.stl")))->paint(0x000000ff)->translate(0,-0.5,0),
-		(new PartCycle(Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl"), BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-0.5,0)->ld(false),
+		(new Part(beltSurface))->paint(0x000000ff)->translate(0,-0.5,0),
+		(new PartCycle(beltRidge, BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-0.5,0)->ld(false),
 	};
 
 	View::beltPillar1 = (new Part(Thing("models/belt-pillar-hd.stl", "models/belt-pillar-hd.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0);
 	View::beltPillar2 = (new Part(Thing("models/belt-pillar-hd.stl", "models/belt-pillar-hd.stl")))->paint(0xcccc00ff)->scale(1.0f, 2.1f, 1.0f)->translate(0,-1.5,0);
+
+	spec = new Spec("loader");
+	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->rotate = true;
+	spec->belt = true;
+	spec->loader = true;
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(10);
+
+	spec->parts = {
+		(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1,0),
+		(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1,0),
+		(new PartCycle(beltRidge, BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-1,0)->ld(false),
+	};
 
 	std::vector<Spec*> rocks;
 
@@ -719,7 +736,7 @@ int main(int argc, char const *argv[]) {
 	spec->vehicle = true;
 	spec->vehicleEnergy = Energy::kW(50);
 	spec->store = true;
-	spec->capacity = Mass::kg(1000);
+	spec->capacity = Mass::kg(5000);
 	spec->enableSetUpper = true;
 	spec->consumeChemical = true;
 
