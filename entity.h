@@ -48,6 +48,8 @@ struct Entity {
 	static inline uint sequence = 0;
 	static uint next();
 
+	static inline std::map<uint,std::string> names;
+
 	static Entity& create(uint id, Spec* spec);
 	static bool exists(uint id);
 	static Entity& get(uint id);
@@ -76,6 +78,8 @@ struct Entity {
 	bool isDeconstruction();
 	Entity& setDeconstruction(bool state);
 
+	std::string name();
+	bool rename(std::string n);
 	Box box();
 	Box miningBox();
 	Point ground();

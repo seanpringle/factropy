@@ -7,6 +7,7 @@
 #include <cstring>
 #include <string>
 #include <memory>
+#include <algorithm>
 
 #define ZERO(s) memset(&s, 0, sizeof(s))
 
@@ -46,6 +47,14 @@ std::string fmt(std::string fmt, Args&& ... args) {
 
 #define fmtc(...) fmt(__VA_ARGS__).c_str()
 
-#endif
+template <typename T, typename B>
+void if_is(B* value, std::function<void(T*)> action) {
+  auto cast_value = dynamic_cast<T*>(value);
+  if (cast_value != nullptr) {
+    action(cast_value);
+  }
+}
 
 #define MaxEntity 1000000
+
+#endif

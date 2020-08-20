@@ -752,6 +752,8 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/truck-stop.stl")))->paint(0x662222ff),
 	};
 	spec->pivot = true;
+	spec->named = true;
+	spec->vehicleStop = true;
 
 	auto thingDroneChassis = Thing("models/drone-chassis-hd.stl", "models/drone-chassis-ld.stl");
 	auto thingDroneSpars = Thing("models/drone-spars-hd.stl", "models/drone-spars-ld.stl");
@@ -1188,6 +1190,7 @@ int main(int argc, char const *argv[]) {
 
 	Popup* popup = NULL;
 	StatsPopup2* statsPopup = new StatsPopup2();
+	WaypointsPopup* waypointsPopup = new WaypointsPopup();
 
 	Mod* mod = new Mod("base");
 	mod->load();
@@ -1362,7 +1365,12 @@ int main(int argc, char const *argv[]) {
 				popup = statsPopup;
 			}
 
-			if (IsKeyReleased(KEY_F2)) {
+			if (IsKeyReleased(KEY_F2) && camera->hovering) {
+				waypointsPopup->useEntity(camera->hovering->id);
+				popup = waypointsPopup;
+			}
+
+			if (IsKeyReleased(KEY_F3)) {
 				camSec->pos = camera->position;
 				camSec->dir = camera->direction;
 			}

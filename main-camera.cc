@@ -490,9 +490,9 @@ void MainCamera::draw() {
 					}
 					p = en.pos;
 					for (auto n: vehicle.waypoints) {
-						DrawSphere(n.position, 0.25f, BLUE);
-						DrawLine3D(p, n.position, BLUE);
-						p = n.position;
+						DrawSphere(n->position, 0.25f, BLUE);
+						DrawLine3D(p, n->position, BLUE);
+						p = n->position;
 					}
 				}
 

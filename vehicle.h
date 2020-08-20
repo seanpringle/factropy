@@ -20,8 +20,43 @@ struct Vehicle {
 		virtual bool rayCast(Point,Point);
 	};
 
+	struct Waypoint;
+
+	struct DepartCondition {
+		virtual bool ready(Waypoint* waypoint, Vehicle *vehicle) = 0;
+		virtual ~DepartCondition();
+	};
+
+	struct DepartInactivity: DepartCondition {
+		int seconds;
+		virtual bool ready(Waypoint* waypoint, Vehicle *vehicle);
+		virtual ~DepartInactivity();
+	};
+
+	struct DepartItem: DepartCondition {
+		static const uint Eq = 1;
+		static const uint Ne = 2;
+		static const uint Lt = 3;
+		static const uint Lte = 4;
+		static const uint Gt = 5;
+		static const uint Gte = 6;
+
+		uint iid;
+		uint count;
+		uint op;
+		virtual bool ready(Waypoint* waypoint, Vehicle *vehicle);
+		virtual ~DepartItem();
+	};
+
 	struct Waypoint {
 		Point position;
+		uint stopId;
+		std::string stopName;
+		std::vector<DepartCondition*> conditions;
+
+		Waypoint(Point pos);
+		Waypoint(uint eid);
+		~Waypoint();
 	};
 
 	static void reset();
@@ -35,15 +70,17 @@ struct Vehicle {
 
 	int id = 0;
 	std::list<Point> path;
-	std::list<Waypoint> waypoints;
-	Waypoint waypoint;
+	std::list<Waypoint*> waypoints;
+	Waypoint* waypoint;
 	Route *pathRequest = NULL;
 	uint64_t pause = 0;
 	bool patrol;
+	bool handbrake;
 
 	void destroy();
 	void update();
-	void addWaypoint(Point p);
+	Waypoint* addWaypoint(Point p);
+	Waypoint* addWaypoint(uint eid);
 };
 
 #endif

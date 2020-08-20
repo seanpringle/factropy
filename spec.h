@@ -54,6 +54,7 @@ struct Spec {
 	bool store;
 	bool rotate;
 	bool junk;
+	bool named;
 
 	Volume collision;
 	EnergyUser electrical;
@@ -99,8 +100,17 @@ struct Spec {
 	Energy energyGenerate;
 
 	bool vehicle;
+	bool vehicleStop;
 	Energy vehicleEnergy;
 	bool vehicleWaitActivity;
+
+	bool processor;
+	uint processorSpeed;
+	uint processorMarkStack;
+	uint processorDataStack;
+	uint processorReturnStack;
+	uint processorMemory;
+
 
 	Spec(std::string name);
 	~Spec();

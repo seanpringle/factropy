@@ -105,6 +105,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 		electricityGenerators.insert(id);
 	}
 
+	if (spec->named) {
+		names[id] = fmt("%s %u", spec->name, id);
+	}
+
 	en.pos = {0,0,0};
 	en.move((Point){0,0,0});
 
@@ -162,6 +166,7 @@ void Entity::destroy() {
 		electricityGenerators.erase(id);
 	}
 
+	names.erase(id);
 	all.drop(id);
 }
 
@@ -264,6 +269,18 @@ bool Entity::isDeconstruction() {
 Entity& Entity::setDeconstruction(bool state) {
 	flags = state ? (flags | DECONSTRUCTION) : (flags & ~DECONSTRUCTION);
 	return *this;
+}
+
+std::string Entity::name() {
+	return spec->named ? names[id]: fmt("%s %u", spec->name, id);
+}
+
+bool Entity::rename(std::string name) {
+	if (spec->named) {
+		names[id] = name;
+		return true;
+	}
+	return false;
 }
 
 Box Entity::box() {

@@ -5,6 +5,7 @@
 #include "chunk.h"
 #include "sim.h"
 #include <cmath>
+#include <cstdio>
 
 extern "C" {
 #define NK_INCLUDE_FIXED_TYPES
@@ -315,6 +316,13 @@ void EntityPopup::build() {
 		float tilePix = 64.0f;
 		struct nk_vec2 content = nk_window_get_content_region_size(&nuklear->ctx);
 		struct nk_vec2 spacing = nuklear->ctx.style.window.spacing;
+
+		if (en.spec->named) {
+			nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+			char name[50]; std::snprintf(name, sizeof(name), "%s", en.name().c_str());
+			nk_edit_string_zero_terminated(&nuklear->ctx, NK_EDIT_FIELD, name, sizeof(name), nk_filter_default);
+			en.rename(name);
+		}
 
 		if (en.spec->consumeChemical) {
 			Burner& burner = en.burner();
@@ -771,6 +779,11 @@ void EntityPopup::build() {
 				nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
 				nk_checkbox_label(&nuklear->ctx, fmtc("patrol %d", patrol), &patrol);
 				en.vehicle().patrol = patrol;
+
+				int handbrake = en.vehicle().handbrake;
+				nk_layout_row_dynamic(&nuklear->ctx, 0, 1);
+				nk_checkbox_label(&nuklear->ctx, fmtc("handbrake %d", handbrake), &handbrake);
+				en.vehicle().handbrake = handbrake;
 			}
 
 			//nk_layout_row_dynamic(&nuklear->ctx, 0, 1);

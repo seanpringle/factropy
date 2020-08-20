@@ -27,6 +27,7 @@ Spec::Spec(std::string name) {
 	lift = false;
 	shunt = false;
 	junk = false;
+	named = false;
 
 	magic = false;
 	capacity = 0;
@@ -58,6 +59,7 @@ Spec::Spec(std::string name) {
 	energyGenerate = 0;
 
 	vehicle = false;
+	vehicleStop = false;
 	vehicleEnergy = 0;
 	vehicleWaitActivity = false;
 
@@ -68,6 +70,13 @@ Spec::Spec(std::string name) {
 
 	arm = false;
 	armOffset = 1.0f;
+
+	processor = false;
+	processorSpeed = 0;
+	processorMarkStack = 0;
+	processorDataStack = 0;
+	processorReturnStack = 0;
+	processorMemory = 0;
 }
 
 Spec::~Spec() {

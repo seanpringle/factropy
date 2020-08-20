@@ -273,6 +273,10 @@ void Entity::saveAll(const char* name) {
 		state["dir"] = { en.dir.x, en.dir.y, en.dir.z };
 		state["state"] = en.state;
 
+		if (en.spec->named) {
+			state["name"] = en.name();
+		}
+
 		out << state << "\n";
 	}
 
@@ -313,6 +317,10 @@ void Entity::loadAll(const char* name) {
 
 		if (en.isDeconstruction()) {
 			en.deconstruct();
+		}
+
+		if (en.spec->named) {
+			en.rename(state["name"]);
 		}
 	}
 
@@ -536,14 +544,41 @@ void Vehicle::saveAll(const char* name) {
 		state["id"] = vehicle.id;
 		state["pause"] = vehicle.pause;
 		state["patrol"] = vehicle.patrol;
+		state["handbrake"] = vehicle.handbrake;
 
 		int i = 0;
 		for (Point point: vehicle.path) {
 			state["path"][i++] = {point.x, point.y, point.z};
 		}
 
+		i = 0;
 		for (auto wp: vehicle.waypoints) {
-			state["waypoints"][i++] = {wp.position.x, wp.position.y, wp.position.z};
+			json wstate;
+			wstate["position"] = {wp->position.x, wp->position.y, wp->position.z};
+			wstate["stopId"] = wp->stopId;
+			wstate["stopName"] = wp->stopName;
+
+			int j = 0;
+			for (auto condition: wp->conditions) {
+
+				if_is<Vehicle::DepartInactivity>(condition, [&](Vehicle::DepartInactivity* con) {
+					int k = j++;
+					wstate["conditions"][k]["type"] = "inactivity";
+					wstate["conditions"][k]["seconds"] = con->seconds;
+				});
+
+				if_is<Vehicle::DepartItem>(condition, [&](Vehicle::DepartItem* con) {
+					if (con->iid) {
+						int k = j++;
+						wstate["conditions"][k]["type"] = "item";
+						wstate["conditions"][k]["item"] = Item::get(con->iid)->name;
+						wstate["conditions"][k]["op"] = con->op;
+						wstate["conditions"][k]["count"] = con->count;
+					}
+				});
+			}
+
+			state["waypoints"][i++] = wstate;
 		}
 
 		out << state << "\n";
@@ -561,15 +596,40 @@ void Vehicle::loadAll(const char* name) {
 		Vehicle& vehicle = get(state["id"]);
 		vehicle.pause = state["pause"];
 		vehicle.patrol = state["patrol"];
+		vehicle.handbrake = state["handbrake"];
 
 		for (auto array: state["path"]) {
 			vehicle.path.push_back(Point(array[0], array[1], array[2]));
 		}
 
-		for (auto array: state["waypoints"]) {
-			vehicle.waypoints.push_back({
-				position: Point(array[0], array[1], array[2]),
-			});
+		for (auto wstate: state["waypoints"]) {
+			uint stopId = wstate["stopId"];
+
+			if (stopId) {
+				auto wp = vehicle.addWaypoint(stopId);
+
+				for (auto cstate: wstate["conditions"]) {
+					std::string type = cstate["type"];
+
+					if (type == "inactivity") {
+						auto con = new Vehicle::DepartInactivity();
+						con->seconds = cstate["seconds"];
+						wp->conditions.push_back(con);
+					}
+
+					if (type == "item") {
+						auto con = new Vehicle::DepartItem();
+						con->iid = Item::byName(cstate["item"])->id;
+						con->op = cstate["op"];
+						con->count = cstate["count"];
+						wp->conditions.push_back(con);
+					}
+
+				}
+			} else {
+				auto pos = wstate["position"];
+				vehicle.addWaypoint(Point(pos[0], pos[1], pos[2]));
+			}
 		}
 	}
 

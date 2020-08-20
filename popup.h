@@ -3,15 +3,23 @@
 
 struct Popup {
 	Popup();
-	~Popup();
-	void center();
+	virtual ~Popup();
 	virtual void draw();
+	void center();
 };
 
 struct StatsPopup2 : Popup {
 	StatsPopup2();
 	virtual ~StatsPopup2();
 	virtual void draw();
+};
+
+struct WaypointsPopup : Popup {
+	uint eid;
+	WaypointsPopup();
+	virtual ~WaypointsPopup();
+	virtual void draw();
+	void useEntity(uint eid);
 };
 
 #endif
