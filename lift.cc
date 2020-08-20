@@ -82,7 +82,7 @@ bool Lift::remove(uint riid, float level) {
 	return false;
 }
 
-uint Lift::removeAny(float level) {
+uint Lift::wouldRemoveAny(float level) {
 	Entity& en = Entity::get(id);
 	bool high = level > en.pos.y;
 
@@ -98,9 +98,15 @@ uint Lift::removeAny(float level) {
 	if (mode == Lower && stage != Lowered) {
 		return 0;
 	}
-	uint riid = iid;
-	iid = 0;
-	return riid;
+	return iid;
+}
+
+uint Lift::removeAny(float level) {
+	uint iid = wouldRemoveAny(level);
+	if (iid) {
+		iid = 0;
+	}
+	return iid;
 }
 
 uint64_t Lift::insertPredict() {

@@ -176,6 +176,10 @@ std::vector<Point> Vehicle::Route::getNeighbours(Point p) {
 			Entity& en = Entity::get(eid);
 			Box box = en.box();
 			for (auto it = points.begin(); it != points.end(); ) {
+				if (*it == target) {
+					it++;
+					continue;
+				}
 				if (box.contains(*it)) {
 					points.erase(it);
 					continue;
@@ -216,6 +220,10 @@ std::vector<Point> Vehicle::Route::getNeighbours(Point p) {
 double Vehicle::Route::calcCost(Point a, Point b) {
 	float clearance = Entity::get(vehicle->id).spec->clearance;
 	float cost = a.distance(b);
+
+	if (b == target || b.distance(target) < clearance*1.5f) {
+		return cost;
+	}
 
 	if (!Chunk::isLand(b.box().grow(clearance))) {
 		cost *= 1000.0f;

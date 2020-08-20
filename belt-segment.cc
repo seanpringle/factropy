@@ -544,22 +544,20 @@ void BeltSegment::load() {
 			Entity& source = Entity::get(loadId);
 
 			if (source.spec->lift) {
-				uint iid = source.lift().removeAny(last.pos.y);
-				if (iid) {
-					insert(belts.back()->offset, iid, BeltBack);
+				uint iid = source.lift().wouldRemoveAny(last.pos.y);
+				if (iid && insert(belts.back()->offset, iid, BeltBack)) {
+					source.lift().remove(iid, last.pos.y);
 				}
-
 				uint64_t predict = source.lift().removePredict();
 				pauseLoad = predict ? predict: Sim::tick+5;
 				return;
 			}
 
 			if (source.spec->store && last.spec->loader && belts.size() > 1) {
-				Stack stack = source.store().removeAny(1);
-				if (stack.iid) {
-					insert(belts.back()->offset, stack.iid, BeltBack);
+				uint iid = source.store().wouldRemoveAny();
+				if (iid && insert(belts.back()->offset, iid, BeltBack)) {
+					source.store().remove({iid,1});
 				}
-
 				pauseLoad = Sim::tick+5;
 				return;
 			}

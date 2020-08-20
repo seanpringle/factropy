@@ -740,6 +740,9 @@ int main(int argc, char const *argv[]) {
 	spec->enableSetUpper = true;
 	spec->consumeChemical = true;
 
+	spec->costGreedy = 1.3;
+	spec->clearance = 1.5;
+
 	spec->materials = {
 		{ Item::byName("electric-motor")->id, 2 },
 		{ Item::byName("steel-ingot")->id, 2 },
