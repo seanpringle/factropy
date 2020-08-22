@@ -70,9 +70,11 @@ Chunk* Chunk::get(int x, int y) {
 				}
 
 				chunk->tiles[ty][tx] = {
+					x : x*Chunk::size+tx,
+					y : y*Chunk::size+ty,
+					hill : NULL,
 					elevation : elevation,
-					resource : resource,
-					mineral : mineral,
+					mineral : {mineral, (uint)(resource*20.0f)},
 				};
 
 				// minables visible on hills
@@ -135,9 +137,18 @@ Stack Chunk::mine(Box b, uint iid) {
 	Stack stack = {0,0};
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
-		if (tile && tile->elevation > 0.001f && tile->mineral == iid && tile->resource > 0.0f) {
-			tile->resource = std::max(0.0f, tile->resource-0.01f);
-			stack = {iid,1};
+		if (tile && tile->hill) {
+			Hill* hill = tile->hill;
+			if (hill->minerals.count(iid) && hill->minerals[iid]) {
+				for (auto tile: hill->tiles) {
+					if (tile->mineral.iid == iid && tile->mineral.size > 0) {
+						tile->mineral.size -= 1;
+						break;
+					}
+				}
+				hill->minerals[iid] -= 1;
+				stack = {iid,1};
+			}
 			break;
 		}
 	}
@@ -147,7 +158,7 @@ Stack Chunk::mine(Box b, uint iid) {
 bool Chunk::canMine(Box b, uint iid) {
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
-		if (tile && tile->elevation > 0.001f && tile->mineral == iid && tile->resource > 0.0f) {
+		if (tile && tile->hill && tile->hill->minerals.count(iid) && tile->hill->minerals[iid]) {
 			return true;
 		}
 	}
@@ -155,14 +166,13 @@ bool Chunk::canMine(Box b, uint iid) {
 }
 
 uint Chunk::countMine(Box b, uint iid) {
-	uint n = 0;
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
-		if (tile && tile->elevation > 0.001f && (iid == 0 || tile->mineral == iid) && tile->resource > 0.0f) {
-			n += (int)(tile->resource*100.0f);
+		if (tile && tile->hill && tile->hill->minerals.count(iid)) {
+			return tile->hill->minerals[iid];
 		}
 	}
-	return n;
+	return 0;
 }
 
 void Chunk::flatten(Box b) {
@@ -177,16 +187,15 @@ void Chunk::flatten(Box b) {
 }
 
 std::vector<Stack> Chunk::minables(Box b) {
-	std::map<uint,uint> res;
+	std::vector<Stack> counts;
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
-		if (tile && tile->elevation > 0.001f && tile->mineral && tile->resource > 0.0f) {
-			res[tile->mineral] += (int)(tile->resource*100.0f);
+		if (tile && tile->hill) {
+			for (auto [iid,count]: tile->hill->minerals) {
+				counts.push_back({iid,count});
+			}
+			break;
 		}
-	}
-	std::vector<Stack> counts;
-	for (auto [iid,count]: res) {
-		counts.push_back({iid,count});
 	}
 	return counts;
 }
@@ -204,6 +213,7 @@ Chunk::Chunk(int cx, int cy) {
 	all[xy] = this;
 	regenerate = true;
 	ZERO(heightmap);
+	ZERO(tiles);
 }
 
 Image Chunk::heightImage() {
@@ -241,7 +251,7 @@ void Chunk::genHeightMap() {
 	Image heightImg = heightImage();
 	heightmap = GenMeshHeightmap(heightImg, (Vector3){ size+1, 100, size+1 });
 	Part::terrainNormals(&heightmap);
-	transform = MatrixTranslate((float)(this->x*size)+0.5f, -49.82, (float)(this->y*size)+0.5f);
+	transform = MatrixTranslate((float)(x*size)+0.5f, -49.82, (float)(y*size)+0.5f);
 	UnloadImage(heightImg);
 	regenerate = false;
 
@@ -257,6 +267,68 @@ void Chunk::genHeightMap() {
 
 void Chunk::dropHeightMap() {
 	UnloadMesh(heightmap);
+}
+
+std::set<Chunk::Tile*> Chunk::hillTiles(Point p) {
+	std::set<Tile*> tiles;
+
+	std::function<void(int x, int y)> add;
+
+	add = [&](int x, int y) {
+		Tile* tile = tileTryGet(x, y);
+		if (tile && !tiles.count(tile) && tile->elevation > 0.001f) {
+			tiles.insert(tile);
+
+			add(x-1, y-1);
+			add(x-1, y-0);
+			add(x-1, y+1);
+			add(x-0, y-1);
+			//add(x-0, y-0);
+			add(x-0, y+1);
+			add(x+1, y-1);
+			add(x+1, y-0);
+			add(x+1, y+1);
+		}
+	};
+
+	add(std::floor(p.x),std::floor(p.z));
+
+	return tiles;
+}
+
+void Chunk::findHills() {
+	for (int ty = 0; ty < size; ty++) {
+		for (int tx = 0; tx < size; tx++) {
+			Tile* tile = &tiles[ty][tx];
+
+			if (tile->elevation > 0.001f && tile->hill == NULL) {
+				auto hgroup = hillTiles({(float)tile->x, 0.0f, (float)tile->y});
+
+				for (auto htile: hgroup) {
+					if (htile && htile->hill) {
+						tile->hill = htile->hill;
+						tile->hill->tiles.insert(tile);
+						break;
+					}
+				}
+
+				Hill* hill = tile->hill;
+				if (!hill) {
+					hill = new Hill;
+					hills.insert(hill);
+				}
+
+				for (auto htile: hgroup) {
+					ensure(htile->hill == hill || htile->hill == NULL);
+					if (!htile->hill) {
+						htile->hill = hill;
+						hill->tiles.insert(htile);
+						hill->minerals[htile->mineral.iid] += htile->mineral.size;
+					}
+				}
+			}
+		}
+	}
 }
 
 Chunk::ChunkWalker Chunk::walk(Box box) {

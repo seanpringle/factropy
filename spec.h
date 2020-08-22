@@ -96,6 +96,7 @@ struct Spec {
 	bool consumeChemical;
 	bool consumeElectricity;
 	Energy energyConsume;
+	Energy energyDrain;
 	bool generateElectricity;
 	Energy energyGenerate;
 

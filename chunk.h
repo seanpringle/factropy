@@ -15,10 +15,21 @@ struct Chunk;
 struct Chunk {
 	static const int size = 128;
 
+	struct Hill;
+	struct Tile;
+
+	struct Hill {
+		std::set<Tile*> tiles;
+		std::map<uint,uint> minerals;
+	};
+
+	static inline std::set<Hill*> hills;
+
 	struct Tile {
+		int x, y;
+		Hill* hill;
 		float elevation;
-		float resource;
-		uint mineral;
+		Stack mineral;
 	};
 
 	struct XY {
@@ -113,6 +124,7 @@ struct Chunk {
 	static uint countMine(Box b, uint iid);
 	static void flatten(Box b);
 	static std::vector<Stack> minables(Box b);
+	static std::set<Tile*> hillTiles(Point p);
 
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
@@ -133,6 +145,7 @@ struct Chunk {
 	Image colorImage();
 	void genHeightMap();
 	void dropHeightMap();
+	void findHills();
 };
 
 

@@ -207,7 +207,7 @@ void Chunk::saveAll(const char* name) {
 		for (int ty = 0; ty < size; ty++) {
 			for (int tx = 0; tx < size; tx++) {
 				Tile* tile = &chunk->tiles[ty][tx];
-				state["tiles"][ty][tx] = { tile->elevation, tile->resource, tile->mineral };
+				state["tiles"][ty][tx] = { tile->x, tile->y, tile->elevation, tile->mineral.iid, tile->mineral.size };
 			}
 		}
 		out << state << "\n";
@@ -229,9 +229,10 @@ void Chunk::loadAll(const char* name) {
 		for (int ty = 0; ty < size; ty++) {
 			for (int tx = 0; tx < size; tx++) {
 				Tile* tile = &chunk->tiles[ty][tx];
-				tile->elevation = state["tiles"][ty][tx][0];
-				tile->resource = state["tiles"][ty][tx][1];
-				tile->mineral = state["tiles"][ty][tx][2];
+				tile->x = state["tiles"][ty][tx][0];
+				tile->y = state["tiles"][ty][tx][1];
+				tile->elevation = state["tiles"][ty][tx][2];
+				tile->mineral = {(uint)(state["tiles"][ty][tx][3]), (uint)(state["tiles"][ty][tx][4])};
 			}
 		}
 	}

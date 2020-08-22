@@ -458,7 +458,7 @@ void Entity::generate() {
 	if (spec->generateElectricity && spec->consumeChemical) {
 
 		electricitySupply += burner().consume(spec->energyGenerate * electricityLoad);
-		if (!burner().store.isEmpty()) electricityCapacityReady += spec->energyGenerate;
+		if (burner().energy) electricityCapacityReady += spec->energyGenerate;
 		electricityCapacity += spec->energyGenerate;
 
 		state = std::floor((float)burner().energy.value/(float)burner().buffer.value * (float)spec->states.size());

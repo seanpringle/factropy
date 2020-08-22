@@ -444,7 +444,7 @@ void MainCamera::draw() {
 						float h = tile->elevation*(49.82*2)-0.25;
 						Mat4 r = Mat4::rotate(Point(cx+tx, h, cz+ty), tx);
 						Mat4 m = Mat4::translate(cx+tx, h, cz+ty);
-						resource_transforms[tile->mineral].push_back(r * m);
+						resource_transforms[tile->mineral.iid].push_back(r * m);
 					}
 				}
 			}
@@ -606,6 +606,15 @@ void MainCamera::draw() {
 				Box box = hovering->box();
 				Point bounds = {box.w, box.h, box.d};
 				DrawCubeWiresV(hovering->pos, bounds + 0.01f, SKYBLUE);
+
+				//if (hovering->spec->crafter && hovering->spec->recipeTags.count("mining")) {
+				//	auto tile = Chunk::tileTryGet(hovering->pos);
+				//	if (tile && tile->hill) {
+				//		for (auto tile: tile->hill->tiles) {
+				//			DrawCube(Point((float)tile->x,tile->elevation+50,(float)tile->y), 0.5f, 0.5f, 0.5f, RED);
+				//		}
+				//	}
+				//}
 			}
 
 			if (selecting) {

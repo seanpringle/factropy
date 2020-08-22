@@ -414,6 +414,7 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"crafting"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(300);
+	spec->energyDrain = Energy::kW(30);
 	spec->collision = { w: 6, h: 3, d: 6 };
 	spec->parts = {
 		(new Part(Thing("models/assembler-chassis-hd.stl", "models/assembler-chassis-ld.stl")))->paint(0x009900ff)->gloss(16),
@@ -491,6 +492,7 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"smelting"};
 	spec->consumeChemical = true;
 	spec->energyConsume = Energy::kW(60);
+	spec->energyDrain = Energy::kW(6);
 	spec->materials = {
 		{ Item::byName("copper-ingot")->id, 3 },
 		{ Item::byName("brick")->id, 3 },
@@ -535,6 +537,7 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"mining"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
+	spec->energyDrain = Energy::kW(10);
 	spec->collision = { w: 5, h: 5, d: 10 };
 	spec->parts = {
 		(new Part(thingMiner))->paint(0xB7410Eff),
@@ -706,7 +709,7 @@ int main(int argc, char const *argv[]) {
 	spec->enableSetUpper = true;
 	spec->consumeChemical = true;
 	spec->generateElectricity = true;
-	spec->energyGenerate = Energy::kW(100);
+	spec->energyGenerate = Energy::kW(250);
 
 	spec->depot = true;
 	spec->drones = 10;
@@ -1070,6 +1073,7 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"teleporting"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::MW(10);
+	spec->energyDrain = Energy::kW(100);
 	spec->collision = { w: 8, h: 8, d: 8 };
 	spec->parts = {
 		(new Part(Thing("models/teleporter-base-hd.stl")))->paint(0x0044ccff)->translate(0,-2.5,0),
@@ -1140,30 +1144,6 @@ int main(int argc, char const *argv[]) {
 	Chunk::material = LoadMaterialDefault();
 	Chunk::material.shader = shader;
 	Chunk::material.maps[MAP_DIFFUSE].color = WHITE;
-
-	if (loadSave) {
-		Sim::load("autosave");
-		for (auto pair: Chunk::all) {
-			pair.second->genHeightMap();
-		}
-	}
-
-	if (!loadSave) {
-		int horizon = 4;
-		for (int cy = -horizon; cy < horizon; cy++) {
-			for (int cx = -horizon; cx < horizon; cx++) {
-				Chunk::get(cx,cy)->genHeightMap();
-			}
-		}
-
-		Entity& en = Entity::create(Entity::next(), Spec::byName("truck-engineer")).floor(0).materialize();
-		en.store().insert({Item::byName("coal")->id, 50});
-		en.store().insert({Item::byName("iron-ingot")->id, 100});
-		en.store().insert({Item::byName("copper-ingot")->id, 100});
-		en.store().insert({Item::byName("steel-ingot")->id, 100});
-		en.store().insert({Item::byName("circuit-board")->id, 100});
-		en.store().insert({Item::byName("gear-wheel")->id, 100});
-	}
 
 	Panels::init();
 	camera->buildPopup = new BuildPopup(camera, 814, 800);
@@ -1337,11 +1317,41 @@ int main(int argc, char const *argv[]) {
 
 	loadingScreen();
 
-	for (auto pair: Chunk::all) {
-		Chunk *chunk = pair.second;
-		if (chunk->regenerate) {
+	if (loadSave) {
+		Sim::load("autosave");
+		for (auto pair: Chunk::all) {
+			loadingScreen();
+			Chunk* chunk = pair.second;
+			chunk->findHills();
 			chunk->genHeightMap();
 		}
+	}
+
+	if (!loadSave) {
+		int horizon = 4;
+		for (int cy = -horizon; cy < horizon; cy++) {
+			for (int cx = -horizon; cx < horizon; cx++) {
+				loadingScreen();
+				Chunk::get(cx,cy);
+			}
+		}
+		for (int cy = -horizon; cy < horizon; cy++) {
+			for (int cx = -horizon; cx < horizon; cx++) {
+				loadingScreen();
+				Chunk* chunk = Chunk::get(cx,cy);
+				chunk->findHills();
+				chunk->genHeightMap();
+			}
+		}
+
+		Entity& en = Entity::create(Entity::next(), Spec::byName("truck-engineer")).floor(0).materialize();
+		en.store().insert({Item::byName("coal")->id, 50});
+		en.store().insert({Item::byName("iron-ingot")->id, 100});
+		en.store().insert({Item::byName("copper-ingot")->id, 100});
+		en.store().insert({Item::byName("brick")->id, 100});
+		en.store().insert({Item::byName("steel-ingot")->id, 50});
+		en.store().insert({Item::byName("circuit-board")->id, 50});
+		en.store().insert({Item::byName("gear-wheel")->id, 50});
 	}
 
 	RenderTexture secondary = LoadRenderTexture(400-imGuiStyle.WindowPadding.x*2, 270-imGuiStyle.WindowPadding.y*2);
@@ -1543,9 +1553,6 @@ int main(int argc, char const *argv[]) {
 
 		BeginDrawing();
 
-			//UpdateLightValues(shader, lightA);
-			//UpdateLightValues(pshader, lightB);
-
 			Point cameraTarget = camSec->pos;
 			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 			SetShaderValue(pshader, pshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
@@ -1572,20 +1579,10 @@ int main(int argc, char const *argv[]) {
 			ImGui::PrintRight(Entity::electricityDemand.formatRate());
 			ImGui::OverflowBar(Entity::electricitySupply.portion(Entity::electricityCapacityReady));
 
-//			{
-//				std::vector<float> plot;
-//				for (uint i = 59; i >= 1; i--) {
-//					Energy e = (i*60) > Sim::tick ? 0: Sim::statsElectricityDemand.minutes[Sim::statsElectricityDemand.minute(Sim::tick-(i*60))];
-//					plot.push_back(e.portion(Entity::electricityCapacity));
-//				}
-//				ImGui::PushItemWidth(-1);
-//				ImGui::PlotLines(
-//					"##electricitySatisfaction",
-//					plot.data(),
-//					plot.size()
-//				);
-//				ImGui::PopItemWidth();
-//			}
+			ImGui::Print(fmtc("electricityDemand %s", Entity::electricityDemand.formatRate()));
+			ImGui::Print(fmtc("electricitySupply %s", Entity::electricitySupply.formatRate()));
+			ImGui::Print(fmtc("electricityCapacity %s", Entity::electricityCapacity.formatRate()));
+			ImGui::Print(fmtc("electricityCapacityReady %s", Entity::electricityCapacityReady.formatRate()));
 
 			ImGui::Print(fmt("Ledger::balance %s", Ledger::balance.format()));
 
@@ -1623,6 +1620,10 @@ int main(int argc, char const *argv[]) {
 							ImGui::Print("Mining: (nothing)");
 						}
 						ImGui::LevelBar(ge->crafter.progress);
+
+						for (Stack stack: Chunk::minables(ge->box())) {
+							ImGui::Print(fmtc("%s(%d)", Item::get(stack.iid)->name, stack.size));
+						}
 					}
 
 					if (ge->spec->recipeTags.count("smelting")) {

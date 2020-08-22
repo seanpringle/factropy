@@ -127,16 +127,14 @@ void Crafter::update() {
 		}
 	}
 
-	// inactive miner on hill without resources
-	if (!working && recipe && recipe->mine && Chunk::countMine(en.miningBox(), 0) == 0) {
-		Chunk::flatten(en.miningBox());
-		Entity::removeJunk(en.miningBox().grow(0,100,0));
-	}
-
 	if (working) {
 		energyUsed += en.consume(en.spec->energyConsume);
 		efficiency = energyUsed.portion(en.spec->energyConsume);
 		progress = energyUsed.portion(recipe->energyUsage);
+	}
+
+	if (!working && en.spec->energyDrain) {
+		en.consume(en.spec->energyDrain);
 	}
 
 	if (working && progress > 0.999) {
@@ -159,10 +157,5 @@ void Crafter::update() {
 		progress = 0.0f;
 		efficiency = 0.0f;
 		completed++;
-
-		if (recipe && recipe->mine && Chunk::countMine(en.miningBox(), recipe->mine) == 0) {
-			Chunk::flatten(en.miningBox());
-			Entity::removeJunk(en.miningBox().grow(0,100,0));
-		}
 	}
 }
