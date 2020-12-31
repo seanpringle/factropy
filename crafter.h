@@ -5,6 +5,7 @@ struct Crafter;
 
 #include "sparse.h"
 #include "item.h"
+#include "fluid.h"
 #include "entity.h"
 #include "recipe.h"
 #include <map>
@@ -31,6 +32,10 @@ struct Crafter {
 	void update();
 	Point output();
 	float inputsProgress();
+	std::vector<Point> pipeConnections();
+	std::vector<Point> pipeInputConnections();
+	std::vector<Point> pipeOutputConnections();
+
 };
 
 #endif

@@ -17,10 +17,12 @@ namespace Sim {
 	extern TimeSeries statsEntity;
 	extern TimeSeries statsArm;
 	extern TimeSeries statsCrafter;
+	extern TimeSeries statsProjector;
 	extern TimeSeries statsPath;
 	extern TimeSeries statsVehicle;
 	extern TimeSeries statsBelt;
 	extern TimeSeries statsLift;
+	extern TimeSeries statsPipe;
 	extern TimeSeries statsShunt;
 	extern TimeSeries statsDepot;
 	extern TimeSeries statsDrone;

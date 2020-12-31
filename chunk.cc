@@ -116,7 +116,7 @@ bool Chunk::isLand(Box b) {
 bool Chunk::isWater(Box b) {
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
-		if (!tile || tile->elevation > 0.0f) {
+		if (!tile || tile->elevation > -0.001f) {
 			return false;
 		}
 	}

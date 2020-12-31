@@ -27,10 +27,18 @@ struct Mass {
 
 	Mass();
 	Mass(int);
-	std::string format();
-
+	virtual std::string format();
 	float portion(Mass o);
 	uint items(uint iid);
+};
+
+struct Liquid : Mass {
+	static Liquid l(int l);
+
+	Liquid();
+	Liquid(int);
+	std::string format() override;
+	uint fluids(uint fid);
 };
 
 #endif

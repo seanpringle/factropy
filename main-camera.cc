@@ -552,6 +552,31 @@ void MainCamera::draw() {
 						}
 					}
 				}
+
+				if (!ge->ghost && ge->spec->projector) {
+					Projector& projector = en.projector();
+
+					if (projector.iid && hd) {
+						Item* item = Item::get(projector.iid);
+						Point p = ge->pos + (Point::Up*0.35f);
+						float rot = (float)(frame%360) * DEG2RAD;
+						float bob = std::sin(rot*4.0f)*0.1f;
+						Mat4 t1 = Mat4::scale(0.75f) * Mat4::rotate(Point::Up, rot) * Mat4::translate(p.x, p.y+bob, p.z);
+						for (uint i = 0; i < item->parts.size(); i++) {
+							Part* part = item->parts[i];
+							(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(t1));
+						}
+					}
+					if (projector.fid && hd) {
+						Fluid* fluid = Fluid::get(projector.fid);
+						Point p = ge->pos + (Point::Up*0.35f);
+						float rot = (float)(frame%360) * DEG2RAD;
+						float bob = std::sin(rot*4.0f)*0.1f;
+						Mat4 t1 = Mat4::scale(0.75f) * Mat4::rotate(Point::Up, rot) * Mat4::translate(p.x, p.y+bob, p.z);
+						Part* part = fluid->droplet;
+						(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(t1));
+					}
+				}
 			}
 
 			for (BeltSegment* segment: belt_segments) {
@@ -582,14 +607,6 @@ void MainCamera::draw() {
 				part->drawInstanced(true, batch.size(), batch.data());
 			}
 
-			for (auto [part,batch]: ghosts_ld) {
-				part->drawGhostInstanced(false, batch.size(), batch.data());
-			}
-
-			for (auto [part,batch]: ghosts_hd) {
-				part->drawGhostInstanced(true, batch.size(), batch.data());
-			}
-
 			if (belt_pillars.size() > 0) {
 				View::beltPillar1->drawInstanced(false, belt_pillars.size(), belt_pillars.data());
 			}
@@ -602,19 +619,44 @@ void MainCamera::draw() {
 				part->drawInstanced(false, batch.size(), batch.data());
 			}
 
+			for (auto [part,batch]: ghosts_ld) {
+				part->drawGhostInstanced(false, batch.size(), batch.data());
+			}
+
+			for (auto [part,batch]: ghosts_hd) {
+				part->drawGhostInstanced(true, batch.size(), batch.data());
+			}
+
 			if (hovering) {
 				Box box = hovering->box();
 				Point bounds = {box.w, box.h, box.d};
 				DrawCubeWiresV(hovering->pos, bounds + 0.01f, SKYBLUE);
 
-				//if (hovering->spec->crafter && hovering->spec->recipeTags.count("mining")) {
-				//	auto tile = Chunk::tileTryGet(hovering->pos);
-				//	if (tile && tile->hill) {
-				//		for (auto tile: tile->hill->tiles) {
-				//			DrawCube(Point((float)tile->x,tile->elevation+50,(float)tile->y), 0.5f, 0.5f, 0.5f, RED);
-				//		}
-				//	}
-				//}
+				if (hovering->spec->pipe) {
+					Entity& en = Entity::get(hovering->id);
+					for (Point p: en.pipe().pipeConnections()) {
+						DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
+					}
+
+					if (en.pipe().network) {
+						for (auto id: en.pipe().network->pipes) {
+							Entity& sib = Entity::get(id);
+							Box box = sib.box();
+							Point bounds = {box.w, box.h, box.d};
+							DrawCubeWiresV(sib.pos, bounds + 0.01f, GREEN);
+						}
+					}
+				}
+
+				if (hovering->spec->crafter) {
+					Entity& en = Entity::get(hovering->id);
+					for (Point p: en.crafter().pipeInputConnections()) {
+						DrawCube(p, 0.25f, 0.25f, 0.25f, GREEN);
+					}
+					for (Point p: en.crafter().pipeOutputConnections()) {
+						DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
+					}
+				}
 			}
 
 			if (selecting) {
@@ -636,6 +678,24 @@ void MainCamera::draw() {
 					Box box = te->box();
 					Point bounds = {box.w, box.h, box.d};
 					DrawCubeWiresV(te->pos, bounds + 0.01f, placingFits ? GREEN: RED);
+
+					if (te->spec->pipeConnections.size()) {
+						for (Point p: te->spec->relativePoints(te->spec->pipeConnections, te->dir.rotation(), te->pos)) {
+							DrawCube(p, 0.25f, 0.25f, 0.25f, BLUE);
+						}
+					}
+
+					if (te->spec->pipeInputConnections.size()) {
+						for (Point p: te->spec->relativePoints(te->spec->pipeInputConnections, te->dir.rotation(), te->pos)) {
+							DrawCube(p, 0.25f, 0.25f, 0.25f, GREEN);
+						}
+					}
+
+					if (te->spec->pipeOutputConnections.size()) {
+						for (Point p: te->spec->relativePoints(te->spec->pipeOutputConnections, te->dir.rotation(), te->pos)) {
+							DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
+						}
+					}
 				}
 			}
 

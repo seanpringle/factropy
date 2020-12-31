@@ -22,4 +22,10 @@ struct WaypointsPopup : Popup {
 	void useEntity(uint eid);
 };
 
+struct TechPopup : Popup {
+	TechPopup();
+	virtual ~TechPopup();
+	virtual void draw();
+};
+
 #endif

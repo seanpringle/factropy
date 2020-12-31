@@ -5,6 +5,7 @@ struct Recipe;
 
 #include "raylib.h"
 #include "item.h"
+#include "spec.h"
 #include "currency.h"
 #include <map>
 #include <set>
@@ -32,6 +33,9 @@ struct Recipe {
 	std::map<uint,uint> inputItems;
 	std::map<uint,uint> outputItems;
 
+	std::map<uint,uint> inputFluids;
+	std::map<uint,uint> outputFluids;
+
 	uint mine;
 	Currency outputCurrency;
 
@@ -39,6 +43,10 @@ struct Recipe {
 
 	Recipe(uint id, std::string name);
 	~Recipe();
+
+	static inline float miningRate = 1.0f;
+
+	float rate(Spec* spec);
 };
 
 #endif

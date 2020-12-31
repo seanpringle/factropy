@@ -70,6 +70,10 @@ Mat4 Mat4::scale(float x, float y, float z) {
 	return MatrixScale(x, y, z);
 }
 
+Mat4 Mat4::scale(float s) {
+	return MatrixScale(s, s, s);
+}
+
 Mat4 Mat4::rotate(Vector3 axis, float radians) {
 	return MatrixRotate(axis, radians);
 }

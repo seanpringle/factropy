@@ -1,5 +1,6 @@
 #include "common.h"
 #include "sim.h"
+#include "tech.h"
 #include "ledger.h"
 #include "entity.h"
 
@@ -62,6 +63,7 @@ namespace Sim {
 		out.close();
 
 		Spec::saveAll(name);
+		Tech::saveAll(name);
 		Chunk::saveAll(name);
 		Entity::saveAll(name);
 		Store::saveAll(name);
@@ -90,6 +92,7 @@ namespace Sim {
 			state["statsVehicle"] = Save::timeSeriesSave(&Sim::statsVehicle);
 			state["statsBelt"] = Save::timeSeriesSave(&Sim::statsBelt);
 			state["statsLift"] = Save::timeSeriesSave(&Sim::statsLift);
+			state["statsPipe"] = Save::timeSeriesSave(&Sim::statsPipe);
 			state["statsShunt"] = Save::timeSeriesSave(&Sim::statsShunt);
 			state["statsDepot"] = Save::timeSeriesSave(&Sim::statsDepot);
 			state["statsDrone"] = Save::timeSeriesSave(&Sim::statsDrone);
@@ -113,6 +116,7 @@ namespace Sim {
 		in.close();
 
 		Spec::loadAll(name);
+		Tech::loadAll(name);
 		Chunk::loadAll(name);
 		Entity::loadAll(name);
 		Store::loadAll(name);
@@ -142,6 +146,7 @@ namespace Sim {
 				Save::timeSeriesLoad(&Sim::statsVehicle, state["statsVehicle"]);
 				Save::timeSeriesLoad(&Sim::statsBelt, state["statsBelt"]);
 				Save::timeSeriesLoad(&Sim::statsLift, state["statsLift"]);
+				//Save::timeSeriesLoad(&Sim::statsPipe, state["statsPipe"]);
 				Save::timeSeriesLoad(&Sim::statsShunt, state["statsShunt"]);
 				Save::timeSeriesLoad(&Sim::statsDepot, state["statsDepot"]);
 				Save::timeSeriesLoad(&Sim::statsDrone, state["statsDrone"]);
@@ -255,6 +260,33 @@ void Spec::saveAll(const char* name) {
 }
 
 void Spec::loadAll(const char* name) {
+}
+
+void Tech::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/techs.json");
+
+	for (auto& pair: Tech::names) {
+		Tech *tech = pair.second;
+		json state;
+		state["name"] = tech->name;
+		state["bought"] = tech->bought;
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Tech::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/techs.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+
+		Tech* tech = Tech::byName(state["name"]);
+		tech->bought = state["bought"];
+	}
 }
 
 void Entity::saveAll(const char* name) {

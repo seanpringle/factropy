@@ -45,6 +45,12 @@ GuiEntity::GuiEntity(uint id) : GuiEntity() {
 		crafter.recipe = en.crafter().recipe;
 		crafter.progress = en.crafter().progress;
 		crafter.inputsProgress = en.crafter().inputsProgress();
+		crafter.completed = en.crafter().completed;
+	}
+
+	if (spec->pipe) {
+		pipe.fid = en.pipe().network ? en.pipe().network->fid: 0;
+		pipe.level = pipe.fid ? en.pipe().network->level(): 0.0f;
 	}
 }
 

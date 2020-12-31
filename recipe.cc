@@ -41,3 +41,9 @@ Recipe* Recipe::get(uint id) {
 	return ids[id];
 }
 
+float Recipe::rate(Spec* spec) {
+	if (spec->recipeTags.count("mining")) {
+		return miningRate;
+	}
+	return 1.0f;
+}

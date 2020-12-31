@@ -66,10 +66,15 @@ Spec::Spec(std::string name) {
 	crafter = false;
 	crafterProgress = false;
 
+	projector = false;
+
 	teleporter = false;
 
 	arm = false;
 	armOffset = 1.0f;
+
+	pipe = false;
+	pipeCapacity = 0;
 
 	processor = false;
 	processorSpeed = 0;
@@ -129,5 +134,13 @@ Box Spec::box(Point pos, Point dir) {
 	}
 
 	return {pos.x, pos.y, pos.z, ww, collision.h, dd};
+}
+
+std::vector<Point> Spec::relativePoints(const std::vector<Point> points, const Matrix rotation, const Point position) {
+	std::vector<Point> rpoints;
+	for (Point point: points) {
+		rpoints.push_back(point.transform(rotation) + position);
+	}
+	return rpoints;
 }
 

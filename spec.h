@@ -51,7 +51,6 @@ struct Spec {
 	bool lift;
 	bool shunt;
 	bool drone;
-	bool store;
 	bool rotate;
 	bool junk;
 	bool named;
@@ -65,6 +64,7 @@ struct Spec {
 	float clearance;
 
 	// store
+	bool store;
 	Mass capacity;
 	bool magic;
 	bool enableSetLower;
@@ -78,9 +78,15 @@ struct Spec {
 	bool supplyPriority;
 	bool defaultOverflow;
 
+	// tanks
+	bool tank;
+	Mass tankCapacity;
+
 	bool crafter;
 	bool crafterProgress;
 	std::set<std::string> recipeTags;
+
+	bool projector;
 
 	bool teleporter;
 
@@ -105,6 +111,12 @@ struct Spec {
 	Energy vehicleEnergy;
 	bool vehicleWaitActivity;
 
+	bool pipe;
+	std::vector<Point> pipeConnections;
+	std::vector<Point> pipeInputConnections;
+	std::vector<Point> pipeOutputConnections;
+	Liquid pipeCapacity;
+
 	bool processor;
 	uint processorSpeed;
 	uint processorMarkStack;
@@ -112,12 +124,13 @@ struct Spec {
 	uint processorReturnStack;
 	uint processorMemory;
 
-
 	Spec(std::string name);
 	~Spec();
 	Point aligned(Point p, Point dir);
 	Box box(Point pos, Point dir);
 	bool hasStore();
+
+	static std::vector<Point> relativePoints(const std::vector<Point> points, const Matrix rotation, const Point position);
 };
 
 #endif

@@ -516,3 +516,4 @@ void PartSmoke::drawInstanced(bool hd, int count, Mat4* trx) {
 
 	delete batch;
 }
+

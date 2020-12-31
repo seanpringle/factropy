@@ -1,6 +1,7 @@
 #include "common.h"
 #include "popup.h"
 #include "sim.h"
+#include "tech.h"
 #include "entity.h"
 #include "vehicle.h"
 #include "energy.h"
@@ -178,4 +179,31 @@ void WaypointsPopup::draw() {
 
 void WaypointsPopup::useEntity(uint eeid) {
 	eid = eeid;
+}
+
+TechPopup::TechPopup() {
+}
+
+TechPopup::~TechPopup() {
+}
+
+void TechPopup::draw() {
+	ImGui::Begin("Tech", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+	ImGui::SetWindowSize({1000.0f,600.0f}, ImGuiCond_Always);
+	center();
+
+	int n = 0;
+	for (auto [name,tech]: Tech::names) {
+		if (tech->bought) {
+			ImGui::Print(fmtc("%s %s", name, tech->cost.format()));
+		} else {
+			if (ImGui::Button(fmtc("%s %s##%d", name, tech->cost.format(), n++))) {
+				Sim::locked([&]() {
+					tech->buy();
+				});
+			}
+		}
+	}
+
+	ImGui::End();
 }

@@ -23,6 +23,8 @@
 #include "entity.h"
 #include "view.h"
 #include "item.h"
+#include "fluid.h"
+#include "tech.h"
 #include "recipe.h"
 #include "ledger.h"
 #include "popup.h"
@@ -58,7 +60,7 @@ int main(int argc, char const *argv[]) {
 	}
 
 	SetTraceLogLevel(LOG_WARNING);
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_VSYNC_HINT|FLAG_MSAA_4X_HINT);
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT);
 	InitWindow(1920,1080,"test9");
 	SetTargetFPS(60);
 	SetExitKey(0);
@@ -128,6 +130,8 @@ int main(int argc, char const *argv[]) {
 	Sim::reset();
 	Sim::reseed(879600773);
 	//Sim::seed(4);
+
+	auto droplet = Thing("models/fluid.stl");
 
 	Mesh oreLD = GenMeshSphere(0.6,6,6);
 
@@ -235,6 +239,13 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/electric-motor-shaft-hd.stl", "models/electric-motor-shaft-ld.stl")))->paint(0x444444ff),
 	};
 
+	Fluid* fluid = new Fluid(Fluid::next(), "water");
+	fluid->color = BLUE;
+
+	fluid = new Fluid(Fluid::next(), "steam");
+	fluid->color = GRAY;
+
+	Tech* tech;
 	Recipe* recipe;
 
 	for (auto iid: Item::mining) {
@@ -249,6 +260,16 @@ int main(int argc, char const *argv[]) {
 		for (auto part: item->parts) {
 			recipe->parts.push_back(part);
 		}
+	}
+
+	for (uint i = 1; i < 10; i++) {
+		tech = new Tech(Tech::next(), fmt("tech-mining-%u", i));
+		tech->tags = {"mining"};
+		tech->cost = Currency::k(i);
+		tech->miningRate = 1.0f + ((float)i * 0.1);
+		tech->parts = {
+			(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
+		};
 	}
 
 	recipe = new Recipe(Recipe::next(), "iron-smelting1");
@@ -416,6 +437,18 @@ int main(int argc, char const *argv[]) {
 	spec->energyConsume = Energy::kW(300);
 	spec->energyDrain = Energy::kW(30);
 	spec->collision = { w: 6, h: 3, d: 6 };
+	spec->pipeInputConnections = {
+		Point(3.0f, -1.0f, 1.5f).transform(Mat4::rotateY(DEG2RAD*0)),
+		Point(3.0f, -1.0f, 1.5f).transform(Mat4::rotateY(DEG2RAD*90)),
+		Point(3.0f, -1.0f, 1.5f).transform(Mat4::rotateY(DEG2RAD*180)),
+		Point(3.0f, -1.0f, 1.5f).transform(Mat4::rotateY(DEG2RAD*270)),
+	};
+	spec->pipeOutputConnections = {
+		Point(3.0f, -1.0f, -1.5f).transform(Mat4::rotateY(DEG2RAD*0)),
+		Point(3.0f, -1.0f, -1.5f).transform(Mat4::rotateY(DEG2RAD*90)),
+		Point(3.0f, -1.0f, -1.5f).transform(Mat4::rotateY(DEG2RAD*180)),
+		Point(3.0f, -1.0f, -1.5f).transform(Mat4::rotateY(DEG2RAD*270)),
+	};
 	spec->parts = {
 		(new Part(Thing("models/assembler-chassis-hd.stl", "models/assembler-chassis-ld.stl")))->paint(0x009900ff)->gloss(16),
 		(new PartSpinner(thingFan, 1))->paint(0x222222ff)->rotate(Point::East, 70)->translate(0,0.5,2.5)->gloss(16),
@@ -560,6 +593,38 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
+	spec = new Spec("offshore-pump");
+	spec->rotate = true;
+	spec->place = Spec::Water;
+	spec->pipeOutputConnections = {
+		{1.5f, -1.0f, 0.0f},
+	};
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(100);
+	spec->energyDrain = Energy::kW(10);
+	spec->collision = { w: 3, h: 3, d: 3 };
+	spec->crafter = true;
+	spec->recipeTags = {"offshore-pumping"};
+	spec->parts = {
+		(new Part(Thing("models/offshore-pump-chassis-hd.stl", "models/offshore-pump-chassis-ld.stl")))->paint(0x4444ccff)->translate(0,-1.5,0),
+		(new Part(Thing("models/offshore-pump-pipe-hd.stl", "models/offshore-pump-pipe-ld.stl")))->paint(0xccccccff)->translate(0,-1.5,0),
+	};
+	spec->materials = {
+		{ Item::byName("iron-ingot")->id, 3 },
+	};
+
+	recipe = new Recipe(Recipe::next(), "offshore-pumping");
+	recipe->energyUsage = Energy::kJ(100);
+	recipe->tags = {"offshore-pumping"};
+	recipe->outputFluids = {
+		{ Fluid::byName("water")->id, 1000 },
+	};
+
+	auto waterDroplet = new Part(droplet);
+	waterDroplet->color = Fluid::byName("water")->color;
+
+	recipe->parts = {waterDroplet};
+
 	auto beltSurface = Thing("models/belt-surface-hd.stl", "models/belt-surface-ld.stl");
 	auto beltRidge = Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl");
 
@@ -591,6 +656,60 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1,0),
 		(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1,0),
 		(new PartCycle(beltRidge, BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-1,0)->ld(false),
+	};
+
+	spec = new Spec("fluid-tank");
+	spec->pipe = true;
+	spec->collision = { w: 5, h: 3, d: 5 };
+	spec->pipeConnections = {Point::North*2.5f+Point::Down, Point::South*2.5f+Point::Down, Point::East*2.5f+Point::Down, Point::West*2.5f+Point::Down};
+	spec->pipeCapacity = Liquid::l(50000);
+
+	spec->parts = {
+		(new Part(Thing("models/fluid-tank-base-hd.stl", "models/fluid-tank-base-ld.stl")))->paint(0xff6600ff)->translate(0,-1.5,0),
+	};
+
+	spec = new Spec("pipe-straight");
+	spec->pipe = true;
+	spec->pipeCapacity = Liquid::l(100);
+	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->rotate = true;
+	spec->pipeConnections = {Point::North*0.5f, Point::South*0.5f};
+
+	spec->parts = {
+		(new Part(Thing("models/pipe-straight-hd.stl", "models/pipe-straight-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+	};
+
+	spec = new Spec("pipe-cross");
+	spec->pipe = true;
+	spec->pipeCapacity = Liquid::l(100);
+	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->rotate = true;
+	spec->pipeConnections = {Point::North*0.5f, Point::South*0.5f, Point::East*0.5f, Point::West*0.5f};
+
+	spec->parts = {
+		(new Part(Thing("models/pipe-cross-hd.stl", "models/pipe-cross-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+	};
+
+	spec = new Spec("pipe-tee");
+	spec->pipe = true;
+	spec->pipeCapacity = Liquid::l(100);
+	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->rotate = true;
+	spec->pipeConnections = {Point::South*0.5f, Point::East*0.5f, Point::West*0.5f};
+
+	spec->parts = {
+		(new Part(Thing("models/pipe-tee-hd.stl", "models/pipe-tee-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+	};
+
+	spec = new Spec("pipe-elbow");
+	spec->pipe = true;
+	spec->pipeCapacity = Liquid::l(100);
+	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->rotate = true;
+	spec->pipeConnections = {Point::South*0.5f, Point::East*0.5f};
+
+	spec->parts = {
+		(new Part(Thing("models/pipe-elbow-hd.stl", "models/pipe-elbow-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
 	};
 
 	std::vector<Spec*> rocks;
@@ -785,12 +904,12 @@ int main(int argc, char const *argv[]) {
 	spec->armSpeed = 1.0f/60.0f;
 	spec->rotate = true;
 	spec->parts = {
-		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0xff6600ff),
-		(new Part(Thing("models/arm-pillar-hd.stl", "models/arm-pillar-ld.stl")))->translate(0,-1.0,0)->paint(0xff6600ff),
+		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0x0044ffff),
+		(new Part(Thing("models/arm-pillar-hd.stl", "models/arm-pillar-ld.stl")))->translate(0,-1.0,0)->paint(0x0044ffff),
 		(new Part(Thing("models/arm-telescope1-hd.stl", "models/arm-telescope1-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
 		(new Part(Thing("models/arm-telescope2-hd.stl", "models/arm-telescope2-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
 		(new Part(Thing("models/arm-telescope3-hd.stl", "models/arm-telescope3-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/arm-grip-hd.stl", "models/arm-grip-ld.stl")))->translate(0,-1.0,0)->paint(0xff6600ff),
+		(new Part(Thing("models/arm-grip-hd.stl", "models/arm-grip-ld.stl")))->translate(0,-1.0,0)->paint(0x0044ffff),
 	};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(10);
@@ -1025,6 +1144,43 @@ int main(int argc, char const *argv[]) {
 
 	auto steamEnginewheel = Thing("models/steam-engine-wheel-hd.stl", "models/steam-engine-wheel-ld.stl");
 
+	spec = new Spec("boiler");
+	spec->collision = { w: 3, h: 2, d: 2 };
+	spec->pipeInputConnections = {
+		{1.5f, -0.5f, -0.5f},
+	};
+	spec->pipeOutputConnections = {
+		{-1.5f, -0.5f, -0.5f},
+	};
+	spec->parts = {
+		(new Part(Thing("models/boiler-chassis-hd.stl")))->gloss(16)->paint(0x51412dff),
+	};
+	spec->align = true;
+	spec->rotate = true;
+	spec->consumeChemical = true;
+	spec->energyConsume = Energy::kW(100);
+	spec->crafter = true;
+	spec->recipeTags = {"boiling"};
+	spec->materials = {
+		{ Item::byName("brick")->id, 3 },
+		{ Item::byName("copper-ingot")->id, 3 },
+	};
+
+	recipe = new Recipe(Recipe::next(), "boiling");
+	recipe->energyUsage = Energy::kJ(100);
+	recipe->tags = {"boiling"};
+	recipe->inputFluids = {
+		{ Fluid::byName("water")->id, 100 },
+	};
+	recipe->outputFluids = {
+		{ Fluid::byName("steam")->id, 100 },
+	};
+
+	auto steamDroplet = new Part(droplet);
+	steamDroplet->color = Fluid::byName("steam")->color;
+
+	recipe->parts = {steamDroplet};
+
 	spec = new Spec("steam-engine");
 	spec->collision = { w: 4, h: 4, d: 5 };
 	spec->electrical = { area: { w: 5, d: 6 }, rate: Energy::MW(1) };
@@ -1126,6 +1282,14 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/block-hd.stl", "models/block-ld.stl")))->paint(0x666666ff)->gloss(16),
 	};
 
+	spec = new Spec("projector");
+	spec->projector = true;
+	spec->collision = { w: 1, h: 0.1, d: 1 };
+	spec->parts = {
+		(new Part(Thing("models/projector.stl")))->paint(0x666666ff),
+		(new PartSmoke(1000, 100, 0.0025, 0.25f, 0.05f, 0.005f, 0.1f, 0.99f, 5, 10))->paint(0xeeeeeeff),
+	};
+
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;
 
@@ -1174,6 +1338,7 @@ int main(int argc, char const *argv[]) {
 	Popup* popup = NULL;
 	StatsPopup2* statsPopup = new StatsPopup2();
 	WaypointsPopup* waypointsPopup = new WaypointsPopup();
+	TechPopup* techPopup = new TechPopup();
 
 	Mod* mod = new Mod("base");
 	mod->load();
@@ -1204,6 +1369,12 @@ int main(int argc, char const *argv[]) {
 			for ([[maybe_unused]] auto [name,item]: Item::names) {
 				if (!item->texture.id) break;
 				DrawTextureEx(item->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 1.0, WHITE);
+				advance();
+			}
+
+			for ([[maybe_unused]] auto [name,fluid]: Fluid::names) {
+				if (!fluid->texture.id) break;
+				DrawTextureEx(fluid->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 1.0, WHITE);
 				advance();
 			}
 
@@ -1252,6 +1423,37 @@ int main(int argc, char const *argv[]) {
 		EndTextureMode();
 
 		item->image = GetTextureData(item->texture.texture);
+		loadingScreen();
+	}
+
+	loadingScreen();
+
+	for (auto [name,fluid]: Fluid::names) {
+
+		fluid->texture = LoadRenderTexture(128, 128);
+
+		BeginTextureMode(fluid->texture);
+
+			ClearBackground(GetColor(0x0));
+
+			BeginMode3D((Camera3D){
+				position: (Vector3){0.9,1,0.9},
+				target:   (Vector3){0,0.25,0},
+				up:       -Point::Up,
+				fovy:     45.0f,
+				type:     CAMERA_PERSPECTIVE,
+			});
+
+			auto drop = new Part(droplet);
+			drop->color = fluid->color;
+			drop->draw(Mat4::identity);
+			fluid->droplet = drop;
+
+			EndMode3D();
+
+		EndTextureMode();
+
+		fluid->image = GetTextureData(fluid->texture.texture);
 		loadingScreen();
 	}
 
@@ -1384,6 +1586,10 @@ int main(int argc, char const *argv[]) {
 			}
 
 			if (IsKeyReleased(KEY_F3)) {
+				popup = techPopup;
+			}
+
+			if (IsKeyReleased(KEY_F9)) {
 				camSec->pos = camera->position;
 				camSec->dir = camera->direction;
 			}
@@ -1615,7 +1821,7 @@ int main(int argc, char const *argv[]) {
 
 					if (ge->spec->recipeTags.count("mining")) {
 						if (recipe && recipe->mine) {
-							ImGui::Print(fmtc("Mining: %s(%d)", Item::get(recipe->mine)->name, Chunk::countMine(ge->miningBox(), recipe->mine)));
+							ImGui::Print(fmtc("Mining: %s(%d) %0.1f", Item::get(recipe->mine)->name, Chunk::countMine(ge->miningBox(), recipe->mine), Recipe::miningRate));
 						} else {
 							ImGui::Print("Mining: (nothing)");
 						}
@@ -1643,11 +1849,17 @@ int main(int argc, char const *argv[]) {
 						ImGui::LevelBar(ge->crafter.progress);
 					}
 
+					ImGui::Print(fmtc("Products completed: %d", ge->crafter.completed));
 				}
 
 				if (ge->spec->store) {
 					ImGui::Print("Storage");
 					ImGui::LevelBar(ge->store.usage.portion(ge->store.limit));
+				}
+
+				if (ge->spec->pipeCapacity) {
+					ImGui::Print(fmtc("Fluid: %s", ge->pipe.fid ? Fluid::get(ge->pipe.fid)->name: "(none)"));
+					ImGui::LevelBar(ge->pipe.level);
 				}
 			}
 

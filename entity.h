@@ -18,7 +18,9 @@ struct GuiFakeEntity;
 #include "arm.h"
 #include "belt.h"
 #include "lift.h"
+#include "pipe.h"
 #include "crafter.h"
+#include "projector.h"
 #include "drone.h"
 #include "depot.h"
 #include "vehicle.h"
@@ -112,10 +114,12 @@ struct Entity {
 	Store& store();
 	std::vector<Store*> stores();
 	Crafter& crafter();
+	Projector& projector();
 	Vehicle& vehicle();
 	Arm& arm();
 	Belt& belt();
 	Lift& lift();
+	Pipe& pipe();
 	Drone& drone();
 	Depot& depot();
 	Burner& burner();
@@ -144,7 +148,17 @@ struct GuiEntity {
 		Recipe* recipe;
 		float progress;
 		float inputsProgress;
+		int completed;
 	} crafter;
+
+	struct Projector {
+
+	} projector;
+
+	struct Pipe {
+		uint fid;
+		float level;
+	} pipe;
 
 	GuiEntity();
 	GuiEntity(uint id);

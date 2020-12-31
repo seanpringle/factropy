@@ -49,6 +49,10 @@ Currency Currency::operator-(const Currency& o) const {
 	return value - o.value;
 }
 
+Currency Currency::operator-() const {
+	return -value;
+}
+
 void Currency::operator+=(const Currency& o) {
 	value += o.value;
 }

@@ -1,5 +1,6 @@
 #include "common.h"
 #include "item.h"
+#include "fluid.h"
 #include "mass.h"
 
 const Mass Mass::Inf = (1000000000);
@@ -78,4 +79,27 @@ float Mass::portion(Mass o) {
 
 uint Mass::items(uint iid) {
 	return value > 0 ? value / Item::get(iid)->mass.value: 0;
+}
+
+Liquid Liquid::l(int l) {
+	return Liquid(l);
+}
+
+Liquid::Liquid() {
+	value = 0;
+}
+
+Liquid::Liquid(int l) {
+	value = l;
+}
+
+uint Liquid::fluids(uint fid) {
+	return value > 0 ? value / Fluid::get(fid)->liquid.value: 0;
+}
+
+std::string Liquid::format() {
+	if (value < 1000) {
+		return fmt("%dl", value);
+	}
+	return fmt("%dMl", value/1000);
 }

@@ -19,6 +19,7 @@ struct Mat4 : Matrix {
 	Mat4 normalize() const;
 
 	static Mat4 scale(float x, float y, float z);
+	static Mat4 scale(float s);
 	static Mat4 rotate(Vector3 axis, float radians);
 	static Mat4 rotateX(float radians);
 	static Mat4 rotateY(float radians);

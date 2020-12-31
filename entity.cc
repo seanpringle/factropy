@@ -69,6 +69,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Crafter::create(id);
 	}
 
+	if (spec->projector) {
+		Projector::create(id);
+	}
+
 	if (spec->drone) {
 		Drone::create(id);
 	}
@@ -91,6 +95,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 
 	if (spec->lift) {
 		Lift::create(id);
+	}
+
+	if (spec->pipe) {
+		Pipe::create(id);
 	}
 
 	if (spec->consumeChemical) {
@@ -130,6 +138,10 @@ void Entity::destroy() {
 		crafter().destroy();
 	}
 
+	if (spec->projector) {
+		projector().destroy();
+	}
+
 	if (spec->vehicle) {
 		vehicle().destroy();
 	}
@@ -152,6 +164,10 @@ void Entity::destroy() {
 
 	if (spec->lift) {
 		lift().destroy();
+	}
+
+	if (spec->pipe) {
+		pipe().destroy();
 	}
 
 	if (spec->consumeElectricity) {
@@ -329,6 +345,9 @@ Entity& Entity::manage() {
 		if (spec->belt) {
 			belt().manage();
 		}
+		if (spec->pipe) {
+			pipe().manage();
+		}
 	}
 	return *this;
 }
@@ -337,6 +356,9 @@ Entity& Entity::unmanage() {
 	if (!isGhost()) {
 		if (spec->belt) {
 			belt().unmanage();
+		}
+		if (spec->pipe) {
+			pipe().unmanage();
 		}
 	}
 	return *this;
@@ -491,6 +513,10 @@ Crafter& Entity::crafter() {
 	return Crafter::get(id);
 }
 
+Projector& Entity::projector() {
+	return Projector::get(id);
+}
+
 Vehicle& Entity::vehicle() {
 	return Vehicle::get(id);
 }
@@ -505,6 +531,10 @@ Belt& Entity::belt() {
 
 Lift& Entity::lift() {
 	return Lift::get(id);
+}
+
+Pipe& Entity::pipe() {
+	return Pipe::get(id);
 }
 
 Drone& Entity::drone() {

@@ -18,10 +18,12 @@ namespace Sim {
 	TimeSeries statsStore;
 	TimeSeries statsArm;
 	TimeSeries statsCrafter;
+	TimeSeries statsProjector;
 	TimeSeries statsPath;
 	TimeSeries statsVehicle;
 	TimeSeries statsBelt;
 	TimeSeries statsLift;
+	TimeSeries statsPipe;
 	TimeSeries statsShunt;
 	TimeSeries statsDepot;
 	TimeSeries statsDrone;
@@ -33,10 +35,12 @@ namespace Sim {
 		statsStore.clear();
 		statsArm.clear();
 		statsCrafter.clear();
+		statsProjector.clear();
 		statsPath.clear();
 		statsVehicle.clear();
 		statsBelt.clear();
 		statsLift.clear();
+		statsPipe.clear();
 		statsShunt.clear();
 		statsDepot.clear();
 		statsDrone.clear();
@@ -90,9 +94,11 @@ namespace Sim {
 		tick++;
 		Entity::preTick();
 		Ghost::tick();
+		statsPipe.track(tick, Pipe::tick);
 		statsStore.track(tick, Store::tick);
 		statsArm.track(tick, Arm::tick);
 		statsCrafter.track(tick, Crafter::tick);
+		statsProjector.track(tick, Projector::tick);
 		statsPath.track(tick, Path::tick);
 		statsVehicle.track(tick, Vehicle::tick);
 		statsBelt.track(tick, Belt::tick);

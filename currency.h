@@ -15,6 +15,7 @@ struct Currency {
 	Currency operator+(const Currency& o) const;
 	Currency operator*(uint n) const;
 	Currency operator-(const Currency& o) const;
+	Currency operator-() const;
 	void operator+=(const Currency& o);
 	void operator-=(const Currency& o);
 
