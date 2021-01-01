@@ -54,6 +54,7 @@ Spec::Spec(std::string name) {
 
 	consumeChemical = false;
 	consumeElectricity = false;
+	consumeThermalFluid = false;
 	energyConsume = 0;
 	generateElectricity = false;
 	energyGenerate = 0;

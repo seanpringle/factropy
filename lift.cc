@@ -103,10 +103,10 @@ uint Lift::wouldRemoveAny(float level) {
 
 uint Lift::removeAny(float level) {
 	uint iid = wouldRemoveAny(level);
-	if (iid) {
-		iid = 0;
+	if (iid && remove(iid, level)) {
+		return iid;
 	}
-	return iid;
+	return 0;
 }
 
 uint64_t Lift::insertPredict() {

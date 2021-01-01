@@ -21,8 +21,12 @@ namespace ImGui {
 		TextUnformatted(s.c_str());
 	}
 
+	void LevelBar(float n, std::string s) {
+		ProgressBar(n, ImVec2(-1,0), s.c_str());
+	}
+
 	void LevelBar(float n) {
-		ProgressBar(n, ImVec2(-1,0), "");
+		LevelBar(n, "");
 	}
 
 	void OverflowBar(float n) {

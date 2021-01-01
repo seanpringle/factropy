@@ -31,6 +31,7 @@ struct Pipe {
 	void manage();
 	void unmanage();
 	std::vector<Point> pipeConnections();
+	Amount contents();
 };
 
 struct PipeNetwork {
@@ -47,6 +48,7 @@ struct PipeNetwork {
 	~PipeNetwork();
 	void propagateLevels();
 
+	void cacheState();
 	Amount inject(Amount amount);
 	Amount extract(Amount amount);
 	uint count(uint fid);

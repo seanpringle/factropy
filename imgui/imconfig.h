@@ -108,6 +108,7 @@
 namespace ImGui {
 	void Print(std::string s);
 	void PrintRight(std::string s);
+	void LevelBar(float n, std::string s);
 	void LevelBar(float n);
 	void OverflowBar(float n);
 }

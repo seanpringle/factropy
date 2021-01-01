@@ -24,6 +24,7 @@ struct Fluid {
 	Color color;
 	Liquid liquid;
 	Part* droplet;
+	Energy thermal;
 
 	Fluid(uint id, std::string name);
 	~Fluid();

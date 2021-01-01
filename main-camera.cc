@@ -88,7 +88,7 @@ void MainCamera::build(Spec* spec) {
 	if (spec) {
 		placing = new Plan(Point::Zero);
 		auto ge = new GuiFakeEntity(spec);
-		ge->floor(buildLevel);
+		ge->floor(0.0f); // build level applied by plan
 		placing->add(ge);
 	}
 }
@@ -656,6 +656,12 @@ void MainCamera::draw() {
 					for (Point p: en.crafter().pipeOutputConnections()) {
 						DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
 					}
+				}
+
+				if (hovering->spec->arm) {
+					Entity& en = Entity::get(hovering->id);
+					DrawCube(en.arm().input(), 0.25f, 0.25f, 0.25f, GREEN);
+					DrawCube(en.arm().output(), 0.25f, 0.25f, 0.25f, RED);
 				}
 			}
 

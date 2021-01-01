@@ -99,7 +99,7 @@ uint Liquid::fluids(uint fid) {
 
 std::string Liquid::format() {
 	if (value < 1000) {
-		return fmt("%dl", value);
+		return fmt("%dL", value);
 	}
-	return fmt("%dMl", value/1000);
+	return fmt("%dkL", value/1000);
 }

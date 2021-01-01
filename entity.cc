@@ -105,6 +105,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Burner::create(id, Entity::next());
 	}
 
+	if (spec->consumeThermalFluid) {
+		Generator::create(id, Entity::next());
+	}
+
 	if (spec->consumeElectricity) {
 		electricityConsumers.insert(id);
 	}
@@ -176,6 +180,10 @@ void Entity::destroy() {
 
 	if (spec->consumeChemical) {
 		burner().destroy();
+	}
+
+	if (spec->consumeThermalFluid) {
+		generator().destroy();
 	}
 
 	if (spec->generateElectricity) {
@@ -469,6 +477,9 @@ Energy Entity::consume(Energy e) {
 	if (spec->consumeChemical) {
 		return burner().consume(e);
 	}
+	if (spec->consumeThermalFluid) {
+		return generator().consume(e);
+	}
 	return 0;
 }
 
@@ -484,6 +495,24 @@ void Entity::generate() {
 		electricityCapacity += spec->energyGenerate;
 
 		state = std::floor((float)burner().energy.value/(float)burner().buffer.value * (float)spec->states.size());
+		state = std::min((uint)spec->states.size(), std::max((uint)1, state)) - 1;
+		return;
+	}
+
+	if (spec->generateElectricity && spec->consumeThermalFluid) {
+
+		Energy supplied = generator().consume(spec->energyGenerate * electricityLoad);
+		electricitySupply += supplied;
+
+		if (generator().supplying) electricityCapacityReady += spec->energyGenerate;
+		electricityCapacity += spec->energyGenerate;
+
+		if (supplied) {
+			state += supplied > (spec->energyGenerate * 0.5f) ? 2: 1;
+			if (state >= spec->states.size()) state -= spec->states.size();
+		}
+
+		return;
 	}
 }
 
@@ -547,4 +576,8 @@ Depot& Entity::depot() {
 
 Burner& Entity::burner() {
 	return Burner::get(id);
+}
+
+Generator& Entity::generator() {
+	return Generator::get(id);
 }

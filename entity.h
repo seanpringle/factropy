@@ -25,6 +25,7 @@ struct GuiFakeEntity;
 #include "depot.h"
 #include "vehicle.h"
 #include "burner.h"
+#include "generator.h"
 #include <unordered_set>
 #include <vector>
 
@@ -123,6 +124,7 @@ struct Entity {
 	Drone& drone();
 	Depot& depot();
 	Burner& burner();
+	Generator& generator();
 };
 
 struct GuiEntity {

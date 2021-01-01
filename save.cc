@@ -75,6 +75,7 @@ namespace Sim {
 		Depot::saveAll(name);
 		Drone::saveAll(name);
 		Burner::saveAll(name);
+		Pipe::saveAll(name);
 
 		Ledger::save(name);
 
@@ -128,6 +129,7 @@ namespace Sim {
 		Depot::loadAll(name);
 		Drone::loadAll(name);
 		Burner::loadAll(name);
+		Pipe::loadAll(name);
 
 		Ledger::load(name);
 
@@ -906,4 +908,37 @@ void Burner::loadAll(const char* name) {
 	in.close();
 }
 
+void Pipe::saveAll(const char* name) {
 
+	for (auto network: PipeNetwork::all) {
+		network->cacheState();
+	}
+
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/pipes.json");
+
+	for (auto& pipe: all) {
+
+		json state;
+		state["id"] = pipe.id;
+		state["cacheFid"] = pipe.cacheFid;
+		state["cacheTally"] = pipe.cacheTally;
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Pipe::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/pipes.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Pipe& pipe = get(state["id"]);
+		pipe.cacheFid = state["cacheFid"];
+		pipe.cacheTally = state["cacheTally"];
+	}
+
+	in.close();
+}

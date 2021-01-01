@@ -243,6 +243,7 @@ int main(int argc, char const *argv[]) {
 	fluid->color = BLUE;
 
 	fluid = new Fluid(Fluid::next(), "steam");
+	fluid->thermal = Energy::kJ(1);
 	fluid->color = GRAY;
 
 	Tech* tech;
@@ -614,7 +615,7 @@ int main(int argc, char const *argv[]) {
 	};
 
 	recipe = new Recipe(Recipe::next(), "offshore-pumping");
-	recipe->energyUsage = Energy::kJ(100);
+	recipe->energyUsage = Energy::kJ(10);
 	recipe->tags = {"offshore-pumping"};
 	recipe->outputFluids = {
 		{ Fluid::byName("water")->id, 1000 },
@@ -1146,10 +1147,14 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("boiler");
 	spec->collision = { w: 3, h: 2, d: 2 };
-	spec->pipeInputConnections = {
-		{1.5f, -0.5f, -0.5f},
+	spec->pipe = true;
+	spec->pipeCapacity = Liquid::l(100);
+	spec->pipeConnections = {
+		{1.0f, -0.5f, 1.0f},
+		{1.0f, -0.5f, -1.0f},
 	};
 	spec->pipeOutputConnections = {
+		{-1.5f, -0.5f, 0.5f},
 		{-1.5f, -0.5f, -0.5f},
 	};
 	spec->parts = {
@@ -1167,7 +1172,7 @@ int main(int argc, char const *argv[]) {
 	};
 
 	recipe = new Recipe(Recipe::next(), "boiling");
-	recipe->energyUsage = Energy::kJ(100);
+	recipe->energyUsage = Energy::MW(1);
 	recipe->tags = {"boiling"};
 	recipe->inputFluids = {
 		{ Fluid::byName("water")->id, 100 },
@@ -1184,6 +1189,9 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("steam-engine");
 	spec->collision = { w: 4, h: 4, d: 5 };
 	spec->electrical = { area: { w: 5, d: 6 }, rate: Energy::MW(1) };
+	spec->pipe = true;
+	spec->pipeCapacity = Liquid::l(100);
+	spec->pipeConnections = {{-0.5f, -1.5f, 2.5f}, {0.5f, -1.5f, 2.5f}};
 	spec->parts = {
 		(new Part(Thing("models/steam-engine-boiler-hd.stl", "models/steam-engine-boiler-ld.stl")))->gloss(16)->paint(0x51412dff)->translate(0,-2,0),
 		(new Part(Thing("models/steam-engine-saddle-hd.stl", "models/steam-engine-saddle-ld.stl")))->gloss(16)->paint(0x004225ff)->translate(0,-2,0),
@@ -1194,7 +1202,7 @@ int main(int argc, char const *argv[]) {
 	};
 	spec->align = true;
 	spec->rotate = true;
-	spec->consumeChemical = true;
+	spec->consumeThermalFluid = true;
 	spec->generateElectricity = true;
 	spec->energyGenerate = Energy::MW(1);
 	spec->materials = {
@@ -1858,7 +1866,10 @@ int main(int argc, char const *argv[]) {
 				}
 
 				if (ge->spec->pipeCapacity) {
-					ImGui::Print(fmtc("Fluid: %s", ge->pipe.fid ? Fluid::get(ge->pipe.fid)->name: "(none)"));
+					ImGui::Print(fmtc("Fluid: %s %s",
+						ge->pipe.fid ? Fluid::get(ge->pipe.fid)->name: "(none)",
+						ge->pipe.fid ? Liquid((uint)((float)ge->spec->pipeCapacity.value * ge->pipe.level)).format(): "0l"
+					));
 					ImGui::LevelBar(ge->pipe.level);
 				}
 			}

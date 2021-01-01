@@ -101,6 +101,7 @@ struct Spec {
 
 	bool consumeChemical;
 	bool consumeElectricity;
+	bool consumeThermalFluid;
 	Energy energyConsume;
 	Energy energyDrain;
 	bool generateElectricity;

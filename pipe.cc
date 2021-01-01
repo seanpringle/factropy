@@ -70,19 +70,11 @@ void PipeNetwork::tick() {
 			delete *(all.begin());
 		}
 
-		std::vector<uint> pipes;
-		for (Pipe& pipe: Pipe::all) {
-			Entity& en = Entity::get(pipe.id);
-			if (en.isGhost()) continue;
-			ensure(!pipe.network);
-			pipes.push_back(pipe.id);
-		}
+		std::function<void(uint)> flood = [&](uint pid) {
+			Entity& en = Entity::get(pid);
+			if (en.isGhost()) return;
 
-		while (pipes.size()) {
-			Pipe& pipe = Pipe::get(pipes.back());
-			pipes.pop_back();
-
-			if (pipe.network) continue;
+			Pipe& pipe = Pipe::get(pid);
 
 			for (Point p: pipe.pipeConnections()) {
 				for (uint sid: Entity::intersecting(p.box().grow(0.1))) {
@@ -92,33 +84,57 @@ void PipeNetwork::tick() {
 					if (sen.isGhost()) continue;
 					if (!sen.spec->pipe) continue;
 
-					Pipe& other = sen.pipe();
+					Pipe& other = Pipe::get(sid);
 
-					// ensure new networks propagate flood-fill style
-					if (!other.network) {
-						pipes.push_back(sid);
+					bool join = false;
+					Box box = p.box().grow(0.1f);
+
+					for (Point op: other.pipeConnections()) {
+						if (box.intersects(op.box().grow(0.1f))) {
+							join = true;
+							break;
+						}
 					}
 
-					// propagate first valid network from a sibling
-					if (!pipe.network && other.network && (!other.network->fid || other.network->fid == pipe.cacheFid)) {
-						for (Point s: other.pipeConnections()) {
-							if (s.box().grow(0.1).intersects(p.box().grow(0.1))) {
-								pipe.network = other.network;
-								pipe.network->pipes.insert(pipe.id);
-								if (!other.network->fid) {
-									other.network->fid = pipe.cacheFid;
-								}
-								break;
-							}
-						}
+					if (join && !other.network) {
+						other.network = pipe.network;
+						other.network->pipes.insert(other.id);
+						flood(sid);
 					}
 				}
 			}
+		};
+
+		for (Pipe& pipe: Pipe::all) {
+			Entity& en = Entity::get(pipe.id);
+			if (en.isGhost()) continue;
+
+			if (pipe.cacheFid && !pipe.network) {
+				pipe.network = new PipeNetwork();
+				pipe.network->pipes.insert(pipe.id);
+				flood(pipe.id);
+			}
+		}
+
+		for (Pipe& pipe: Pipe::all) {
+			Entity& en = Entity::get(pipe.id);
+			if (en.isGhost()) continue;
 
 			if (!pipe.network) {
 				pipe.network = new PipeNetwork();
 				pipe.network->pipes.insert(pipe.id);
-				pipe.network->fid = pipe.cacheFid;
+				flood(pipe.id);
+			}
+		}
+
+		for (auto network: all) {
+			for (uint id: network->pipes) {
+				Pipe& pipe = Pipe::get(id);
+				if (pipe.cacheFid) {
+					network->fid = pipe.cacheFid;
+					network->tally = pipe.cacheTally;
+					break;
+				}
 			}
 		}
 
@@ -126,9 +142,15 @@ void PipeNetwork::tick() {
 			for (uint id: network->pipes) {
 				Entity& en = Entity::get(id);
 				Pipe& pipe = Pipe::get(id);
-				pipe.cacheFid = network->fid;
 				network->limit += en.spec->pipeCapacity;
-				network->tally += pipe.cacheTally;
+				if (pipe.cacheFid == network->fid) {
+					network->tally += pipe.cacheTally;
+				}
+				pipe.cacheFid = network->fid;
+				pipe.cacheTally = 0;
+			}
+			if (!network->tally) {
+				network->fid = 0;
 			}
 		}
 
@@ -136,23 +158,42 @@ void PipeNetwork::tick() {
 	}
 }
 
+Amount Pipe::contents() {
+	if (network && network->fid) {
+		Entity& en = Entity::get(id);
+		uint fid = network->fid;
+		float fill = network->level();
+		uint n = std::ceil((float)en.spec->pipeCapacity.fluids(fid) * fill);
+		return {fid, n};
+	}
+	return {0,0};
+}
+
 PipeNetwork::PipeNetwork() {
 	all.insert(this);
+	fid = 0;
 	limit = 0;
 	tally = 0;
 }
 
 PipeNetwork::~PipeNetwork() {
+	cacheState();
+	for (uint id: pipes) {
+		Pipe& pipe = Pipe::get(id);
+		pipe.network = NULL;
+	}
+	pipes.clear();
+	all.erase(this);
+}
+
+void PipeNetwork::cacheState() {
 	float fill = level();
 	for (uint id: pipes) {
 		Entity& en = Entity::get(id);
 		Pipe& pipe = Pipe::get(id);
 		pipe.cacheFid = fid;
 		pipe.cacheTally = fid ? (uint)std::ceil((float)en.spec->pipeCapacity.fluids(fid) * fill): 0;
-		pipe.network = NULL;
 	}
-	pipes.clear();
-	all.erase(this);
 }
 
 Amount PipeNetwork::inject(Amount amount) {

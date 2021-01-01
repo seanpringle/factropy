@@ -131,6 +131,12 @@ void Crafter::update() {
 		if (recipe->inputFluids.size()) {
 			fluidsReady = false;
 
+			for (auto point: pipeConnections()) {
+				for (auto pid: Pipe::servicing(point.box())) {
+					inputPipes.insert(pid);
+				}
+			}
+
 			for (auto point: pipeInputConnections()) {
 				for (auto pid: Pipe::servicing(point.box())) {
 					inputPipes.insert(pid);

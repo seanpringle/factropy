@@ -22,6 +22,7 @@ Fluid::Fluid(uint id, std::string name) {
 	color = BLUE;
 	liquid = Liquid::l(1);
 	droplet = nullptr;
+	thermal = 0;
 
 	ZERO(image);
 	ZERO(texture);
@@ -52,3 +53,4 @@ Amount::Amount(std::initializer_list<uint> l) {
 	fid = (uint)*i++;
 	size = *i++;
 }
+

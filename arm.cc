@@ -35,12 +35,12 @@ void Arm::destroy() {
 
 Point Arm::input() {
 	Entity& en = Entity::get(id);
-	return en.pos.floor(0.5f) - (en.dir * en.spec->armOffset);
+	return en.ground() + (Point::Up*0.5f) - (en.dir * en.spec->armOffset);
 }
 
 Point Arm::output() {
 	Entity& en = Entity::get(id);
-	return en.pos.floor(0.5f) + (en.dir * en.spec->armOffset);
+	return en.ground() + (Point::Up*0.5f) + (en.dir * en.spec->armOffset);
 }
 
 void Arm::updateProximity() {
@@ -206,6 +206,17 @@ bool Arm::updateReady() {
 			}
 		}
 
+		if (ei.spec->lift) {
+			uint liid = ei.lift().wouldRemoveAny(input().y);
+			if (liid) {
+				for (Store* so: eo.stores()) {
+					if (so->isAccepting(liid)) {
+						return true;
+					}
+				}
+			}
+		}
+
 		if (ei.spec->belt && eo.spec->belt) {
 			uint biid = ei.belt().itemAt(BeltAny);
 			if (biid) {
@@ -264,6 +275,23 @@ bool Arm::updateInput() {
 						so->arms.insert(id);
 						ei.belt().remove(biid, BeltAny);
 						iid = biid;
+						stage = ToOutput;
+						return true;
+					}
+				}
+			}
+		}
+
+		if (ei.spec->lift) {
+			uint liid = ei.lift().wouldRemoveAny(input().y);
+			if (liid) {
+				for (Store* so: eo.stores()) {
+					if (so->isAccepting(liid)) {
+						outputStoreId = so->sid;
+						so->promise({liid,1});
+						so->arms.insert(id);
+						ei.lift().removeAny(input().y);
+						iid = liid;
 						stage = ToOutput;
 						return true;
 					}
