@@ -152,6 +152,9 @@ void PipeNetwork::tick() {
 			if (!network->tally) {
 				network->fid = 0;
 			}
+			if (network->tally > network->limit.value) {
+				network->tally = network->limit.value;
+			}
 		}
 
 		rebuild = false;
@@ -210,7 +213,7 @@ Amount PipeNetwork::inject(Amount amount) {
 
 Amount PipeNetwork::extract(Amount amount) {
 	if (amount.fid == fid) {
-		uint count = std::min(tally, amount.size);
+		uint count = std::min(tally, (int)amount.size);
 		amount.size = count;
 		tally -= count;
 		return amount;
@@ -228,5 +231,5 @@ uint PipeNetwork::space(uint ffid) {
 }
 
 float PipeNetwork::level() {
-	return fid ? (Fluid::get(fid)->liquid * tally).portion(limit): 0.0f;
+	return fid ? Liquid(Fluid::get(fid)->liquid.value * tally).portion(limit): 0.0f;
 }

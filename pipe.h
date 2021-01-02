@@ -25,7 +25,7 @@ struct Pipe {
 	uint id;
 	PipeNetwork* network;
 	uint cacheFid;
-	uint cacheTally;
+	int cacheTally;
 
 	void destroy();
 	void manage();
@@ -41,7 +41,7 @@ struct PipeNetwork {
 
 	std::set<uint> pipes;
 	uint fid;
-	uint tally;
+	int tally;
 	Liquid limit;
 
 	PipeNetwork();

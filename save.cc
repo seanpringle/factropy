@@ -78,6 +78,7 @@ namespace Sim {
 		Pipe::saveAll(name);
 
 		Ledger::save(name);
+		Recipe::save(name);
 
 		{
 			auto out = std::ofstream(path + "/time-series.json");
@@ -132,6 +133,7 @@ namespace Sim {
 		Pipe::loadAll(name);
 
 		Ledger::load(name);
+		Recipe::load(name);
 
 		{
 			auto in = std::ifstream(path + "/time-series.json");
@@ -193,6 +195,30 @@ void Ledger::load(const char* name) {
 			desc: state["desc"],
 		});
 	}
+
+	in.close();
+}
+
+void Recipe::save(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/recipe.json");
+
+	json state;
+	state["miningRate"] = Recipe::miningRate;
+	out << state << "\n";
+
+	out.close();
+}
+
+void Recipe::load(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/recipe.json");
+
+	std::string line;
+	std::getline(in, line);
+	auto state = json::parse(line);
+
+	Recipe::miningRate = state["miningRate"];
 
 	in.close();
 }

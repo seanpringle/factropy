@@ -13,6 +13,8 @@ struct Recipe;
 
 struct Recipe {
 	static void reset();
+	static void save(const char *path);
+	static void load(const char *path);
 
 	static inline uint sequence;
 	static uint next();

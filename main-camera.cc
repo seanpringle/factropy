@@ -289,12 +289,12 @@ void MainCamera::updateCamera() {
 
 	mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, raylibCamera());
 
-	if (mouse.right.clicked) {
-		RayHitInfo spot = GetCollisionRayGround(mouse.ray, buildLevel);
-		nextDirection = -(position - Point(spot.position)).normalize();
-	}
+	//if (mouse.right.clicked && !IsKeyDown(KEY_LEFT_SHIFT)) {
+	//	RayHitInfo spot = GetCollisionRayGround(mouse.ray, buildLevel);
+	//	nextDirection = -(position - Point(spot.position)).normalize();
+	//}
 
-	mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, raylibCamera());
+	//mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, raylibCamera());
 }
 
 void MainCamera::update() {
