@@ -63,6 +63,7 @@ struct Part: Thing {
 	Part* rotate(Point axis, float degrees);
 	Part* scale(float x, float y, float z);
 	Part* translate(float x, float y, float z);
+
 	virtual void update();
 
 	void draw(Mat4 trx);
@@ -72,6 +73,10 @@ struct Part: Thing {
 	Mat4 specInstanceState(Spec* spec, uint slot, uint state);
 	virtual Mat4 specInstance(Spec* spec, uint slot, uint state, Mat4 trx);
 	virtual Mat4 instance(Mat4 trx);
+
+	// info for GuiEntity
+	bool pivot;
+	Part* pivots(bool state = true);
 };
 
 struct PartSpinner : Part {

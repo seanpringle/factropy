@@ -6,7 +6,9 @@ GuiEntity::GuiEntity() {
 	spec = NULL;
 	pos = {0,0,0};
 	dir = Point::South;
+	aim = Point::South;
 	state = 0;
+	health = 1.0;
 	ghost = false;
 	transform = Mat4::identity;
 
@@ -19,6 +21,11 @@ GuiEntity::GuiEntity() {
 	crafter.recipe = NULL;
 	crafter.progress = 0.0f;
 	crafter.inputsProgress = 0.0f;
+
+	pipe.fid = 0;
+	pipe.level = 0;
+
+	explosion.radius = 0;
 }
 
 GuiEntity::GuiEntity(uint id) : GuiEntity() {
@@ -27,7 +34,9 @@ GuiEntity::GuiEntity(uint id) : GuiEntity() {
 	spec = en.spec;
 	pos = en.pos;
 	dir = en.dir;
+	aim = Point::South;
 	state = en.state;
+	health = en.health;
 	ghost = en.isGhost();
 	updateTransform();
 
@@ -52,6 +61,14 @@ GuiEntity::GuiEntity(uint id) : GuiEntity() {
 		pipe.fid = en.pipe().network ? en.pipe().network->fid: 0;
 		pipe.level = pipe.fid ? en.pipe().network->level(): 0.0f;
 	}
+
+	if (spec->explosion) {
+		explosion.radius = en.explosion().radius;
+	}
+
+	if (spec->turret) {
+		aim = en.turret().aim;
+	}
 }
 
 GuiEntity::~GuiEntity() {
@@ -73,6 +90,15 @@ void GuiEntity::updateTransform() {
 	Mat4 r = dir.rotation();
 	Mat4 t = Mat4::translate(pos.x, pos.y, pos.z);
 	transform = r * t;
+}
+
+Mat4 GuiEntity::partTransform(Part* part) {
+	if (part->pivot) {
+		Mat4 r = aim.rotation();
+		Mat4 t = Mat4::translate(pos.x, pos.y, pos.z);
+		return r * t;
+	}
+	return transform;
 }
 
 // GuiFakeEntity

@@ -279,6 +279,7 @@ Part::Part() {
 	tsrt = transform * srt;
 	color = WHITE;
 	specular = 0.0f;
+	pivot = false;
 	all.insert(this);
 }
 
@@ -295,6 +296,7 @@ Part::Part(Thing thing) {
 	tsrt = transform * srt;
 	color = WHITE;
 	specular = 0.0f;
+	pivot = false;
 	all.insert(this);
 }
 
@@ -334,6 +336,11 @@ Part* Part::translate(float x, float y, float z) {
 	t = Mat4::translate(x, y, z);
 	srt = (s * r) * t;
 	tsrt = transform * srt;
+	return this;
+}
+
+Part* Part::pivots(bool state) {
+	pivot = state;
 	return this;
 }
 

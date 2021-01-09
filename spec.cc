@@ -21,6 +21,8 @@ Spec::Spec(std::string name) {
 	align = true;
 	pivot = false;
 	drone = false;
+	explodes = false;
+	explosion = false;
 	store = false;
 	belt = false;
 	loader = false;
@@ -28,6 +30,12 @@ Spec::Spec(std::string name) {
 	shunt = false;
 	junk = false;
 	named = false;
+
+	health = 0;
+	explosionSpec = "";
+	explosionDamage = 0;
+	explosionRadius = 0;
+	explosionRate = 0;
 
 	magic = false;
 	capacity = 0;
@@ -76,6 +84,15 @@ Spec::Spec(std::string name) {
 
 	pipe = false;
 	pipeCapacity = 0;
+
+	turret = false;
+	turretRange = 0;
+	turretCooldown = 0;
+	turretBulletSpec = "";
+
+	missile = false;
+	missileSpeed = 0;
+	missileBallistic = false;
 
 	processor = false;
 	processorSpeed = 0;

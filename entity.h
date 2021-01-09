@@ -22,10 +22,13 @@ struct GuiFakeEntity;
 #include "crafter.h"
 #include "projector.h"
 #include "drone.h"
+#include "missile.h"
+#include "explosion.h"
 #include "depot.h"
 #include "vehicle.h"
 #include "burner.h"
 #include "generator.h"
+#include "turret.h"
 #include <unordered_set>
 #include <vector>
 
@@ -37,6 +40,7 @@ struct Entity {
 
 	static inline std::map<Chunk::XY,std::set<uint>> grid;
 	static inline std::unordered_set<uint> removing;
+	static inline std::unordered_set<uint> exploding;
 
 	static inline float electricityLoad = 0.0f;
 	static inline float electricitySatisfaction = 0.0f;
@@ -65,7 +69,10 @@ struct Entity {
 	static bool fits(Spec *spec, Point pos, Point dir);
 
 	static std::unordered_set<uint> intersecting(Box box);
+	static std::unordered_set<uint> intersecting(Point pos, float radius);
 	static uint at(Point p);
+
+	static std::unordered_set<uint> enemiesInRange(Point pos, float radius);
 
 	uint id;
 	uint32_t flags;
@@ -73,6 +80,7 @@ struct Entity {
 	Point pos;
 	Point dir;
 	uint state;
+	Health health;
 
 	bool isGhost();
 	Entity& setGhost(bool state);
@@ -96,6 +104,7 @@ struct Entity {
 	Entity& toggle();
 	void destroy();
 	void remove();
+	void explode();
 	static void removeJunk(Box b);
 
 	Entity& index();
@@ -111,6 +120,8 @@ struct Entity {
 	float consumeRate(Energy e);
 	void generate();
 
+	void damage(Health hits);
+
 	Ghost& ghost();
 	Store& store();
 	std::vector<Store*> stores();
@@ -122,9 +133,12 @@ struct Entity {
 	Lift& lift();
 	Pipe& pipe();
 	Drone& drone();
+	Missile& missile();
+	Explosion& explosion();
 	Depot& depot();
 	Burner& burner();
 	Generator& generator();
+	Turret& turret();
 };
 
 struct GuiEntity {
@@ -133,34 +147,36 @@ struct GuiEntity {
 	Point pos;
 	Point dir;
 	uint state;
+	Health health;
 	bool ghost;
 	Mat4 transform;
+	Point aim;
 
-	struct Burner {
+	struct {
 		Energy energy;
 		Energy buffer;
 	} burner;
 
-	struct Store {
+	struct {
 		Mass limit;
 		Mass usage;
 	} store;
 
-	struct Crafter {
+	struct {
 		Recipe* recipe;
 		float progress;
 		float inputsProgress;
 		int completed;
 	} crafter;
 
-	struct Projector {
-
-	} projector;
-
-	struct Pipe {
+	struct {
 		uint fid;
 		float level;
 	} pipe;
+
+	struct {
+		float radius;
+	} explosion;
 
 	GuiEntity();
 	GuiEntity(uint id);
@@ -170,6 +186,7 @@ struct GuiEntity {
 	Box miningBox();
 	Point ground();
 	void updateTransform();
+	Mat4 partTransform(Part* part);
 };
 
 struct GuiFakeEntity : GuiEntity {

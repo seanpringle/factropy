@@ -3,6 +3,7 @@
 
 #include "opensimplex.h"
 #include "time-series.h"
+#include "point.h"
 #include <mutex>
 #include <functional>
 
@@ -42,10 +43,13 @@ namespace Sim {
 	// decrease persistence to make coastline smoother
 	double noise2D(double x, double y, int layers, double persistence, double frequency);
 
+	bool rayCast(Point a, Point b, float clearance, std::function<bool(uint)> collide);
+
 	void save(const char *path);
 	void load(const char *path);
 
 	void update();
+
 }
 
 #endif

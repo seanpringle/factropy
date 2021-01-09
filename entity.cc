@@ -18,7 +18,21 @@ void Entity::reset() {
 }
 
 void Entity::preTick() {
-	for (int id: removing) {
+
+	for (auto id: exploding) {
+		Entity& en = Entity::get(id);
+		ensuref(en.spec->explodes, "%s cannot explode", en.spec->name);
+
+		Entity& ex = Entity::create(Entity::next(), Spec::byName(en.spec->explosionSpec));
+		ex.explosion().define(ex.spec->explosionDamage, ex.spec->explosionRadius, ex.spec->explosionRate);
+		ex.move(en.pos);
+		ex.materialize();
+
+		removing.insert(id);
+	}
+	exploding.clear();
+
+	for (auto id: removing) {
 		Entity::get(id).destroy();
 	}
 	removing.clear();
@@ -57,6 +71,7 @@ Entity& Entity::create(uint id, Spec *spec) {
 	en.spec = spec;
 	en.dir = Point::South;
 	en.state = 0;
+	en.health = spec->health;
 
 	en.flags = GHOST;
 	Ghost::create(id, Entity::next());
@@ -75,6 +90,14 @@ Entity& Entity::create(uint id, Spec *spec) {
 
 	if (spec->drone) {
 		Drone::create(id);
+	}
+
+	if (spec->missile) {
+		Missile::create(id);
+	}
+
+	if (spec->explosion) {
+		Explosion::create(id);
 	}
 
 	if (spec->depot) {
@@ -99,6 +122,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 
 	if (spec->pipe) {
 		Pipe::create(id);
+	}
+
+	if (spec->turret) {
+		Turret::create(id);
 	}
 
 	if (spec->consumeChemical) {
@@ -154,6 +181,14 @@ void Entity::destroy() {
 		drone().destroy();
 	}
 
+	if (spec->missile) {
+		missile().destroy();
+	}
+
+	if (spec->explosion) {
+		explosion().destroy();
+	}
+
 	if (spec->depot) {
 		depot().destroy();
 	}
@@ -172,6 +207,10 @@ void Entity::destroy() {
 
 	if (spec->pipe) {
 		pipe().destroy();
+	}
+
+	if (spec->turret) {
+		turret().destroy();
 	}
 
 	if (spec->consumeElectricity) {
@@ -243,6 +282,17 @@ std::unordered_set<uint> Entity::intersecting(Box box) {
 	return hits;
 }
 
+std::unordered_set<uint> Entity::intersecting(Point pos, float radius) {
+	std::unordered_set<uint> hits;
+	for (auto id: intersecting(pos.box().grow(radius))) {
+		Entity& en = get(id);
+		if (en.pos.distance(pos) < radius) {
+			hits.insert(id);
+		}
+	}
+	return hits;
+}
+
 uint Entity::at(Point p) {
 	Box box = p.box();
 	for (auto xy: Chunk::walk(box)) {
@@ -255,8 +305,26 @@ uint Entity::at(Point p) {
 	return 0;
 }
 
+std::unordered_set<uint> Entity::enemiesInRange(Point pos, float radius) {
+	std::unordered_set<uint>hits;
+	for (auto& pair: Missile::all) {
+		Missile& missile = pair.second;
+		Entity& me = Entity::get(missile.id);
+		float de = me.pos.distance(pos);
+
+		if (me.spec->name == "bullet") continue;
+
+		if (de < radius) hits.insert(me.id);
+	}
+	return hits;
+}
+
 void Entity::remove() {
 	removing.insert(id);
+}
+
+void Entity::explode() {
+	exploding.insert(id);
 }
 
 void Entity::removeJunk(Box b) {
@@ -516,6 +584,16 @@ void Entity::generate() {
 	}
 }
 
+void Entity::damage(Health hits) {
+	if (!spec->health) return;
+
+	health -= hits;
+	if (health < 0) {
+		unmanage();
+		if (spec->explodes) explode(); else remove();
+	}
+}
+
 Ghost& Entity::ghost() {
 	return Ghost::get(id);
 }
@@ -570,6 +648,14 @@ Drone& Entity::drone() {
 	return Drone::get(id);
 }
 
+Missile& Entity::missile() {
+	return Missile::get(id);
+}
+
+Explosion& Entity::explosion() {
+	return Explosion::get(id);
+}
+
 Depot& Entity::depot() {
 	return Depot::get(id);
 }
@@ -580,4 +666,8 @@ Burner& Entity::burner() {
 
 Generator& Entity::generator() {
 	return Generator::get(id);
+}
+
+Turret& Entity::turret() {
+	return Turret::get(id);
 }

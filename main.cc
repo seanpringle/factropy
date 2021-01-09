@@ -393,6 +393,7 @@ int main(int argc, char const *argv[]) {
 	spec->logistic = true;
 	spec->enableSetUpper = true;
 	spec->rotate = true;
+	spec->health = 10;
 	spec->materials = {
 		{Item::byName("iron-ingot")->id, 5},
 	};
@@ -408,6 +409,7 @@ int main(int argc, char const *argv[]) {
 	spec->enableSetLower = true;
 	spec->enableSetUpper = true;
 	spec->rotate = true;
+	spec->health = 10;
 	spec->materials = {
 		{Item::byName("copper-ingot")->id, 5},
 	};
@@ -420,6 +422,7 @@ int main(int argc, char const *argv[]) {
 	spec->store = true;
 	spec->capacity = Mass::kg(1000);
 	spec->rotate = true;
+	spec->health = 10;
 	spec->materials = {
 		{Item::byName("steel-ingot")->id, 5},
 	};
@@ -438,6 +441,7 @@ int main(int argc, char const *argv[]) {
 	spec->energyConsume = Energy::kW(300);
 	spec->energyDrain = Energy::kW(30);
 	spec->collision = { w: 6, h: 3, d: 6 };
+	spec->health = 10;
 	spec->pipeInputConnections = {
 		Point(3.0f, -1.0f, 1.5f).transform(Mat4::rotateY(DEG2RAD*0)),
 		Point(3.0f, -1.0f, 1.5f).transform(Mat4::rotateY(DEG2RAD*90)),
@@ -517,6 +521,7 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/furnace-smoke-hd.stl", "models/furnace-smoke-ld.stl")))->paint(0x000000ff),
 		(new PartSmoke(2400, 20, 0.01, 0.5f, 0.01f, 0.005f, 0.1f, 0.99f, 60, 180))->translate(0,2,0),
 	};
+	spec->health = 10;
 	spec->store = true;
 	spec->capacity = Mass::kg(100);
 	spec->rotate = true;
@@ -573,6 +578,7 @@ int main(int argc, char const *argv[]) {
 	spec->energyConsume = Energy::kW(100);
 	spec->energyDrain = Energy::kW(10);
 	spec->collision = { w: 5, h: 5, d: 10 };
+	spec->health = 10;
 	spec->parts = {
 		(new Part(thingMiner))->paint(0xB7410Eff),
 		(new Part(thingGear))->paint(0xccccccff)->scale(3,3,3)->rotate(Point::East, 90)->translate(0,0,3.75)->gloss(32),
@@ -606,6 +612,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 3, h: 3, d: 3 };
 	spec->crafter = true;
 	spec->recipeTags = {"offshore-pumping"};
+	spec->health = 10;
 	spec->parts = {
 		(new Part(Thing("models/offshore-pump-chassis-hd.stl", "models/offshore-pump-chassis-ld.stl")))->paint(0x4444ccff)->translate(0,-1.5,0),
 		(new Part(Thing("models/offshore-pump-pipe-hd.stl", "models/offshore-pump-pipe-ld.stl")))->paint(0xccccccff)->translate(0,-1.5,0),
@@ -635,6 +642,7 @@ int main(int argc, char const *argv[]) {
 	spec->belt = true;
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(1);
+	spec->health = 10;
 
 	spec->parts = {
 		(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0),
@@ -652,6 +660,7 @@ int main(int argc, char const *argv[]) {
 	spec->loader = true;
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(10);
+	spec->health = 10;
 
 	spec->parts = {
 		(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1,0),
@@ -664,6 +673,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 5, h: 3, d: 5 };
 	spec->pipeConnections = {Point::North*2.5f+Point::Down, Point::South*2.5f+Point::Down, Point::East*2.5f+Point::Down, Point::West*2.5f+Point::Down};
 	spec->pipeCapacity = Liquid::l(50000);
+	spec->health = 10;
 
 	spec->parts = {
 		(new Part(Thing("models/fluid-tank-base-hd.stl", "models/fluid-tank-base-ld.stl")))->paint(0xff6600ff)->translate(0,-1.5,0),
@@ -675,6 +685,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->rotate = true;
 	spec->pipeConnections = {Point::North*0.5f, Point::South*0.5f};
+	spec->health = 10;
 
 	spec->parts = {
 		(new Part(Thing("models/pipe-straight-hd.stl", "models/pipe-straight-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
@@ -686,6 +697,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->rotate = true;
 	spec->pipeConnections = {Point::North*0.5f, Point::South*0.5f, Point::East*0.5f, Point::West*0.5f};
+	spec->health = 10;
 
 	spec->parts = {
 		(new Part(Thing("models/pipe-cross-hd.stl", "models/pipe-cross-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
@@ -697,6 +709,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->rotate = true;
 	spec->pipeConnections = {Point::South*0.5f, Point::East*0.5f, Point::West*0.5f};
+	spec->health = 10;
 
 	spec->parts = {
 		(new Part(Thing("models/pipe-tee-hd.stl", "models/pipe-tee-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
@@ -708,6 +721,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->rotate = true;
 	spec->pipeConnections = {Point::South*0.5f, Point::East*0.5f};
+	spec->health = 10;
 
 	spec->parts = {
 		(new Part(Thing("models/pipe-elbow-hd.stl", "models/pipe-elbow-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
@@ -721,6 +735,7 @@ int main(int argc, char const *argv[]) {
 
 		spec = new Spec(name);
 		spec->collision = { w: 2, h: 1, d: 2 };
+		spec->health = 100;
 		spec->pivot = true;
 		spec->junk = true;
 		spec->parts = {
@@ -762,6 +777,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 2, h: 5, d: 2 };
 	spec->pivot = true;
 	spec->junk = true;
+	spec->health = 10;
 	spec->parts = {
 		(new Part(Thing("models/tree1.stl").smooth()))->paint(0x224400ff)->translate(0,-2.5,0),
 	};
@@ -775,6 +791,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 2, h: 6, d: 2 };
 	spec->pivot = true;
 	spec->junk = true;
+	spec->health = 10;
 	spec->parts = {
 		(new Part(Thing("models/tree2.stl").smooth()))->paint(0x006600ff)->translate(-5,-3,0),
 	};
@@ -818,6 +835,7 @@ int main(int argc, char const *argv[]) {
 		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,0),
 		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(0.8,-0.75,1),
 	};
+	spec->health = 100;
 	spec->align = false;
 	spec->pivot = true;
 	spec->vehicle = true;
@@ -855,6 +873,7 @@ int main(int argc, char const *argv[]) {
 		Spec::byName("truck-engineer")->parts[5],
 		Spec::byName("truck-engineer")->parts[6],
 	};
+	spec->health = 100;
 	spec->align = false;
 	spec->vehicle = true;
 	spec->vehicleEnergy = Energy::kW(50);
@@ -873,6 +892,7 @@ int main(int argc, char const *argv[]) {
 	};
 
 	spec = new Spec("truck-stop");
+	spec->health = 10;
 	spec->collision = { w: 3, h: 0.1, d: 3 };
 	spec->parts = {
 		(new Part(Thing("models/truck-stop.stl")))->paint(0x662222ff),
@@ -886,6 +906,7 @@ int main(int argc, char const *argv[]) {
 	auto thingDroneRotor = Thing("models/drone-rotor-hd.stl", "models/drone-rotor-ld.stl");
 
 	spec = new Spec("drone");
+	spec->health = 10;
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->parts = {
 		(new Part(thingDroneChassis))->paint(0x660000ff),
@@ -899,6 +920,7 @@ int main(int argc, char const *argv[]) {
 	spec->drone = true;
 
 	spec = new Spec("arm");
+	spec->health = 10;
 	spec->collision = { w: 1, h: 2, d: 1 };
 	spec->arm = true;
 	spec->armOffset = 1.0f;
@@ -995,6 +1017,7 @@ int main(int argc, char const *argv[]) {
 	spec->armOffset = 2.0f;
 	spec->armSpeed =1.0f/60.0f;
 	spec->rotate = true;
+	spec->health = 10;
 	spec->parts = {
 		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0xff0000ff),
 		(new Part(Thing("models/arm-pillar-hd.stl", "models/arm-pillar-ld.stl")))->translate(0,-1.0,0)->paint(0xff0000ff),
@@ -1098,6 +1121,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 1, h: 2, d: 1 };
 	spec->lift = true;
 	spec->rotate = true;
+	spec->health = 10;
 	spec->parts = {
 		(new Part(Thing("models/lift-base-hd.stl", "models/lift-base-ld.stl")))->translate(0,-1,0)->paint(0xcccc00ff),
 		(new Part(Thing("models/lift-telescope1-hd.stl", "models/lift-telescope1-ld.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
@@ -1139,6 +1163,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = { w: 1, h: 6, d: 1 };
 	spec->electrical = { area: { w: 7.1, d: 7.1 }, rate: Energy::kW(-10) };
 	spec->rotate = true;
+	spec->health = 10;
 	spec->parts = {
 		(new Part(Thing("models/utility-pole-hd.stl")))->translate(0,-3,0)->paint(0x5c2414ff),
 	};
@@ -1160,6 +1185,7 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new Part(Thing("models/boiler-chassis-hd.stl")))->gloss(16)->paint(0x51412dff),
 	};
+	spec->health = 10;
 	spec->align = true;
 	spec->rotate = true;
 	spec->consumeChemical = true;
@@ -1200,6 +1226,7 @@ int main(int argc, char const *argv[]) {
 		(new Part(steamEnginewheel))->gloss(32)->paint(0x444444ff)->translate(-1.75,1,1)->rotate(Point::South, 90),
 		(new Part(steamEnginewheel))->gloss(32)->paint(0x444444ff)->translate( 1.75,1,1)->rotate(Point::South, 90),
 	};
+	spec->health = 10;
 	spec->align = true;
 	spec->rotate = true;
 	spec->consumeThermalFluid = true;
@@ -1227,7 +1254,61 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
+	spec = new Spec("turret");
+	spec->health = 100;
+	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->parts = {
+		(new Part(Thing("models/turret-chassis.stl")))->paint(0x51412dff)->translate(0,-0.5,0),
+		(new Part(Thing("models/turret-dome.stl")))->paint(0x0044ccff)->translate(0,-0.5,0)->pivots(),
+		(new Part(Thing("models/turret-barrel.stl")))->paint(0x444444ff)->translate(0,-0.5,0)->pivots(),
+	};
+	spec->align = true;
+	spec->rotate = true;
+	spec->turret = true;
+	spec->turretRange = 50;
+	spec->turretCooldown = 10;
+	spec->turretBulletSpec = "bullet";
+
+	spec = new Spec("bullet");
+	spec->explodes = true;
+	spec->explosionSpec = "bullet-impact1";
+	spec->health = 0;
+	spec->collision = { w: 0.1, h: 0.1, d: 0.1 };
+	spec->parts = {
+		(new Part(Thing("models/bullet.stl")))->paint(0x660000ff),
+	};
+	spec->align = false;
+	spec->missile = true;
+	spec->missileSpeed = 1.0;
+	spec->missileBallistic = true;
+
+	spec = new Spec("bullet-impact1");
+	spec->align = false;
+	spec->explosion = true;
+	spec->explosionDamage = 10;
+	spec->explosionRadius = 0.1;
+	spec->explosionRate = 0.01;
+
+	spec = new Spec("missile");
+	spec->explodes = true;
+	spec->explosionSpec = "missile-explosion1";
+	spec->health = 100;
+	spec->collision = { w: 1, h: 1, d: 2 };
+	spec->parts = {
+		(new Part(Thing("models/missile-chassis.stl")))->paint(0x660000ff),
+	};
+	spec->align = false;
+	spec->missile = true;
+
+	spec = new Spec("missile-explosion1");
+	spec->align = false;
+	spec->explosion = true;
+	spec->explosionDamage = 100;
+	spec->explosionRadius = 10;
+	spec->explosionRate = 0.5;
+
 	spec = new Spec("teleporter");
+	spec->health = 10;
 	spec->store = true;
 	spec->capacity = Mass::kg(10000);
 	spec->loadPriority = true;
@@ -1285,12 +1366,14 @@ int main(int argc, char const *argv[]) {
 	recipe->parts = Item::byName("copper-ingot")->parts;
 
 	spec = new Spec("block");
+	spec->health = 100;
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->parts = {
 		(new Part(Thing("models/block-hd.stl", "models/block-ld.stl")))->paint(0x666666ff)->gloss(16),
 	};
 
 	spec = new Spec("projector");
+	spec->health = 10;
 	spec->projector = true;
 	spec->collision = { w: 1, h: 0.1, d: 1 };
 	spec->parts = {
@@ -1818,6 +1901,9 @@ int main(int argc, char const *argv[]) {
 					ImVec2(ge->spec->texture.texture.width, ge->spec->texture.texture.height),
 					ImVec2(0,0)
 				);
+
+				ImGui::Print(fmtc("Health: %d/%d", ge->health, ge->spec->health));
+				ImGui::LevelBar(std::max(0.01, ge->spec->health ? (float)ge->health / (float)ge->spec->health: 1.0));
 
 				if (ge->spec->consumeChemical) {
 					ImGui::Print("Fuel");

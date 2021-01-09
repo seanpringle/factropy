@@ -474,7 +474,7 @@ void MainCamera::draw() {
 
 				for (uint i = 0; i < ge->spec->parts.size(); i++) {
 					Part *part = ge->spec->parts[i];
-					Mat4 instance = part->specInstance(ge->spec, i, ge->state, ge->transform);
+					Mat4 instance = part->specInstance(ge->spec, i, ge->state, ge->partTransform(part));
 					(ge->ghost ? (hd ? ghosts_hd: ghosts_ld): (hd ? extant_hd: extant_ld))[part].push_back(instance);
 				}
 
@@ -627,6 +627,12 @@ void MainCamera::draw() {
 				part->drawGhostInstanced(true, batch.size(), batch.data());
 			}
 
+			for (auto ge: entities) {
+				if (ge->spec->explosion) {
+					DrawSphere(ge->pos, ge->explosion.radius, RED);
+				}
+			}
+
 			if (hovering) {
 				Box box = hovering->box();
 				Point bounds = {box.w, box.h, box.d};
@@ -662,6 +668,10 @@ void MainCamera::draw() {
 					Entity& en = Entity::get(hovering->id);
 					DrawCube(en.arm().input(), 0.25f, 0.25f, 0.25f, GREEN);
 					DrawCube(en.arm().output(), 0.25f, 0.25f, 0.25f, RED);
+				}
+
+				if (hovering->spec->turret) {
+					DrawSphereWires(hovering->pos, hovering->spec->turretRange, 72, 72, RED);
 				}
 			}
 

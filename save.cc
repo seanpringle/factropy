@@ -333,6 +333,7 @@ void Entity::saveAll(const char* name) {
 		state["pos"] = { en.pos.x, en.pos.y, en.pos.z };
 		state["dir"] = { en.dir.x, en.dir.y, en.dir.z };
 		state["state"] = en.state;
+		state["health"] = en.health;
 
 		if (en.spec->named) {
 			state["name"] = en.name();
@@ -363,6 +364,8 @@ void Entity::loadAll(const char* name) {
 		en.flags = state["flags"];
 
 		en.state = state["state"];
+		en.health = state["health"];
+
 		// in case spec state animations changed across save or mod upgrade
 		en.state = (uint)std::max(0, std::min((int)en.state, (int)en.spec->states.size()-1));
 

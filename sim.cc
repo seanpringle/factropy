@@ -27,6 +27,9 @@ namespace Sim {
 	TimeSeries statsShunt;
 	TimeSeries statsDepot;
 	TimeSeries statsDrone;
+	TimeSeries statsMissile;
+	TimeSeries statsExplosion;
+	TimeSeries statsTurret;
 
 	void reset() {
 		statsElectricityDemand.clear();
@@ -44,6 +47,9 @@ namespace Sim {
 		statsShunt.clear();
 		statsDepot.clear();
 		statsDrone.clear();
+		statsMissile.clear();
+		statsExplosion.clear();
+		statsTurret.clear();
 	}
 
 	void locked(lockCallback cb) {
@@ -85,6 +91,25 @@ namespace Sim {
 		return noise;
 	}
 
+	bool rayCast(Point a, Point b, float clearance, std::function<bool(uint)> collide) {
+
+		Point n = (b-a).normalize();
+
+		for (Point c = a; c.distance(b) > 1.0f; c += n) {
+			if (!Chunk::isLand(c.box().grow(clearance))) {
+				return false;
+			}
+			for (int eid: Entity::intersecting(c.box().grow(clearance))) {
+				if (collide(eid)) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+
 	void update() {
 		statsElectricityDemand.set(tick, Entity::electricityDemand.value);
 		statsElectricityDemand.update(tick);
@@ -106,5 +131,8 @@ namespace Sim {
 		//statsShunt.track(tick, Shunt::tick);
 		statsDepot.track(tick, Depot::tick);
 		statsDrone.track(tick, Drone::tick);
+		statsMissile.track(tick, Missile::tick);
+		statsExplosion.track(tick, Explosion::tick);
+		statsTurret.track(tick, Turret::tick);
 	}
 }

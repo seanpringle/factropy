@@ -2,6 +2,7 @@
 #define _H_spec
 
 struct Spec;
+typedef int Health;
 
 #include <string>
 #include <vector>
@@ -42,6 +43,8 @@ struct Spec {
 	std::string name;
 	std::vector<Part*> parts;
 	std::vector<std::vector<Mat4>> states;
+	Health health;
+
 	Image image;
 	RenderTexture texture;
 	bool align;
@@ -62,6 +65,16 @@ struct Spec {
 
 	float costGreedy;
 	float clearance;
+
+	// the entity explosing
+	bool explodes;
+	std::string explosionSpec;
+
+	// the resulting explosion
+	bool explosion;
+	float explosionRate;
+	float explosionRadius;
+	Health explosionDamage;
 
 	// store
 	bool store;
@@ -117,6 +130,15 @@ struct Spec {
 	std::vector<Point> pipeInputConnections;
 	std::vector<Point> pipeOutputConnections;
 	Liquid pipeCapacity;
+
+	bool turret;
+	float turretRange;
+	int turretCooldown;
+	std::string turretBulletSpec;
+
+	bool missile;
+	float missileSpeed;
+	bool missileBallistic;
 
 	bool processor;
 	uint processorSpeed;
