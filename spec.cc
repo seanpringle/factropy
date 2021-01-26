@@ -30,6 +30,7 @@ Spec::Spec(std::string name) {
 	shunt = false;
 	junk = false;
 	named = false;
+	block = false;
 
 	health = 0;
 	explosionSpec = "";
@@ -162,3 +163,30 @@ std::vector<Point> Spec::relativePoints(const std::vector<Point> points, const M
 	return rpoints;
 }
 
+void Spec::setCornerSupports() {
+	float w = collision.w / 2.0 - 0.5;
+	float d = collision.d / 2.0 - 0.5;
+	float h = collision.h / 2.0 + 0.5;
+
+	if (collision.w < 2 && collision.d < 2) {
+		supportPoints.push_back(Point(0, -h, 0));
+		return;
+	}
+
+	if (collision.w < 2 && collision.d > 1) {
+		supportPoints.push_back(Point(0, -h, -d));
+		supportPoints.push_back(Point(0, -h, +d));
+		return;
+	}
+
+	if (collision.d < 2 && collision.w > 1) {
+		supportPoints.push_back(Point(+w, -h, 0));
+		supportPoints.push_back(Point(-w, -h, 0));
+		return;
+	}
+
+	supportPoints.push_back(Point(+w, -h, -d));
+	supportPoints.push_back(Point(+w, -h, +d));
+	supportPoints.push_back(Point(-w, -h, -d));
+	supportPoints.push_back(Point(-w, -h, +d));
+}

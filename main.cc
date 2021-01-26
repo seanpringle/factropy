@@ -384,6 +384,7 @@ int main(int argc, char const *argv[]) {
 
 	Spec* spec = new Spec("provider-container");
 	spec->collision = { w: 2, h: 2, d: 5 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x990000ff)->gloss(16),
 		(new PartSpinner(thingFan, 4))->paint(0xccccccff)->translate(0,1.1,0)->gloss(32),
@@ -400,6 +401,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("requester-container");
 	spec->collision = { w: 2, h: 2, d: 5 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x0044ccff)->gloss(16),
 	};
@@ -416,6 +418,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("buffer-container");
 	spec->collision = { w: 2, h: 2, d: 5 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x006600ff)->gloss(16),
 	};
@@ -441,6 +444,7 @@ int main(int argc, char const *argv[]) {
 	spec->energyConsume = Energy::kW(300);
 	spec->energyDrain = Energy::kW(30);
 	spec->collision = { w: 6, h: 3, d: 6 };
+	spec->setCornerSupports();
 	spec->health = 10;
 	spec->pipeInputConnections = {
 		Point(3.0f, -1.0f, 1.5f).transform(Mat4::rotateY(DEG2RAD*0)),
@@ -515,6 +519,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("furnace");
 	spec->collision = { w: 4, h: 4, d: 4 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/furnace-hd.stl", "models/furnace-ld.stl")))->paint(0xcc6600ff),
 		(new Part(Thing("models/furnace-fire-hd.stl", "models/furnace-fire-ld.stl")))->paint(0x000000ff),
@@ -578,6 +583,7 @@ int main(int argc, char const *argv[]) {
 	spec->energyConsume = Energy::kW(100);
 	spec->energyDrain = Energy::kW(10);
 	spec->collision = { w: 5, h: 5, d: 10 };
+	spec->setCornerSupports();
 	spec->health = 10;
 	spec->parts = {
 		(new Part(thingMiner))->paint(0xB7410Eff),
@@ -655,6 +661,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("loader");
 	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->setCornerSupports();
 	spec->rotate = true;
 	spec->belt = true;
 	spec->loader = true;
@@ -671,6 +678,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("fluid-tank");
 	spec->pipe = true;
 	spec->collision = { w: 5, h: 3, d: 5 };
+	spec->setCornerSupports();
 	spec->pipeConnections = {Point::North*2.5f+Point::Down, Point::South*2.5f+Point::Down, Point::East*2.5f+Point::Down, Point::West*2.5f+Point::Down};
 	spec->pipeCapacity = Liquid::l(50000);
 	spec->health = 10;
@@ -735,6 +743,7 @@ int main(int argc, char const *argv[]) {
 
 		spec = new Spec(name);
 		spec->collision = { w: 2, h: 1, d: 2 };
+		spec->setCornerSupports();
 		spec->health = 100;
 		spec->pivot = true;
 		spec->junk = true;
@@ -775,6 +784,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("tree1");
 	spec->collision = { w: 2, h: 5, d: 2 };
+	spec->setCornerSupports();
 	spec->pivot = true;
 	spec->junk = true;
 	spec->health = 10;
@@ -789,6 +799,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("tree2");
 	spec->collision = { w: 2, h: 6, d: 2 };
+	spec->setCornerSupports();
 	spec->pivot = true;
 	spec->junk = true;
 	spec->health = 10;
@@ -826,6 +837,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("truck-engineer");
 	spec->collision = { w: 2, h: 2, d: 3 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xff6600ff)->translate(0,0.3,0),
 		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,-1),
@@ -864,6 +876,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("truck-hauler");
 	spec->collision = { w: 2, h: 2, d: 3 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xffcc00ff)->translate(0,0.3,0),
 		Spec::byName("truck-engineer")->parts[1],
@@ -894,6 +907,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("truck-stop");
 	spec->health = 10;
 	spec->collision = { w: 3, h: 0.1, d: 3 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/truck-stop.stl")))->paint(0x662222ff),
 	};
@@ -922,6 +936,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("arm");
 	spec->health = 10;
 	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->setCornerSupports();
 	spec->arm = true;
 	spec->armOffset = 1.0f;
 	spec->armSpeed = 1.0f/60.0f;
@@ -1013,6 +1028,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("long-arm");
 	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->setCornerSupports();
 	spec->arm = true;
 	spec->armOffset = 2.0f;
 	spec->armSpeed =1.0f/60.0f;
@@ -1119,6 +1135,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("lift");
 	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->setCornerSupports();
 	spec->lift = true;
 	spec->rotate = true;
 	spec->health = 10;
@@ -1161,6 +1178,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("utility-pole");
 	spec->collision = { w: 1, h: 6, d: 1 };
+	spec->setCornerSupports();
 	spec->electrical = { area: { w: 7.1, d: 7.1 }, rate: Energy::kW(-10) };
 	spec->rotate = true;
 	spec->health = 10;
@@ -1172,6 +1190,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("boiler");
 	spec->collision = { w: 3, h: 2, d: 2 };
+	spec->setCornerSupports();
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->pipeConnections = {
@@ -1214,6 +1233,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("steam-engine");
 	spec->collision = { w: 4, h: 4, d: 5 };
+	spec->setCornerSupports();
 	spec->electrical = { area: { w: 5, d: 6 }, rate: Energy::MW(1) };
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
@@ -1257,6 +1277,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("turret");
 	spec->health = 100;
 	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/turret-chassis.stl")))->paint(0x51412dff)->translate(0,-0.5,0),
 		(new Part(Thing("models/turret-dome.stl")))->paint(0x0044ccff)->translate(0,-0.5,0)->pivots(),
@@ -1320,6 +1341,7 @@ int main(int argc, char const *argv[]) {
 	spec->energyConsume = Energy::MW(10);
 	spec->energyDrain = Energy::kW(100);
 	spec->collision = { w: 8, h: 8, d: 8 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/teleporter-base-hd.stl")))->paint(0x0044ccff)->translate(0,-2.5,0),
 		(new Part(Thing("models/teleporter-ring1-hd.stl")))->paint(0xd4af37ff)->gloss(64),
@@ -1366,8 +1388,10 @@ int main(int argc, char const *argv[]) {
 	recipe->parts = Item::byName("copper-ingot")->parts;
 
 	spec = new Spec("block");
+	spec->block = true;
 	spec->health = 100;
 	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/block-hd.stl", "models/block-ld.stl")))->paint(0x666666ff)->gloss(16),
 	};
@@ -1376,6 +1400,7 @@ int main(int argc, char const *argv[]) {
 	spec->health = 10;
 	spec->projector = true;
 	spec->collision = { w: 1, h: 0.1, d: 1 };
+	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/projector.stl")))->paint(0x666666ff),
 		(new PartSmoke(1000, 100, 0.0025, 0.25f, 0.05f, 0.005f, 0.1f, 0.99f, 5, 10))->paint(0xeeeeeeff),
@@ -1767,21 +1792,25 @@ int main(int argc, char const *argv[]) {
 				});
 			}
 
-			if (camera->mouse.left.clicked && camera->placing && !IsKeyDown(KEY_LEFT_SHIFT)) {
+			if (camera->mouse.left.down && camera->placing) {
+				bool force = IsKeyDown(KEY_LEFT_SHIFT);
 				Sim::locked([&]() {
-					if (camera->placing->fits()) {
+					if (force || camera->placing->fits()) {
 						for (uint i = 0; i < camera->placing->entities.size(); i++) {
 							auto te = camera->placing->entities[i];
-							Entity::create(Entity::next(), te->spec)
-								.construct()
-								.look(te->dir)
-								.move(camera->placing->position + camera->placing->offsets[i]);
+							// Plan will fit over existing entities in the right positions, but don't double up
+							if (Entity::fits(te->spec, te->pos, te->dir)) {
+								Entity::create(Entity::next(), te->spec)
+									.construct()
+									.look(te->dir)
+									.move(camera->placing->position + camera->placing->offsets[i]);
+							}
 						}
 					}
 				});
 			}
 
-			if (camera->mouse.left.clicked && !camera->placing && camera->hovering && !IsKeyDown(KEY_LEFT_SHIFT)) {
+			if (camera->mouse.left.clicked && !camera->placing && camera->hovering) {
 				camera->popup = camera->entityPopup;
 				Sim::locked([&]() {
 					camera->entityPopup->useEntity(camera->hovering->id);

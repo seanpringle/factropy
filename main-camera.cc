@@ -174,7 +174,7 @@ void MainCamera::updateMouseState() {
 
 	if (mouse.left.dragged) {
 		selection = {(float)mouse.left.downAt.x, (float)mouse.left.downAt.y, (float)mouse.left.drag.x, (float)mouse.left.drag.y};
-		selecting = std::abs(selection.width) > 5 && std::abs(selection.height) > 5;
+		selecting = !placing && std::abs(selection.width) > 5 && std::abs(selection.height) > 5;
 	}
 
 	if (selecting && mouse.left.clicked) {
@@ -710,6 +710,12 @@ void MainCamera::draw() {
 					if (te->spec->pipeOutputConnections.size()) {
 						for (Point p: te->spec->relativePoints(te->spec->pipeOutputConnections, te->dir.rotation(), te->pos)) {
 							DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
+						}
+					}
+
+					if (te->spec->supportPoints.size()) {
+						for (Point p: te->spec->relativePoints(te->spec->supportPoints, te->dir.rotation(), te->pos)) {
+							DrawCube(p, 0.25f, 0.25f, 0.25f, GOLD);
 						}
 					}
 				}

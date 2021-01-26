@@ -52,9 +52,73 @@ void Plan::floor(float level) {
 bool Plan::fits() {
 	for (uint i = 0; i < entities.size(); i++) {
 		auto te = entities[i];
-		if (!Entity::fits(te->spec, te->pos, te->dir)) {
+		if (!Entity::fits(te->spec, te->pos, te->dir) && !entityFits(te->spec, te->pos, te->dir)) {
 			return false;
 		}
 	}
+	return true;
+}
+
+bool Plan::entityFits(Spec *spec, Point pos, Point dir) {
+	Box bounds = spec->box(pos, dir).shrink(0.1);
+
+	switch (spec->place) {
+		case Spec::Land: {
+
+			if (spec->supportPoints.size() > 0) {
+				for (auto p: spec->relativePoints(spec->supportPoints, dir.rotation(), pos)) {
+					bool supported = p.y < 0 && p.y > -1;
+
+					if (!supported) {
+						for (auto bid: Entity::intersecting(p.box().grow(0.1))) {
+							Entity& eb = Entity::get(bid);
+							if (eb.spec->block) {
+								supported = true;
+								break;
+							}
+						}
+					}
+
+					if (!supported) {
+						for (auto eb: entities) {
+							if (eb->spec->block && eb->box().intersects(p.box().grow(0.1))) {
+								supported = true;
+								break;
+							}
+						}
+					}
+
+					if (!supported) {
+						return false;
+					}
+				}
+			}
+
+			if (!Chunk::isLand(bounds)) {
+				return false;
+			}
+			break;
+		}
+		case Spec::Water: {
+			if (!Chunk::isWater(bounds)) {
+				return false;
+			}
+			break;
+		}
+		case Spec::Hill: {
+			if (!Chunk::isHill(bounds)) {
+				return false;
+			}
+			break;
+		}
+	}
+
+	for (auto sid: Entity::intersecting(bounds)) {
+		Entity& es = Entity::get(sid);
+		if (es.spec != spec) return false;
+		if (es.pos != pos) return false;
+		if (es.dir != dir) return false;
+	}
+
 	return true;
 }

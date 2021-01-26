@@ -57,6 +57,7 @@ struct Spec {
 	bool rotate;
 	bool junk;
 	bool named;
+	bool block;
 
 	Volume collision;
 	EnergyUser electrical;
@@ -140,6 +141,8 @@ struct Spec {
 	float missileSpeed;
 	bool missileBallistic;
 
+	std::vector<Point> supportPoints;
+
 	bool processor;
 	uint processorSpeed;
 	uint processorMarkStack;
@@ -152,6 +155,7 @@ struct Spec {
 	Point aligned(Point p, Point dir);
 	Box box(Point pos, Point dir);
 	bool hasStore();
+	void setCornerSupports();
 
 	static std::vector<Point> relativePoints(const std::vector<Point> points, const Matrix rotation, const Point position);
 };

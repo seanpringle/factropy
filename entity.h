@@ -184,6 +184,7 @@ struct GuiEntity {
 
 	Box box();
 	Box miningBox();
+	Box supportBox();
 	Point ground();
 	void updateTransform();
 	Mat4 partTransform(Part* part);

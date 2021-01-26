@@ -244,8 +244,30 @@ Entity& Entity::get(uint id) {
 
 bool Entity::fits(Spec *spec, Point pos, Point dir) {
 	Box bounds = spec->box(pos, dir).shrink(0.1);
+
 	switch (spec->place) {
 		case Spec::Land: {
+
+			if (spec->supportPoints.size() > 0) {
+				for (auto p: spec->relativePoints(spec->supportPoints, dir.rotation(), pos)) {
+					bool supported = p.y < 0 && p.y > -1;
+
+					if (!supported) {
+						for (auto bid: intersecting(p.box().grow(0.1))) {
+							Entity& eb = get(bid);
+							if (eb.spec->block) {
+								supported = true;
+								break;
+							}
+						}
+					}
+
+					if (!supported) {
+						return false;
+					}
+				}
+			}
+
 			if (!Chunk::isLand(bounds)) {
 				return false;
 			}
@@ -264,10 +286,8 @@ bool Entity::fits(Spec *spec, Point pos, Point dir) {
 			break;
 		}
 	}
-	if (intersecting(bounds).size() > 0) {
-		return false;
-	}
-	return true;
+
+	return intersecting(bounds).size() == 0;
 }
 
 std::unordered_set<uint> Entity::intersecting(Box box) {
