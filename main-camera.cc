@@ -54,17 +54,6 @@ MainCamera::MainCamera(Point pos, Point dir) {
 	placing = NULL;
 	directing = NULL;
 
-	popup = NULL;
-	buildPopup = NULL;
-	entityPopup = NULL;
-	recipePopup = NULL;
-	popupFocused = false;
-	worldFocused = true;
-
-	info = NULL;
-	entityInfo = NULL;
-	ghostInfo = NULL;
-
 	buildLevel = 0.0f;
 
 	statsUpdate.clear();
@@ -159,9 +148,6 @@ void MainCamera::updateMouseState() {
 		button->released = !button->down && button->changed;
 		button->clicked = button->released && !button->dragged;
 	}
-
-	popupFocused = popup ? popup->contains(mouse.x, mouse.y): false;
-	worldFocused = !popupFocused;
 
 	if (mouse.right.down) {
 		mouse.rH += speedH * (float)mouse.dx;
@@ -312,10 +298,6 @@ void MainCamera::update() {
 		updateCamera();
 
 		if (IsKeyReleased(KEY_ESCAPE)) {
-			if (popup) {
-				popup = NULL;
-			}
-			else
 			if (placing) {
 				delete placing;
 				placing = NULL;
@@ -327,12 +309,10 @@ void MainCamera::update() {
 			}
 		}
 
-		if (worldFocused) {
-			if (placing) {
-				RayHitInfo hit = GetCollisionRayGround(mouse.ray, buildLevel);
-				placing->move(Point(hit.position));
-				placing->floor(buildLevel);
-			}
+		if (placing) {
+			RayHitInfo hit = GetCollisionRayGround(mouse.ray, buildLevel);
+			placing->move(Point(hit.position));
+			placing->floor(buildLevel);
 		}
 
 		Point target = groundTarget(buildLevel);
@@ -357,38 +337,35 @@ void MainCamera::update() {
 			}
 		});
 
-		if (worldFocused) {
+		for (auto ge: entities) {
+			if (CheckCollisionRayBox(mouse.ray, ge->box().bounds())) {
+				hovered.push_back(ge);
+			}
+		}
 
+		if (hovered.size() > 0) {
+			float distance = 0.0f;
+			for (auto ge: hovered) {
+				float d = ge->pos.distance(position);
+				if (hovering == NULL || d < distance) {
+					hovering = ge;
+					distance = d;
+				}
+			}
+		}
+
+		if (selecting) {
+			Camera3D rcam = raylibCamera();
 			for (auto ge: entities) {
-				if (CheckCollisionRayBox(mouse.ray, ge->box().bounds())) {
-					hovered.push_back(ge);
+				Vector2 at = GetWorldToScreen(ge->pos, rcam);
+				if (at.x > selection.x && at.x < selection.x+selection.width && at.y > selection.y && at.y < selection.y+selection.height) {
+					selected.push_back(ge);
 				}
 			}
+		}
 
-			if (hovered.size() > 0) {
-				float distance = 0.0f;
-				for (auto ge: hovered) {
-					float d = ge->pos.distance(position);
-					if (hovering == NULL || d < distance) {
-						hovering = ge;
-						distance = d;
-					}
-				}
-			}
-
-			if (selecting) {
-				Camera3D rcam = raylibCamera();
-				for (auto ge: entities) {
-					Vector2 at = GetWorldToScreen(ge->pos, rcam);
-					if (at.x > selection.x && at.x < selection.x+selection.width && at.y > selection.y && at.y < selection.y+selection.height) {
-						selected.push_back(ge);
-					}
-				}
-			}
-
-			if (placing) {
-				placing->floor(buildLevel);
-			}
+		if (placing) {
+			placing->floor(buildLevel);
 		}
 	});
 }
@@ -754,14 +731,6 @@ void MainCamera::draw() {
 
 		if (selecting) {
 			DrawRectangleRec(selection, GetColor(0x0000ff99));
-		}
-
-		if (popup) {
-			popup->draw();
-		}
-
-		if (info) {
-			info->draw();
 		}
 	});
 }

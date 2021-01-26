@@ -3,11 +3,12 @@
 #include "imgui.cpp"
 #include "imgui_draw.cpp"
 #include "imgui_widgets.cpp"
+#include "imgui_tables.cpp"
 #include "imgui_impl_glfw.cpp"
 #include "imgui_impl_opengl3.cpp"
 
 #include "implot.cpp"
-//#include "implot_items.cpp"
+#include "implot_items.cpp"
 
 #include <string>
 
@@ -35,4 +36,11 @@ namespace ImGui {
 		ProgressBar(n, ImVec2(-1,0), "");
 		if (overflow) ImGui::PopStyleColor();
 	}
+
+	bool InputIntClamp(const char* label, int* v, int low, int high, int step, int step_fast) {
+		bool f = InputInt(label, v, step, step_fast);
+		if (f) *v = std::max(low, std::min(*v, high));
+		return f;
+	}
+
 }

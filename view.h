@@ -1,5 +1,4 @@
-#ifndef _H_view
-#define _H_view
+#pragma once
 
 struct View;
 struct SiteCamera;
@@ -93,21 +92,7 @@ struct MainCamera : View {
 	std::vector<GuiEntity*> hovered;
 	std::vector<GuiEntity*> selected;
 
-	bool worldFocused;
-
 	float buildLevel;
-
-	Panel* popup;
-	BuildPopup* buildPopup;
-	EntityPopup* entityPopup;
-	RecipePopup* recipePopup;
-	ItemPopup* itemPopup;
-	StatsPopup* statsPopup;
-	bool popupFocused;
-
-	Panel* info;
-	EntityInfo *entityInfo;
-	GhostInfo *ghostInfo;
 
 	TimeSeries statsUpdate;
 	TimeSeries statsDraw;
@@ -126,4 +111,3 @@ struct MainCamera : View {
 	void build(Spec*);
 };
 
-#endif

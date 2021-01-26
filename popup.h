@@ -1,31 +1,54 @@
-#ifndef _H_popup
-#define _H_popup
+#pragma once
+
+#include "view.h"
 
 struct Popup {
-	Popup();
+	MainCamera* camera = nullptr;
+	bool visible = false;
+	Popup(MainCamera* c);
 	virtual ~Popup();
 	virtual void draw();
+	void show(bool state = true);
 	void center();
 };
 
+struct MessagePopup : Popup {
+	std::string text;
+	MessagePopup(MainCamera* c);
+	~MessagePopup();
+	void draw();
+};
+
 struct StatsPopup2 : Popup {
-	StatsPopup2();
-	virtual ~StatsPopup2();
-	virtual void draw();
+	StatsPopup2(MainCamera* c);
+	~StatsPopup2();
+	void draw();
 };
 
 struct WaypointsPopup : Popup {
-	uint eid;
-	WaypointsPopup();
-	virtual ~WaypointsPopup();
-	virtual void draw();
+	uint eid = 0;
+	WaypointsPopup(MainCamera* c);
+	~WaypointsPopup();
+	void draw();
 	void useEntity(uint eid);
 };
 
 struct TechPopup : Popup {
-	TechPopup();
-	virtual ~TechPopup();
-	virtual void draw();
+	TechPopup(MainCamera* c);
+	~TechPopup();
+	void draw();
 };
 
-#endif
+struct BuildPopup2 : Popup {
+	BuildPopup2(MainCamera* c);
+	~BuildPopup2();
+	void draw();
+};
+
+struct EntityPopup2 : Popup {
+	uint eid = 0;
+	EntityPopup2(MainCamera* c);
+	~EntityPopup2();
+	void draw();
+	void useEntity(uint eid);
+};

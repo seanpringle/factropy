@@ -14,7 +14,6 @@
 #include "imgui/implot.h"
 
 #include "common.h"
-#include "panel.h"
 #include "mod.h"
 #include "sim.h"
 #include "energy.h"
@@ -1425,16 +1424,15 @@ int main(int argc, char const *argv[]) {
 	Chunk::material.shader = shader;
 	Chunk::material.maps[MAP_DIFFUSE].color = WHITE;
 
-	Panels::init();
-	camera->buildPopup = new BuildPopup(camera, 814, 800);
-	camera->entityPopup = new EntityPopup(camera, 800, 800);
-	camera->recipePopup = new RecipePopup(camera, 800, 800);
-	camera->itemPopup = new ItemPopup(camera, 800, 800);
-	camera->statsPopup = new StatsPopup(camera, 800, 800);
+	Popup* popup = NULL;
+	StatsPopup2* statsPopup = new StatsPopup2(camera);
+	WaypointsPopup* waypointsPopup = new WaypointsPopup(camera);
+	TechPopup* techPopup = new TechPopup(camera);
+	BuildPopup2* buildPopup = new BuildPopup2(camera);
+	EntityPopup2* entityPopup = new EntityPopup2(camera);
 
-	camera->info = NULL;
-	camera->entityInfo = new EntityInfo(camera, 300, 300);
-	camera->ghostInfo = new GhostInfo(camera, 300, 300);
+	Mod* mod = new Mod("base");
+	mod->load();
 
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
@@ -1451,21 +1449,22 @@ int main(int argc, char const *argv[]) {
 	//auto font =
 	imGuiIO.Fonts->AddFontFromFileTTF("font/Roboto-Regular.ttf", 24);
 
-	Popup* popup = NULL;
-	StatsPopup2* statsPopup = new StatsPopup2();
-	WaypointsPopup* waypointsPopup = new WaypointsPopup();
-	TechPopup* techPopup = new TechPopup();
+	imGuiIO.IniFilename = nullptr;
 
-	Mod* mod = new Mod("base");
-	mod->load();
+	//imGuiStyle.ScaleAllSizes(1.5f);
+	//imGuiIO.FontGlobalScale = 1.5f;
 
-	MessagePopup *status = new MessagePopup(800, 150);
+	MessagePopup *status = new MessagePopup(camera);
 	status->text = std::string(quotes[(uint)std::time(NULL)%(sizeof(quotes)/sizeof(char*))]);
 
 	std::function<void(void)> loadingScreen = [&]() {
 		ensure(!WindowShouldClose());
 
 		BeginDrawing();
+
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
 
 			ClearBackground(BLACK);
 
@@ -1506,8 +1505,12 @@ int main(int argc, char const *argv[]) {
 				advance();
 			}
 
-			status->update();
 			status->draw();
+
+			rlglDraw();
+
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		EndDrawing();
 	};
@@ -1681,9 +1684,7 @@ int main(int argc, char const *argv[]) {
 		camera->update();
 		camSec->update();
 
-		camera->worldFocused = !camera->popupFocused && !ImGui::GetIO().WantCaptureMouse && !ImGui::GetIO().WantCaptureKeyboard;
-
-		if (camera->worldFocused) {
+		if (true) {
 
 			if (IsKeyReleased(KEY_ONE) && camera->hovering && camera->hovering->spec->belt) {
 				Sim::locked([&]() {
@@ -1693,16 +1694,22 @@ int main(int argc, char const *argv[]) {
 			}
 
 			if (IsKeyReleased(KEY_F1)) {
+				if (popup) popup->show(false);
 				popup = statsPopup;
+				popup->show(true);
 			}
 
 			if (IsKeyReleased(KEY_F2) && camera->hovering) {
 				waypointsPopup->useEntity(camera->hovering->id);
+				if (popup) popup->show(false);
 				popup = waypointsPopup;
+				popup->show(true);
 			}
 
 			if (IsKeyReleased(KEY_F3)) {
+				if (popup) popup->show(false);
 				popup = techPopup;
+				popup->show(true);
 			}
 
 			if (IsKeyReleased(KEY_F9)) {
@@ -1769,7 +1776,18 @@ int main(int argc, char const *argv[]) {
 			}
 
 			if (IsKeyReleased(KEY_E)) {
-				camera->popup = (camera->popup && camera->popup == camera->buildPopup) ? NULL: camera->buildPopup;
+				bool wasBuildPopup = popup == buildPopup;
+				bool wasVisible = popup && popup->visible;
+
+				if (popup) {
+					popup->show(false);
+					popup = nullptr;
+				}
+
+				if (!wasBuildPopup || (wasBuildPopup && !wasVisible)) {
+					popup = buildPopup;
+					popup->show(true);
+				}
 			}
 
 			if (IsKeyReleased(KEY_G)) {
@@ -1811,10 +1829,10 @@ int main(int argc, char const *argv[]) {
 			}
 
 			if (camera->mouse.left.clicked && !camera->placing && camera->hovering) {
-				camera->popup = camera->entityPopup;
-				Sim::locked([&]() {
-					camera->entityPopup->useEntity(camera->hovering->id);
-				});
+				if (popup) popup->show(false);
+				popup = entityPopup;
+				popup->show(true);
+				entityPopup->useEntity(camera->hovering->id);
 			}
 
 			if (IsKeyReleased(KEY_DELETE)) {
@@ -1839,10 +1857,6 @@ int main(int argc, char const *argv[]) {
 			}
 
 			if (IsKeyReleased(KEY_ESCAPE)) {
-				if (camera->popup) {
-					camera->popup = NULL;
-				}
-				else
 				if (popup) {
 					popup = NULL;
 				}
@@ -1850,34 +1864,23 @@ int main(int argc, char const *argv[]) {
 				if (camera->placing) {
 					delete camera->placing;
 					camera->placing = NULL;
-					camera->ghostInfo->useGhost(NULL);
 				}
 			}
 
 			if (IsKeyReleased(KEY_F5)) {
 				Sim::save("autosave");
 			}
-
-			camera->info = NULL;
-		}
-
-		if (camera->popup) {
-			camera->popup->update();
-		}
-
-		if (camera->info) {
-			camera->info->update();
 		}
 
 		for (auto part: Part::all) {
 			part->update();
 		}
 
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-
 		BeginDrawing();
+
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
 
 			Point cameraTarget = camSec->pos;
 			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
@@ -2006,7 +2009,7 @@ int main(int argc, char const *argv[]) {
 
 			ImGui::End();
 
-			if (popup) {
+			if (popup && popup->visible) {
 				popup->draw();
 			}
 
@@ -2042,10 +2045,6 @@ int main(int argc, char const *argv[]) {
 	}
 
 	delete mod;
-	delete camera->buildPopup;
-	delete camera->entityPopup;
-	delete camera->recipePopup;
-	delete camera->itemPopup;
 	delete camera;
 	delete camSec;
 
