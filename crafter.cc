@@ -125,23 +125,25 @@ void Crafter::update() {
 		}
 
 		bool fluidsReady = true;
-		std::unordered_set<uint> inputPipes;
-		std::unordered_set<uint> outputPipes;
+		std::vector<uint> inputPipes;
+		std::vector<uint> outputPipes;
 
 		if (recipe->inputFluids.size()) {
 			fluidsReady = false;
 
 			for (auto point: pipeConnections()) {
 				for (auto pid: Pipe::servicing(point.box())) {
-					inputPipes.insert(pid);
+					inputPipes.push_back(pid);
 				}
 			}
 
 			for (auto point: pipeInputConnections()) {
 				for (auto pid: Pipe::servicing(point.box())) {
-					inputPipes.insert(pid);
+					inputPipes.push_back(pid);
 				}
 			}
+
+			deduplicate(inputPipes);
 
 			for (auto [fid,count]: recipe->inputFluids) {
 				for (uint pid: inputPipes) {
@@ -171,9 +173,11 @@ void Crafter::update() {
 
 			for (auto point: pipeOutputConnections()) {
 				for (auto pid: Pipe::servicing(point.box())) {
-					outputPipes.insert(pid);
+					outputPipes.push_back(pid);
 				}
 			}
+
+			deduplicate(outputPipes);
 
 			for (auto [fid,count]: recipe->outputFluids) {
 				for (uint pid: outputPipes) {
@@ -233,12 +237,14 @@ void Crafter::update() {
 
 		if (recipe->outputFluids.size()) {
 
-			std::unordered_set<uint> outputPipes;
+			std::vector<uint> outputPipes;
 			for (auto point: pipeOutputConnections()) {
 				for (auto pid: Pipe::servicing(point.box())) {
-					outputPipes.insert(pid);
+					outputPipes.push_back(pid);
 				}
 			}
+
+			deduplicate(outputPipes);
 
 			for (auto [fid,count]: recipe->outputFluids) {
 				for (uint pid: outputPipes) {

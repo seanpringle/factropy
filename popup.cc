@@ -116,12 +116,12 @@ void WaypointsPopup::draw() {
 
 			int thisCon = 0, dropCon = -1;
 			for (auto condition: waypoint->conditions) {
-				if_is<Vehicle::DepartInactivity>(condition, [&](Vehicle::DepartInactivity* con) {
+				if_is<Vehicle::DepartInactivity>(condition, [&](auto con) {
 					ImGui::Print(fmt("inactivity %d", con->seconds));
 					ImGui::InputInt(fmtc("seconds##%d", n++), &con->seconds);
 				});
 
-				if_is<Vehicle::DepartItem>(condition, [&](Vehicle::DepartItem* con) {
+				if_is<Vehicle::DepartItem>(condition, [&](auto con) {
 					ImGui::Print(fmt("item %d,%d,%d", con->iid, con->op, con->count));
 					if (ImGui::BeginCombo(fmtc("combo##%d", n++), (con->iid ? Item::get(con->iid)->name.c_str(): "item"), ImGuiComboFlags_None)) {
 						for (auto [iid,item]: Item::ids) {

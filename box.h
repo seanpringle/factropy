@@ -15,18 +15,19 @@ struct Box {
 	Box(Point p, Volume v);
 	Box(std::initializer_list<float>);
 
-	Point centroid();
-	BoundingBox bounds();
-	Box translate(const Point p);
-	Box translate(float x, float y, float z);
-	Box grow(const Point p);
-	Box grow(float n);
-	Box grow(float x, float y, float z);
-	Box shrink(const Point p);
-	Box shrink(float n);
-	Box shrink(float x, float y, float z);
-	bool intersects(Box b);
-	bool contains(Point p);
+	Point centroid() const;
+	BoundingBox bounds() const;
+	Box translate(const Point p) const;
+	Box translate(float x, float y, float z) const;
+	Box grow(const Point p) const;
+	Box grow(float n) const;
+	Box grow(float x, float y, float z) const;
+	Box shrink(const Point p) const;
+	Box shrink(float n) const;
+	Box shrink(float x, float y, float z) const;
+	bool intersects(Box b) const;
+	bool contains(Point p) const;
+	float volume() const;
 };
 
 #endif

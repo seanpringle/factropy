@@ -88,6 +88,7 @@ Spec::Spec(std::string name) {
 
 	turret = false;
 	turretRange = 0;
+	turretPivot = 0;
 	turretCooldown = 0;
 	turretBulletSpec = "";
 

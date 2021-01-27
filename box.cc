@@ -29,50 +29,50 @@ Box::Box(std::initializer_list<float> l) {
 	d = *i++;
 }
 
-Point Box::centroid() {
+Point Box::centroid() const {
 	return (Point){x, y, z};
 }
 
-BoundingBox Box::bounds() {
+BoundingBox Box::bounds() const {
 	return (BoundingBox){
 		(Vector3){x - w/2, y - h/2, z - d/2},
 		(Vector3){x + w/2, y + h/2, z + d/2},
 	};
 }
 
-Box Box::translate(Point p) {
+Box Box::translate(Point p) const {
 	return (Box){x + p.x, y + p.y, z + p.z, w, h, d};
 }
 
-Box Box::translate(float xx, float yy, float zz) {
+Box Box::translate(float xx, float yy, float zz) const {
 	return translate(Point(xx,yy,zz));
 }
 
-Box Box::grow(Point p) {
+Box Box::grow(Point p) const {
 	return (Box){x, y, z, w + p.x*2, h + p.y*2, d + p.z*2};
 }
 
-Box Box::grow(float n) {
+Box Box::grow(float n) const {
 	return grow(Point(n,n,n));
 }
 
-Box Box::grow(float xx, float yy, float zz) {
+Box Box::grow(float xx, float yy, float zz) const {
 	return grow(Point(xx,yy,zz));
 }
 
-Box Box::shrink(Point p) {
+Box Box::shrink(Point p) const {
 	return grow((Point){-p.x, -p.y, -p.z});
 }
 
-Box Box::shrink(float n) {
+Box Box::shrink(float n) const {
 	return shrink(Point(n,n,n));
 }
 
-Box Box::shrink(float xx, float yy, float zz) {
+Box Box::shrink(float xx, float yy, float zz) const {
 	return shrink(Point(xx,yy,zz));
 }
 
-bool Box::intersects(Box a) {
+bool Box::intersects(Box a) const {
 	float xMin = x-w/2.0f;
 	float yMin = y-h/2.0f;
 	float zMin = z-d/2.0f;
@@ -90,7 +90,7 @@ bool Box::intersects(Box a) {
 	return (axMin <= xMax && axMax >= xMin) && (ayMin <= yMax && ayMax >= yMin) && (azMin <= zMax && azMax >= zMin);
 }
 
-bool Box::contains(Point p) {
+bool Box::contains(Point p) const {
 	float xMin = x-w/2.0f - 0.000001f;
 	float yMin = y-h/2.0f - 0.000001f;
 	float zMin = z-d/2.0f - 0.000001f;
@@ -103,4 +103,8 @@ bool Box::contains(Point p) {
 	bool zc = zMin < p.z && zMax > p.z;
 
 	return xc && yc && zc;
+}
+
+float Box::volume() const {
+	return w*d*h;
 }

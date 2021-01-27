@@ -1286,6 +1286,7 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = true;
 	spec->turret = true;
 	spec->turretRange = 50;
+	spec->turretPivot = 0.1;
 	spec->turretCooldown = 10;
 	spec->turretBulletSpec = "bullet";
 

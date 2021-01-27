@@ -44,10 +44,9 @@ std::vector<Point> Pipe::pipeConnections() {
 	return en.spec->relativePoints(en.spec->pipeConnections, en.dir.rotation(), en.pos);
 }
 
-std::unordered_set<uint> Pipe::servicing(Box box) {
-	std::unordered_set<uint> hits;
+std::vector<uint> Pipe::servicing(Box box) {
+	std::vector<uint> hits;
 	for (uint id: Entity::intersecting(box.grow(0.5f))) {
-		if (hits.count(id)) continue;
 		Entity& en = Entity::get(id);
 		if (!en.spec->pipe) continue;
 		Pipe& pipe = en.pipe();
@@ -56,10 +55,11 @@ std::unordered_set<uint> Pipe::servicing(Box box) {
 
 		for (Point point: pipe.pipeConnections()) {
 			if (box.intersects(point.box().grow(0.1f))) {
-				hits.insert(pipe.id);
+				hits.push_back(pipe.id);
 			}
 		}
 	}
+	deduplicate(hits);
 	return hits;
 }
 

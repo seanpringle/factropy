@@ -8,7 +8,6 @@ struct PipeNetwork;
 #include "fluid.h"
 #include "entity.h"
 #include <set>
-#include <unordered_set>
 
 struct Pipe {
 	static void reset();
@@ -20,7 +19,7 @@ struct Pipe {
 	static Pipe& create(uint id);
 	static Pipe& get(uint id);
 
-	static std::unordered_set<uint> servicing(Box box);
+	static std::vector<uint> servicing(Box box);
 
 	uint id;
 	PipeNetwork* network;

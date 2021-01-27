@@ -41,11 +41,13 @@ void Turret::update() {
 	}
 
 	if (!tid) {
+		float tdist = 0.0f;
 		for (auto rid: Entity::enemiesInRange(en.pos, en.spec->turretRange)) {
-			Entity& te = Entity::get(rid);
-			if (Sim::rayCast(en.pos, te.pos, 0.25, [&](uint cid) { return cid != id && cid != rid; })) {
+			Entity& ren = Entity::get(rid);
+			if (tid && ren.pos.distance(en.pos) > tdist) continue;
+			if (Sim::rayCast(en.pos, ren.pos, 0.25, [&](uint cid) { return cid != id && cid != rid; })) {
 				tid = rid;
-				break;
+				tdist = ren.pos.distance(en.pos);
 			}
 		}
 	}
@@ -73,7 +75,7 @@ void Turret::update() {
 bool Turret::aimAt(Point p) {
 	Entity& en = Entity::get(id);
 	p = (p-en.pos).normalize();
-	aim = aim.pivot(p, 0.03);
+	aim = aim.pivot(p, en.spec->turretPivot);
 	return aim == p;
 }
 

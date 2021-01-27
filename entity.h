@@ -29,7 +29,7 @@ struct GuiFakeEntity;
 #include "burner.h"
 #include "generator.h"
 #include "turret.h"
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 struct Entity {
@@ -39,8 +39,8 @@ struct Entity {
 	static const uint32_t DECONSTRUCTION = 1<<2;
 
 	static inline std::map<Chunk::XY,std::set<uint>> grid;
-	static inline std::unordered_set<uint> removing;
-	static inline std::unordered_set<uint> exploding;
+	static inline std::set<uint> removing;
+	static inline std::set<uint> exploding;
 
 	static inline float electricityLoad = 0.0f;
 	static inline float electricitySatisfaction = 0.0f;
@@ -68,11 +68,11 @@ struct Entity {
 
 	static bool fits(Spec *spec, Point pos, Point dir);
 
-	static std::unordered_set<uint> intersecting(Box box);
-	static std::unordered_set<uint> intersecting(Point pos, float radius);
+	static std::vector<uint> intersecting(Box box);
+	static std::vector<uint> intersecting(Point pos, float radius);
 	static uint at(Point p);
 
-	static std::unordered_set<uint> enemiesInRange(Point pos, float radius);
+	static std::vector<uint> enemiesInRange(Point pos, float radius);
 
 	uint id;
 	uint32_t flags;

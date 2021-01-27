@@ -57,4 +57,15 @@ void if_is(B* value, std::function<void(T*)> action) {
 
 #define MaxEntity 1000000
 
+template <typename C, typename V>
+bool contains(const C& c, const V& v) {
+  return std::find(c.begin(), c.end(), v) != c.end();
+}
+
+template <typename C>
+void deduplicate(C& c) {
+  std::sort(c.begin(), c.end());
+  c.erase(std::unique(c.begin(), c.end()), c.end());
+}
+
 #endif

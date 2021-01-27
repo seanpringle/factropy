@@ -290,24 +290,25 @@ bool Entity::fits(Spec *spec, Point pos, Point dir) {
 	return intersecting(bounds).size() == 0;
 }
 
-std::unordered_set<uint> Entity::intersecting(Box box) {
-	std::unordered_set<uint> hits;
+std::vector<uint> Entity::intersecting(Box box) {
+	std::vector<uint> hits;
 	for (auto xy: Chunk::walk(box)) {
 		for (uint id: grid[xy]) {
 			if (get(id).box().intersects(box)) {
-				hits.insert(id);
+				hits.push_back(id);
 			}
 		}
 	}
+	deduplicate(hits);
 	return hits;
 }
 
-std::unordered_set<uint> Entity::intersecting(Point pos, float radius) {
-	std::unordered_set<uint> hits;
+std::vector<uint> Entity::intersecting(Point pos, float radius) {
+	std::vector<uint> hits;
 	for (auto id: intersecting(pos.box().grow(radius))) {
 		Entity& en = get(id);
 		if (en.pos.distance(pos) < radius) {
-			hits.insert(id);
+			hits.push_back(id);
 		}
 	}
 	return hits;
@@ -325,8 +326,8 @@ uint Entity::at(Point p) {
 	return 0;
 }
 
-std::unordered_set<uint> Entity::enemiesInRange(Point pos, float radius) {
-	std::unordered_set<uint>hits;
+std::vector<uint> Entity::enemiesInRange(Point pos, float radius) {
+	std::vector<uint>hits;
 	for (auto& pair: Missile::all) {
 		Missile& missile = pair.second;
 		Entity& me = Entity::get(missile.id);
@@ -334,7 +335,7 @@ std::unordered_set<uint> Entity::enemiesInRange(Point pos, float radius) {
 
 		if (me.spec->name == "bullet") continue;
 
-		if (de < radius) hits.insert(me.id);
+		if (de < radius) hits.push_back(me.id);
 	}
 	return hits;
 }
@@ -422,7 +423,7 @@ bool Entity::lookAtPivot(Point o) {
 }
 
 Entity& Entity::index() {
-	unindex();
+	//unindex();
 	for (auto xy: Chunk::walk(box())) {
 		grid[xy].insert(id);
 	}

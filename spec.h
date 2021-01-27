@@ -134,6 +134,7 @@ struct Spec {
 
 	bool turret;
 	float turretRange;
+	float turretPivot;
 	int turretCooldown;
 	std::string turretBulletSpec;
 
