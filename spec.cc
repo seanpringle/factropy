@@ -24,7 +24,6 @@ Spec::Spec(std::string name) {
 	explodes = false;
 	explosion = false;
 	store = false;
-	belt = false;
 	loader = false;
 	lift = false;
 	shunt = false;
@@ -96,12 +95,16 @@ Spec::Spec(std::string name) {
 	missileSpeed = 0;
 	missileBallistic = false;
 
-	processor = false;
-	processorSpeed = 0;
-	processorMarkStack = 0;
-	processorDataStack = 0;
-	processorReturnStack = 0;
-	processorMemory = 0;
+	conveyor = false;
+
+	computer = false;
+	networker = false;
+
+	cycle = nullptr;
+	pipette = nullptr;
+
+	build = true;
+	select = true;
 }
 
 Spec::~Spec() {
@@ -154,6 +157,10 @@ Box Spec::box(Point pos, Point dir) {
 	}
 
 	return {pos.x, pos.y, pos.z, ww, collision.h, dd};
+}
+
+Box Spec::southBox(Point pos) {
+	return {pos.x, pos.y, pos.z, collision.w, collision.h, collision.d};
 }
 
 std::vector<Point> Spec::relativePoints(const std::vector<Point> points, const Matrix rotation, const Point position) {

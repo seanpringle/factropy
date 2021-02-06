@@ -69,6 +69,11 @@ GuiEntity::GuiEntity(uint id) : GuiEntity() {
 	if (spec->turret) {
 		aim = en.turret().aim;
 	}
+
+	if (spec->conveyor) {
+		conveyor.iid = en.conveyor().iid;
+		conveyor.offset = en.conveyor().offset;
+	}
 }
 
 GuiEntity::~GuiEntity() {
@@ -76,6 +81,10 @@ GuiEntity::~GuiEntity() {
 
 Box GuiEntity::box() {
 	return spec->box(pos, dir);
+}
+
+Box GuiEntity::southBox() {
+	return spec->southBox(pos);
 }
 
 Box GuiEntity::miningBox() {
@@ -113,6 +122,24 @@ GuiFakeEntity::GuiFakeEntity(Spec* spec) : GuiEntity() {
 }
 
 GuiFakeEntity::~GuiFakeEntity() {
+}
+
+GuiFakeEntity* GuiFakeEntity::getConfig(Entity& en) {
+	if (en.spec != spec) return this;
+
+	if (en.spec->crafter) {
+		crafter.recipe = en.crafter().recipe;
+	}
+	return this;
+}
+
+GuiFakeEntity* GuiFakeEntity::setConfig(Entity& en) {
+	if (en.spec != spec) return this;
+
+	if (en.spec->crafter) {
+		en.crafter().nextRecipe = crafter.recipe;
+	}
+	return this;
 }
 
 GuiFakeEntity* GuiFakeEntity::move(Point p) {

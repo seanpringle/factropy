@@ -15,6 +15,7 @@ struct Plan {
 	void add(GuiFakeEntity* ge);
 	void move(Point p);
 	void rotate();
+	void cycle();
 	void floor(float level);
 	bool fits();
 	bool entityFits(Spec *spec, Point pos, Point dir);

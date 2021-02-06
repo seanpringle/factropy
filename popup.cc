@@ -14,16 +14,29 @@
 
 Popup::Popup(MainCamera* c) {
 	camera = c;
+	mouseOver = false;
+	visible = false;
 }
 
 Popup::~Popup() {
 }
 
-void Popup::center() {
-	ImGui::SetWindowPos({
-		((float)GetScreenWidth()-ImGui::GetWindowWidth())/2.0f,
-		((float)GetScreenHeight()-ImGui::GetWindowHeight())/2.0f
-	}, ImGuiCond_Always);
+void Popup::center(int w, int h) {
+
+	const ImVec2 size = {
+		(float)w,(float)h
+	};
+
+	const ImVec2 pos = {
+		((float)GetScreenWidth()-size.x)/2.0f,
+		((float)GetScreenHeight()-size.y)/2.0f
+	};
+
+	ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+	ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+
+	Vector2 mouse = GetMousePosition();
+	mouseOver = mouse.x >= pos.x && mouse.x < pos.x+size.x && mouse.y >= pos.y && mouse.y < pos.y+size.y;
 }
 
 void Popup::show(bool state) {
@@ -40,6 +53,7 @@ MessagePopup::~MessagePopup() {
 }
 
 void MessagePopup::draw() {
+	center(1,1);
 	ImGui::Begin("##message", nullptr,
 		ImGuiWindowFlags_AlwaysAutoResize |
 		ImGuiWindowFlags_NoTitleBar |
@@ -47,7 +61,6 @@ void MessagePopup::draw() {
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove
 	);
-	center();
 
 	ImGui::Print(text.c_str());
 
@@ -61,11 +74,10 @@ StatsPopup2::~StatsPopup2() {
 }
 
 void StatsPopup2::draw() {
+	center(1000,600);
 	ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-	ImGui::SetWindowSize({1000.0f,600.0f}, ImGuiCond_Always);
-	center();
 
-	ImPlot::SetNextPlotLimits(0,60,0,1.0f);
+	ImPlot::SetNextPlotLimits(0,60,0,1.0f, ImGuiCond_Always);
 	if (ImPlot::BeginPlot("Electricity")) {
 		std::vector<float> y;
 		for (uint i = 59; i >= 1; i--) {
@@ -100,9 +112,8 @@ void WaypointsPopup::draw() {
 
 		Vehicle& vehicle = Vehicle::get(en.id);
 
+		center(1000,600);
 		ImGui::Begin("Waypoints", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-		ImGui::SetWindowSize({1000.0f,600.0f}, ImGuiCond_Always);
-		center();
 
 		int n = 0;
 		int thisWay = 0, dropWay = -1;
@@ -214,9 +225,9 @@ TechPopup::~TechPopup() {
 }
 
 void TechPopup::draw() {
+	center(1000,600);
 	ImGui::Begin("Tech", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 	ImGui::SetWindowSize({1000.0f,600.0f}, ImGuiCond_Always);
-	center();
 
 	int n = 0;
 	for (auto [name,tech]: Tech::names) {
@@ -241,13 +252,13 @@ BuildPopup2::~BuildPopup2() {
 }
 
 void BuildPopup2::draw() {
+	center(1000,1000);
 	ImGui::Begin("Build", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-	ImGui::SetWindowSize({1000.0f,1000.0f}, ImGuiCond_Always);
-	center();
 
 	int n = 0;
 	for (auto pair: Spec::all) {
 		Spec* spec = pair.second;
+		if (!spec->build) continue;
 
 		if (n%6) ImGui::SameLine();
 		if (ImGui::ImageButton(spec->texture.texture.id,
@@ -287,9 +298,8 @@ void EntityPopup2::draw() {
 
 		Entity &en = Entity::get(eid);
 
+		center(1000,1000);
 		Begin(fmtc("%s###Entity", en.name()), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-		SetWindowSize({1000.0f,1000.0f}, ImGuiCond_Always);
-		center();
 
 		if (en.spec->named) {
 			char name[50]; std::snprintf(name, sizeof(name), "%s", en.name().c_str());
@@ -483,6 +493,10 @@ void EntityPopup2::draw() {
 			for (Stack stack: store.stacks) {
 				if (store.level(stack.iid) != nullptr) continue;
 				Item *item = Item::get(stack.iid);
+
+				int limit = (uint)store.limit().value/item->mass.value;
+				int step  = (int)std::max(1U, (uint)limit/100);
+
 				TableNextRow();
 
 				TableNextColumn();
@@ -496,7 +510,8 @@ void EntityPopup2::draw() {
 
 				TableNextColumn();
 				if (Button("+", ImVec2(-1,0))) {
-					store.levelSet(stack.iid, 0, 0);
+					uint size = stack.size%step ? stack.size+step-(stack.size%step): stack.size;
+					store.levelSet(stack.iid, 0, size);
 				}
 
 				TableNextColumn();

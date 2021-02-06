@@ -2,35 +2,81 @@ use <lib.scad>
 
 module base() {
 	difference() {
-		translate([0,0,1.0-0.05]) box([1.0, 1.0, 0.1]);
-		translate([0,0,1.0]) box([0.9, 1.1, 0.1]);
+		translate([0,0,1000-50]) box([1000, 1000, 100]);
+		translate([0,0,1000]) box([900, 1100, 100]);
 	}
 }
 
 module loaderBase() {
 	difference() {
-		translate([0,0,1.25]) box([1.0, 1.0, 0.7]);
-		translate([0,0,1.25]) box([0.9, 1.1, 0.6]);
+		translate([0,0,1250]) box([1000, 1000, 700]);
+		translate([0,0,1250]) box([900, 1100, 600]);
 	}
 }
 
 module pillar() {
-	translate([0,0,0.45]) box([0.5, 0.5, 0.9]);
+	translate([0,0,450]) box([500, 500, 900]);
 }
 
 module belt() {
-	translate([0,0,0.995]) box([0.85, 1.0, 0.01]);
+	translate([0,0,995]) box([850, 1000, 10]);
 }
 
 module ridge() {
-	translate([0,0.5,1.005]) box([0.8, 0.01, 0.01]);
+	translate([0,0,100005]) box([800, 10, 10]);
 }
 
-//fillet(0.01, $fn=12) base();
+module baseRight() {
+	translate([0,0,1000-50]) union() {
+		translate([500,-500,0]) intersection() {
+			cyl(50, 50, 100);
+			translate([-25,25,0]) box([50, 50, 100]);
+		}
+		intersection() {
+			translate([500,-500,0]) difference() {
+				cyl(1000, 1000, 100);
+				translate([0,0,50]) cyl(950, 950, 100);
+			}
+			box([1000, 1000, 200]);
+		}
+	}
+}
+
+module baseLeft() {
+	mirror([1,0,0]) baseRight();
+}
+
+module beltRight() {
+	translate([0,0,995]) intersection() {
+		translate([500,-500,0]) difference() {
+			cyl(925, 925, 10);
+			cyl( 75,  75, 20);
+		}
+		box([1000, 1000, 200]);
+	}
+}
+
+module beltLeft() {
+	mirror([1,0,0]) beltRight();
+}
+
+//fillet(10, $fn=12) base();
 //base();
-//fillet(0.01, $fn=12) loaderBase();
-loaderBase();
-//fillet(0.01, $fn=12) pillar();
+//fillet(10, $fn=12) loaderBase();
+//loaderBase();
+//fillet(10, $fn=12) pillar();
 //pillar();
 //belt();
 //ridge();
+
+baseRight($fn=72);
+//baseRight($fn=36);
+
+//beltRight($fn=72);
+//beltRight($fn=36);
+
+//baseLeft($fn=72);
+//baseLeft($fn=36);
+
+//beltLeft($fn=72);
+//beltLeft($fn=36);

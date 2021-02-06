@@ -253,6 +253,14 @@ Mat4 Point::rotation() {
 		r = Mat4::rotate(Point::Up, 180.0f*DEG2RAD);
 	}
 	else
+	if (dir == Point::East) {
+		r = Mat4::rotate(Point::Up, 90.0f*DEG2RAD);
+	}
+	else
+	if (dir == Point::West) {
+		r = Mat4::rotate(Point::Up, 270.0f*DEG2RAD);
+	}
+	else
 	if (dir == Point::South) {
 		r = Mat4::identity;
 	}
@@ -263,4 +271,8 @@ Mat4 Point::rotation() {
 	}
 
 	return r;
+}
+
+Mat4 Point::translation() {
+	return Mat4::translate(*this);
 }

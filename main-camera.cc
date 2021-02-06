@@ -41,9 +41,7 @@ namespace {
 
 MainCamera::MainCamera(Point pos, Point dir) {
 	position = pos;
-	nextPosition = pos;
 	direction = dir;
-	nextDirection = dir;
 	up = Point::Up;
 
 	ZERO(mouse);
@@ -71,12 +69,13 @@ MainCamera::~MainCamera() {
 void MainCamera::lookAt(Point p) {
 }
 
-void MainCamera::build(Spec* spec) {
+void MainCamera::build(Spec* spec, Point dir) {
 	delete placing;
 	placing = NULL;
 	if (spec) {
 		placing = new Plan(Point::Zero);
 		auto ge = new GuiFakeEntity(spec);
+		ge->dir = dir;
 		ge->floor(0.0f); // build level applied by plan
 		placing->add(ge);
 	}
@@ -157,53 +156,47 @@ void MainCamera::updateMouseState() {
 	if (mouse.wheel) {
 		mouse.zW += speedW * -(float)mouse.wheel;
 	}
-
-	if (mouse.left.dragged) {
-		selection = {(float)mouse.left.downAt.x, (float)mouse.left.downAt.y, (float)mouse.left.drag.x, (float)mouse.left.drag.y};
-		selecting = !placing && std::abs(selection.width) > 5 && std::abs(selection.height) > 5;
-	}
-
-	if (selecting && mouse.left.clicked) {
-		selection = {0,0,0,0};
-		selecting = false;
-	}
 }
 
 void MainCamera::updateCamera() {
 
+	float pitchAngleMax = 75.0f*DEG2RAD;
+
 	if (IsKeyDown(KEY_W)) {
 		Point ahead = {direction.x, 0, direction.z};
 		position += ahead.normalize();
-		nextPosition = position;
 	}
 
 	if (IsKeyDown(KEY_S)) {
 		Point ahead = {direction.x, 0, direction.z};
 		position -= ahead.normalize();
-		nextPosition = position;
 	}
 
 	if (IsKeyDown(KEY_D)) {
 		Point ahead = {direction.x, 0, direction.z};
 		Point left = ahead.transform(Mat4::rotate(up, -90*DEG2RAD));
 		position += left.normalize();
-		nextPosition = position;
 	}
 
 	if (IsKeyDown(KEY_A)) {
 		Point ahead = {direction.x, 0, direction.z};
 		Point left = ahead.transform(Mat4::rotate(up, 90*DEG2RAD));
 		position += left.normalize();
-		nextPosition = position;
 	}
 
-	if (position != nextPosition) {
-		position += (nextPosition - position) * 0.025f;
-	}
+	if (IsKeyReleased(KEY_O)) {
+		Point target = groundTarget(buildLevel);
+		float radius = (position - target).length();
 
-	if (direction != nextDirection) {
-		direction += (nextDirection - direction) * 0.25f;
-		direction = direction.normalize();
+		if (position.z < target.z) {
+			Mat4 rotateV = Mat4::rotate(Point::East, pitchAngleMax);
+			position = Point(target.x, buildLevel, -radius).transform(rotateV);
+			direction = (target - position).normalize();
+		} else {
+			Mat4 rotateV = Mat4::rotate(Point::West, pitchAngleMax);
+			position = Point(target.x, buildLevel, radius).transform(rotateV);
+			direction = (target - position).normalize();
+		}
 	}
 
 	if (mouse.rH > 0.0f || mouse.rH < 0.0f || mouse.rV > 0.0f || mouse.rV < 0.0f) {
@@ -229,20 +222,23 @@ void MainCamera::updateCamera() {
 		}
 
 		Point target = groundTarget(buildLevel);
-		Point radius = position - target;
-		Point right = radius.cross(up).normalize();
+		Point view = position - target;
+		Point right = view.cross(up).normalize();
+
+		// as camera always orients to Up, prevent rotation past the zenith and causing a spin
+		Point groundRadius = Point(view.x, buildLevel, view.z);
+		float pitchAngle = std::acos(view.dot(groundRadius)/(view.length() * groundRadius.length()));
+		rDV = (pitchAngle + rDV > pitchAngleMax) ? pitchAngleMax - pitchAngle: rDV;
+
 		Mat4 rotateH = Mat4::rotate(up, -rDH);
 		Mat4 rotateV = Mat4::rotate(right, rDV);
 		Mat4 rotate = rotateH * rotateV;
-		radius = radius.transform(rotate);
+		view = view.transform(rotate);
 
-		position = target + radius;
+		position = target + view;
 		position.y = std::max(5.0f, position.y);
 
 		direction = (target - position).normalize();
-
-		nextPosition = position;
-		nextDirection = direction;
 	}
 
 	if (mouse.zW > 0.0f || mouse.zW < 0.0f) {
@@ -260,42 +256,52 @@ void MainCamera::updateCamera() {
 		}
 
 		Point target = groundTarget(buildLevel);
-		Point radius = position - target;
+		Point view = position - target;
 
-		if (radius.length() > 10.0f || zDW > 0.0f) {
-			position += radius * zDW;
+		if (view.length() > 10.0f || zDW > 0.0f) {
+			position += view * zDW;
 			position.y = std::max(5.0f, position.y);
 
 			direction = (target - position).normalize();
-
-			nextPosition = position;
-			nextDirection = direction;
 		}
 	}
 
 	mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, raylibCamera());
 
-	//if (mouse.right.clicked && !IsKeyDown(KEY_LEFT_SHIFT)) {
-	//	RayHitInfo spot = GetCollisionRayGround(mouse.ray, buildLevel);
-	//	nextDirection = -(position - Point(spot.position)).normalize();
-	//}
+	if (mouse.left.dragged) {
+		if (!selecting) {
+			Ray rayA = GetMouseRay((Vector2){(float)mouse.left.downAt.x,(float)mouse.left.downAt.y}, raylibCamera());
+			RayHitInfo hitA = GetCollisionRayGround(rayA, buildLevel);
+			selection.a = hitA.position;
+		}
+		Ray rayB = mouse.ray;
+		RayHitInfo hitB = GetCollisionRayGround(rayB, buildLevel);
+		selection.b = {hitB.position};
+		selecting = !placing;
+	}
 
-	//mouse.ray = GetMouseRay((Vector2){(float)mouse.x, (float)mouse.y}, raylibCamera());
+	if (selecting && mouse.left.clicked) {
+		selection = {Point::Zero, Point::Zero};
+		selecting = false;
+	}
 }
 
-void MainCamera::update() {
+void MainCamera::update(bool worldFocused) {
 	statsUpdate.track(frame, [&]() {
 		hovering = NULL;
 		hovered.clear();
 		selected.clear();
+		placingFits = false;
 
 		while (entities.size() > 0) {
 			delete entities.back();
 			entities.pop_back();
 		}
 
-		updateMouseState();
-		updateCamera();
+		if (worldFocused) {
+			updateMouseState();
+			updateCamera();
+		}
 
 		if (IsKeyReleased(KEY_ESCAPE)) {
 			if (placing) {
@@ -304,7 +310,7 @@ void MainCamera::update() {
 			}
 			else
 			if (selecting) {
-				selection = {0,0,0,0};
+				selection = {Point::Zero, Point::Zero};
 				selecting = false;
 			}
 		}
@@ -323,8 +329,6 @@ void MainCamera::update() {
 				entities.push_back(new GuiEntity(id));
 			}
 
-			placingFits = !placing || placing->fits();
-
 			if (directing && !Entity::exists(directing->id)) {
 				delete directing;
 				directing = NULL;
@@ -335,9 +339,12 @@ void MainCamera::update() {
 				delete directing;
 				directing = new GuiEntity(id);
 			}
+
+			placingFits = !placing || placing->fits();
 		});
 
 		for (auto ge: entities) {
+			if (!ge->spec->select) continue;
 			if (CheckCollisionRayBox(mouse.ray, ge->box().bounds())) {
 				hovered.push_back(ge);
 			}
@@ -355,23 +362,29 @@ void MainCamera::update() {
 		}
 
 		if (selecting) {
-			Camera3D rcam = raylibCamera();
+			Box box = Box(selection.a, selection.b);
 			for (auto ge: entities) {
-				Vector2 at = GetWorldToScreen(ge->pos, rcam);
-				if (at.x > selection.x && at.x < selection.x+selection.width && at.y > selection.y && at.y < selection.y+selection.height) {
+				if (!ge->spec->select) continue;
+				if (ge->box().intersects(box)) {
 					selected.push_back(ge);
 				}
 			}
-		}
-
-		if (placing) {
-			placing->floor(buildLevel);
 		}
 	});
 }
 
 void MainCamera::draw() {
 	statsDraw.track(frame, [&]() {
+
+		auto drawBox = [&](Box box, Point dir, Color color) {
+			Point bounds = {box.w, box.h, box.d};
+			rlPushMatrix();
+				rlLoadIdentity();
+				rlMultMatrixf(MatrixToFloat(dir.rotation()));
+				rlMultMatrixf(MatrixToFloat(box.centroid().translation()));
+				DrawCubeWiresV(Point::Zero, bounds + 0.01f, color);
+			rlPopMatrix();
+		};
 
 		Camera3D camera = {
 			position : position,
@@ -442,7 +455,6 @@ void MainCamera::draw() {
 			std::map<Part*,std::vector<Mat4>> ghosts_hd;
 
 			std::vector<Mat4> belt_pillars;
-			std::set<BeltSegment*> belt_segments;
 			std::map<Part*,std::vector<Mat4>> items_hd;
 			std::map<Part*,std::vector<Mat4>> items_ld;
 
@@ -473,15 +485,15 @@ void MainCamera::draw() {
 					}
 				}
 
-				if (!ge->ghost && ge->spec->belt) {
-					Belt& belt = en.belt();
-
-					if (belt.segment) {
-						belt_segments.insert(belt.segment);
-					}
-
-					if (en.ground().y < 0.01f && (belt.offset == 0 || belt.offset == belt.segment->belts.size()-1)) {
-						belt_pillars.push_back(View::beltPillar1->instance(Mat4::translate(en.pos.x, 0.5f, en.pos.z)));
+				if (!ge->ghost && ge->spec->conveyor && ge->conveyor.iid && hd) {
+					Item* item = Item::get(ge->conveyor.iid);
+					Point p = ge->pos;
+					Mat4 move = Mat4::translate(ge->pos - ((Point::Up*0.5f) + item->beltV));
+					Mat4 bump = ge->spec->conveyorTransforms[ge->conveyor.offset];
+					Mat4 m = bump * ge->dir.rotation() * move;
+					for (uint i = 0; i < item->parts.size(); i++) {
+						Part* part = item->parts[i];
+						(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(m));
 					}
 				}
 
@@ -556,26 +568,6 @@ void MainCamera::draw() {
 				}
 			}
 
-			for (BeltSegment* segment: belt_segments) {
-				Point spot = segment->front();
-				Point step = segment->step();
-
-				for (auto beltItem: segment->items) {
-					Item* item = Item::get(beltItem.iid);
-
-					spot += step * (float)beltItem.offset;
-					Point p = spot + (step * ((float)BeltSegment::slot/2.0f));
-
-					Mat4 m = Mat4::translate(p.x, p.y + item->beltV, p.z);
-					for (uint i = 0; i < item->parts.size(); i++) {
-						Part* part = item->parts[i];
-						(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(m));
-					}
-
-					spot += step * (float)BeltSegment::slot;
-				}
-			}
-
 			for (auto [part,batch]: extant_ld) {
 				part->drawInstanced(false, batch.size(), batch.data());
 			}
@@ -611,24 +603,22 @@ void MainCamera::draw() {
 			}
 
 			if (hovering) {
-				Box box = hovering->box();
-				Point bounds = {box.w, box.h, box.d};
-				DrawCubeWiresV(hovering->pos, bounds + 0.01f, SKYBLUE);
+				drawBox(hovering->southBox(), hovering->dir, SKYBLUE);
 
 				if (hovering->spec->pipe) {
-					Entity& en = Entity::get(hovering->id);
-					for (Point p: en.pipe().pipeConnections()) {
-						DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
-					}
-
-					if (en.pipe().network) {
-						for (auto id: en.pipe().network->pipes) {
-							Entity& sib = Entity::get(id);
-							Box box = sib.box();
-							Point bounds = {box.w, box.h, box.d};
-							DrawCubeWiresV(sib.pos, bounds + 0.01f, GREEN);
+					Sim::locked([&]() {
+						Entity& en = Entity::get(hovering->id);
+						for (Point p: en.pipe().pipeConnections()) {
+							DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
 						}
-					}
+
+						if (en.pipe().network) {
+							for (auto id: en.pipe().network->pipes) {
+								Entity& sib = Entity::get(id);
+								drawBox(sib.spec->southBox(sib.pos), sib.dir, GREEN);
+							}
+						}
+					});
 				}
 
 				if (hovering->spec->crafter) {
@@ -650,13 +640,29 @@ void MainCamera::draw() {
 				if (hovering->spec->turret) {
 					DrawSphereWires(hovering->pos, hovering->spec->turretRange, 72, 72, RED);
 				}
+
+				if (hovering->spec->conveyor) {
+					Sim::locked([&]() {
+						Entity& en = Entity::get(hovering->id);
+						DrawCube(en.conveyor().input(), 0.25f, 0.25f, 0.25f, GREEN);
+						DrawCube(en.conveyor().output(), 0.25f, 0.25f, 0.25f, RED);
+
+						if (en.conveyor().prev) {
+							Entity& sib = Entity::get(en.conveyor().prev);
+							drawBox(sib.spec->southBox(sib.pos), sib.dir, GREEN);
+						}
+
+						if (en.conveyor().next) {
+							Entity& sib = Entity::get(en.conveyor().next);
+							drawBox(sib.spec->southBox(sib.pos), sib.dir, RED);
+						}
+					});
+				}
 			}
 
 			if (selecting) {
 				for (auto ge: selected) {
-					Box box = ge->box();
-					Point bounds = {box.w, box.h, box.d};
-					DrawCubeWiresV(ge->pos, bounds + 0.01f, SKYBLUE);
+					drawBox(ge->southBox(), ge->dir, SKYBLUE);
 				}
 			}
 
@@ -664,13 +670,11 @@ void MainCamera::draw() {
 				for (auto te: placing->entities) {
 					for (uint i = 0; i < te->spec->parts.size(); i++) {
 						Part *part = te->spec->parts[i];
-						Mat4 instance = part->specInstance(te->spec, i, te->state, te->transform);
+						Mat4 instance = part->specInstance(te->spec, i, te->state, te->transform) * (Point::Up*0.01f).translation();
 						part->drawGhostInstanced(true, 1, &instance);
 					}
 
-					Box box = te->box();
-					Point bounds = {box.w, box.h, box.d};
-					DrawCubeWiresV(te->pos, bounds + 0.01f, placingFits ? GREEN: RED);
+					drawBox(te->southBox(), te->dir, placingFits ? GREEN: RED);
 
 					if (te->spec->pipeConnections.size()) {
 						for (Point p: te->spec->relativePoints(te->spec->pipeConnections, te->dir.rotation(), te->pos)) {
@@ -699,9 +703,7 @@ void MainCamera::draw() {
 			}
 
 			if (directing) {
-				Box box = directing->box();
-				Point bounds = {box.w, box.h, box.d};
-				DrawCubeWiresV(directing->pos, bounds + 0.01f, ORANGE);
+				drawBox(directing->southBox(), directing->dir, ORANGE);
 			}
 
 			if (Path::jobs.size() > 0) {
@@ -727,10 +729,12 @@ void MainCamera::draw() {
 					rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
 			}
 
-		EndMode3D();
+			if (selecting) {
+				Box box = Box(selection.a, selection.b);
+				DrawCube(box.centroid(), box.w, box.h, box.d, GetColor(0x0000ff99));
+				drawBox(box, Point::South, ORANGE);
+			}
 
-		if (selecting) {
-			DrawRectangleRec(selection, GetColor(0x0000ff99));
-		}
+		EndMode3D();
 	});
 }

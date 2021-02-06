@@ -96,6 +96,16 @@ struct PartCycle : Part {
 	virtual Mat4 specInstance(Spec* spec, uint slot, uint state, Mat4 trx);
 };
 
+struct PartCycle2 : Part {
+	Mat4 shunt;
+	Mat4 ssrt;
+	std::vector<Mat4> transforms;
+
+	PartCycle2(Thing thing, std::vector<Mat4> transforms);
+	virtual void update();
+	virtual Mat4 specInstance(Spec* spec, uint slot, uint state, Mat4 trx);
+};
+
 struct PartSmoke : Part {
 
 	struct Particle {

@@ -18,10 +18,10 @@ namespace Sim {
 	TimeSeries statsStore;
 	TimeSeries statsArm;
 	TimeSeries statsCrafter;
+	TimeSeries statsConveyor;
 	TimeSeries statsProjector;
 	TimeSeries statsPath;
 	TimeSeries statsVehicle;
-	TimeSeries statsBelt;
 	TimeSeries statsLift;
 	TimeSeries statsPipe;
 	TimeSeries statsShunt;
@@ -30,6 +30,7 @@ namespace Sim {
 	TimeSeries statsMissile;
 	TimeSeries statsExplosion;
 	TimeSeries statsTurret;
+	TimeSeries statsComputer;
 
 	void reset() {
 		statsElectricityDemand.clear();
@@ -38,10 +39,10 @@ namespace Sim {
 		statsStore.clear();
 		statsArm.clear();
 		statsCrafter.clear();
+		statsConveyor.clear();
 		statsProjector.clear();
 		statsPath.clear();
 		statsVehicle.clear();
-		statsBelt.clear();
 		statsLift.clear();
 		statsPipe.clear();
 		statsShunt.clear();
@@ -50,6 +51,7 @@ namespace Sim {
 		statsMissile.clear();
 		statsExplosion.clear();
 		statsTurret.clear();
+		statsComputer.clear();
 	}
 
 	void locked(lockCallback cb) {
@@ -119,6 +121,7 @@ namespace Sim {
 		tick++;
 		Entity::preTick();
 		Ghost::tick();
+		//Wire::tick();
 		statsPipe.track(tick, Pipe::tick);
 		statsStore.track(tick, Store::tick);
 		statsArm.track(tick, Arm::tick);
@@ -126,13 +129,13 @@ namespace Sim {
 		statsProjector.track(tick, Projector::tick);
 		statsPath.track(tick, Path::tick);
 		statsVehicle.track(tick, Vehicle::tick);
-		statsBelt.track(tick, Belt::tick);
+		statsConveyor.track(tick, Conveyor::tick);
 		statsLift.track(tick, Lift::tick);
-		//statsShunt.track(tick, Shunt::tick);
 		statsDepot.track(tick, Depot::tick);
 		statsDrone.track(tick, Drone::tick);
 		statsMissile.track(tick, Missile::tick);
 		statsExplosion.track(tick, Explosion::tick);
 		statsTurret.track(tick, Turret::tick);
+		statsComputer.track(tick, Computer::tick);
 	}
 }

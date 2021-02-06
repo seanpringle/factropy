@@ -21,7 +21,7 @@ Point SiteCamera::groundTarget(float ground) {
 	return Point(spot.position);
 }
 
-void SiteCamera::update() {
+void SiteCamera::update(bool worldFocused) {
 	if (Sim::tick%refresh != 0) return;
 
 	while (entities.size() > 0) {

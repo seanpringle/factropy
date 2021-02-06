@@ -13,6 +13,7 @@ struct Box {
 
 	Box();
 	Box(Point p, Volume v);
+	Box(Point a, Point b);
 	Box(std::initializer_list<float>);
 
 	Point centroid() const;

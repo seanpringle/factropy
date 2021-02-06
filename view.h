@@ -36,7 +36,7 @@ struct SiteCamera : View {
 
 	SiteCamera(Point, Point);
 	~SiteCamera();
-	virtual void update();
+	virtual void update(bool worldFocused);
 	virtual void draw(RenderTexture canvas);
 	Point groundTarget(float ground);
 };
@@ -74,15 +74,15 @@ struct MainCamera : View {
 	Point direction;
 	Point up;
 
-	Point nextPosition;
-	Point nextDirection;
-	bool moving;
-
 	MouseState mouse;
 	bool showGrid;
 
 	bool selecting;
-	Rectangle selection;
+
+	struct {
+		Point a;
+		Point b;
+	} selection;
 
 	GuiEntity* hovering;
 	GuiEntity* directing;
@@ -100,7 +100,7 @@ struct MainCamera : View {
 
 	MainCamera(Point, Point);
 	~MainCamera();
-	virtual void update();
+	virtual void update(bool worldFocused);
 	virtual void draw();
 
 	Point groundTarget(float ground);
@@ -108,6 +108,6 @@ struct MainCamera : View {
 	void updateMouseState();
 	void updateCamera();
 	void lookAt(Point);
-	void build(Spec*);
+	void build(Spec* = nullptr, Point dir = Point::South);
 };
 

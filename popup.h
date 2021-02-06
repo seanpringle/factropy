@@ -5,11 +5,12 @@
 struct Popup {
 	MainCamera* camera = nullptr;
 	bool visible = false;
+	bool mouseOver = false;
 	Popup(MainCamera* c);
 	virtual ~Popup();
 	virtual void draw();
 	void show(bool state = true);
-	void center();
+	void center(int w, int h);
 };
 
 struct MessagePopup : Popup {

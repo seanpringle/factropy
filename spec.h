@@ -49,7 +49,6 @@ struct Spec {
 	RenderTexture texture;
 	bool align;
 	bool pivot;
-	bool belt;
 	bool loader;
 	bool lift;
 	bool shunt;
@@ -144,17 +143,25 @@ struct Spec {
 
 	std::vector<Point> supportPoints;
 
-	bool processor;
-	uint processorSpeed;
-	uint processorMarkStack;
-	uint processorDataStack;
-	uint processorReturnStack;
-	uint processorMemory;
+	bool conveyor;
+	Point conveyorInput;
+	Point conveyorOutput;
+	std::vector<Mat4> conveyorTransforms;
+
+	bool computer;
+	bool networker;
+
+	Spec* pipette;
+	Spec* cycle;
+
+	bool build;
+	bool select;
 
 	Spec(std::string name);
 	~Spec();
 	Point aligned(Point p, Point dir);
 	Box box(Point pos, Point dir);
+	Box southBox(Point pos);
 	bool hasStore();
 	void setCornerSupports();
 

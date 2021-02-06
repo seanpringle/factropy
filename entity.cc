@@ -112,8 +112,8 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Arm::create(id);
 	}
 
-	if (spec->belt) {
-		Belt::create(id);
+	if (spec->conveyor) {
+		Conveyor::create(id);
 	}
 
 	if (spec->lift) {
@@ -126,6 +126,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 
 	if (spec->turret) {
 		Turret::create(id);
+	}
+
+	if (spec->computer) {
+		Computer::create(id);
 	}
 
 	if (spec->consumeChemical) {
@@ -197,8 +201,8 @@ void Entity::destroy() {
 		arm().destroy();
 	}
 
-	if (spec->belt) {
-		belt().destroy();
+	if (spec->conveyor) {
+		conveyor().destroy();
 	}
 
 	if (spec->lift) {
@@ -211,6 +215,10 @@ void Entity::destroy() {
 
 	if (spec->turret) {
 		turret().destroy();
+	}
+
+	if (spec->computer) {
+		computer().destroy();
 	}
 
 	if (spec->consumeElectricity) {
@@ -244,6 +252,8 @@ Entity& Entity::get(uint id) {
 
 bool Entity::fits(Spec *spec, Point pos, Point dir) {
 	Box bounds = spec->box(pos, dir).shrink(0.1);
+
+	if (intersecting(bounds).size()) return false;
 
 	switch (spec->place) {
 		case Spec::Land: {
@@ -287,7 +297,7 @@ bool Entity::fits(Spec *spec, Point pos, Point dir) {
 		}
 	}
 
-	return intersecting(bounds).size() == 0;
+	return true;
 }
 
 std::vector<uint> Entity::intersecting(Box box) {
@@ -405,9 +415,11 @@ Box Entity::miningBox() {
 }
 
 Entity& Entity::look(Point p) {
+	unmanage();
 	unindex();
 	dir = p.normalize();
 	index();
+	manage();
 	return *this;
 }
 
@@ -439,8 +451,8 @@ Entity& Entity::unindex() {
 
 Entity& Entity::manage() {
 	if (!isGhost()) {
-		if (spec->belt) {
-			belt().manage();
+		if (spec->conveyor) {
+			conveyor().manage();
 		}
 		if (spec->pipe) {
 			pipe().manage();
@@ -451,8 +463,8 @@ Entity& Entity::manage() {
 
 Entity& Entity::unmanage() {
 	if (!isGhost()) {
-		if (spec->belt) {
-			belt().unmanage();
+		if (spec->conveyor) {
+			conveyor().unmanage();
 		}
 		if (spec->pipe) {
 			pipe().unmanage();
@@ -476,7 +488,6 @@ Entity& Entity::construct() {
 	for (Stack stack: spec->materials) {
 		ghost().store.levelSet(stack.iid, stack.size, stack.size);
 	}
-
 	return *this;
 }
 
@@ -499,7 +510,6 @@ Entity& Entity::deconstruct() {
 		}
 		gstore.levelSet(stack.iid, 0, 0);
 	}
-
 	return *this;
 }
 
@@ -653,8 +663,8 @@ Arm& Entity::arm() {
 	return Arm::get(id);
 }
 
-Belt& Entity::belt() {
-	return Belt::get(id);
+Conveyor& Entity::conveyor() {
+	return Conveyor::get(id);
 }
 
 Lift& Entity::lift() {
@@ -692,3 +702,8 @@ Generator& Entity::generator() {
 Turret& Entity::turret() {
 	return Turret::get(id);
 }
+
+Computer& Entity::computer() {
+	return Computer::get(id);
+}
+

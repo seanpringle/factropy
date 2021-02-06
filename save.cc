@@ -67,7 +67,6 @@ namespace Sim {
 		Chunk::saveAll(name);
 		Entity::saveAll(name);
 		Store::saveAll(name);
-		Belt::saveAll(name);
 		Lift::saveAll(name);
 		Arm::saveAll(name);
 		Vehicle::saveAll(name);
@@ -76,6 +75,8 @@ namespace Sim {
 		Drone::saveAll(name);
 		Burner::saveAll(name);
 		Pipe::saveAll(name);
+		Conveyor::saveAll(name);
+		Computer::saveAll(name);
 
 		Ledger::save(name);
 		Recipe::save(name);
@@ -90,9 +91,9 @@ namespace Sim {
 			state["statsStore"] = Save::timeSeriesSave(&Sim::statsStore);
 			state["statsArm"] = Save::timeSeriesSave(&Sim::statsArm);
 			state["statsCrafter"] = Save::timeSeriesSave(&Sim::statsCrafter);
+			state["statsConveyor"] = Save::timeSeriesSave(&Sim::statsConveyor);
 			state["statsPath"] = Save::timeSeriesSave(&Sim::statsPath);
 			state["statsVehicle"] = Save::timeSeriesSave(&Sim::statsVehicle);
-			state["statsBelt"] = Save::timeSeriesSave(&Sim::statsBelt);
 			state["statsLift"] = Save::timeSeriesSave(&Sim::statsLift);
 			state["statsPipe"] = Save::timeSeriesSave(&Sim::statsPipe);
 			state["statsShunt"] = Save::timeSeriesSave(&Sim::statsShunt);
@@ -122,7 +123,6 @@ namespace Sim {
 		Chunk::loadAll(name);
 		Entity::loadAll(name);
 		Store::loadAll(name);
-		Belt::loadAll(name);
 		Lift::loadAll(name);
 		Arm::loadAll(name);
 		Vehicle::loadAll(name);
@@ -131,6 +131,8 @@ namespace Sim {
 		Drone::loadAll(name);
 		Burner::loadAll(name);
 		Pipe::loadAll(name);
+		Conveyor::loadAll(name);
+		Computer::loadAll(name);
 
 		Ledger::load(name);
 		Recipe::load(name);
@@ -148,7 +150,6 @@ namespace Sim {
 				Save::timeSeriesLoad(&Sim::statsCrafter, state["statsCrafter"]);
 				Save::timeSeriesLoad(&Sim::statsPath, state["statsPath"]);
 				Save::timeSeriesLoad(&Sim::statsVehicle, state["statsVehicle"]);
-				Save::timeSeriesLoad(&Sim::statsBelt, state["statsBelt"]);
 				Save::timeSeriesLoad(&Sim::statsLift, state["statsLift"]);
 				//Save::timeSeriesLoad(&Sim::statsPipe, state["statsPipe"]);
 				Save::timeSeriesLoad(&Sim::statsShunt, state["statsShunt"]);
@@ -460,100 +461,6 @@ void Store::loadAll(const char* name) {
 
 		for (uint did: state["drones"]) {
 			store.drones.insert(did);
-		}
-	}
-
-	in.close();
-}
-
-void Belt::saveAll(const char* name) {
-	auto path = std::string(name);
-	auto out = std::ofstream(path + "/belts.json");
-
-	for (Belt& belt: all) {
-		json state;
-		state["id"] = belt.id;
-		state["offset"] = belt.offset;
-
-		out << state << "\n";
-	}
-
-	out.close();
-
-	BeltSegment::saveAll(name);
-}
-
-void Belt::loadAll(const char* name) {
-	auto path = std::string(name);
-	auto in = std::ifstream(path + "/belts.json");
-
-	for (std::string line; std::getline(in, line);) {
-		auto state = json::parse(line);
-		Belt& belt = get(state["id"]);
-		belt.offset = state["offset"];
-	}
-
-	in.close();
-
-	BeltSegment::loadAll(name);
-}
-
-void BeltSegment::saveAll(const char* name) {
-	auto path = std::string(name);
-	auto out = std::ofstream(path + "/belt-segments.json");
-
-	for (BeltSegment* segment: all) {
-		json state;
-
-		int i = 0;
-		for (Belt* belt: segment->belts) {
-			state["belts"][i++] = belt->id;
-		}
-
-		i = 0;
-		for (BeltItem beltItem: segment->items) {
-			state["items"][i++] = {
-				Item::get(beltItem.iid)->name,
-				beltItem.offset,
-			};
-		}
-
-		state["pauseOffload"] = segment->pauseOffload;
-		state["pauseLoad"] = segment->pauseLoad;
-
-		out << state << "\n";
-	}
-
-	out.close();
-}
-
-void BeltSegment::loadAll(const char* name) {
-	while (all.size()) {
-		delete *all.begin();
-	}
-
-	auto path = std::string(name);
-	auto in = std::ifstream(path + "/belt-segments.json");
-
-	for (std::string line; std::getline(in, line);) {
-		auto state = json::parse(line);
-		BeltSegment* segment = new BeltSegment();
-
-		segment->changed = true;
-		segment->pauseOffload = state["pauseOffload"];
-		segment->pauseLoad = state["pauseLoad"];
-
-		for (auto id: state["belts"]) {
-			Belt* belt = &Belt::get(id);
-			segment->belts.push_back(belt);
-			belt->segment = segment;
-		}
-
-		for (auto array: state["items"]) {
-			segment->items.push_back({
-				iid: Item::byName(array[0])->id,
-				offset: array[1],
-			});
 		}
 	}
 
@@ -969,5 +876,73 @@ void Pipe::loadAll(const char* name) {
 		pipe.cacheTally = state["cacheTally"];
 	}
 
+	PipeNetwork::rebuild = true;
+
 	in.close();
+}
+
+void Conveyor::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/conveyors.json");
+
+	for (auto& pair: all) {
+		auto conveyor = pair.second;
+
+		json state;
+		state["id"] = conveyor.id;
+		state["iid"] = conveyor.iid;
+		state["offset"] = conveyor.offset;
+		state["prev"] = conveyor.prev;
+		state["next"] = conveyor.next;
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Conveyor::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/conveyors.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Conveyor& conveyor = get(state["id"]);
+		conveyor.iid = state["iid"];
+		conveyor.offset = state["offset"];
+		conveyor.prev = state["prev"];
+		conveyor.next = state["next"];
+	}
+
+	in.close();
+}
+
+void Computer::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/computers.json");
+
+	for (auto& pair: all) {
+		auto computer = pair.second;
+
+		json state;
+		state["id"] = computer.id;
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Computer::loadAll(const char* name) {
+	//auto path = std::string(name);
+	//auto in = std::ifstream(path + "/computers.json");
+
+	//for (std::string line; std::getline(in, line);) {
+	//	auto state = json::parse(line);
+	//	Computer& computer = get(state["id"]);
+	//	computer.iid = state["iid"];
+	//	computer.offset = state["offset"];
+	//	computer.prev = state["prev"];
+	//	computer.next = state["next"];
+	//}
+
+	//in.close();
 }

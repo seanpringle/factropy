@@ -186,7 +186,7 @@ bool Arm::updateReady() {
 			}
 		}
 
-		if (eo.spec->belt) {
+		if (eo.spec->conveyor) {
 			for (Store* si: ei.stores()) {
 				Stack stack = transferStoreToBelt(*si);
 				if (stack.iid && stack.size) {
@@ -195,11 +195,11 @@ bool Arm::updateReady() {
 			}
 		}
 
-		if (ei.spec->belt) {
-			uint biid = ei.belt().itemAt(BeltAny);
-			if (biid) {
+		if (ei.spec->conveyor) {
+			uint ciid = ei.conveyor().itemAt();
+			if (ciid) {
 				for (Store* so: eo.stores()) {
-					if (so->isAccepting(biid)) {
+					if (so->isAccepting(ciid)) {
 						return true;
 					}
 				}
@@ -217,9 +217,9 @@ bool Arm::updateReady() {
 			}
 		}
 
-		if (ei.spec->belt && eo.spec->belt) {
-			uint biid = ei.belt().itemAt(BeltAny);
-			if (biid) {
+		if (ei.spec->conveyor && eo.spec->conveyor) {
+			uint ciid = ei.conveyor().itemAt();
+			if (ciid) {
 				return true;
 			}
 		}
@@ -253,7 +253,7 @@ bool Arm::updateInput() {
 			}
 		}
 
-		if (eo.spec->belt) {
+		if (eo.spec->conveyor) {
 			for (Store* si: ei.stores()) {
 				Stack stack = transferStoreToBelt(*si);
 				if (stack.iid && stack.size) {
@@ -265,16 +265,16 @@ bool Arm::updateInput() {
 			}
 		}
 
-		if (ei.spec->belt) {
-			uint biid = ei.belt().itemAt(BeltAny);
-			if (biid) {
+		if (ei.spec->conveyor) {
+			uint ciid = ei.conveyor().itemAt();
+			if (ciid) {
 				for (Store* so: eo.stores()) {
-					if (so->isAccepting(biid)) {
+					if (so->isAccepting(ciid)) {
 						outputStoreId = so->sid;
-						so->promise({biid,1});
+						so->promise({ciid,1});
 						so->arms.insert(id);
-						ei.belt().remove(biid, BeltAny);
-						iid = biid;
+						ei.conveyor().remove(ciid);
+						iid = ciid;
 						stage = ToOutput;
 						return true;
 					}
@@ -299,11 +299,11 @@ bool Arm::updateInput() {
 			}
 		}
 
-		if (ei.spec->belt && eo.spec->belt) {
-			uint biid = ei.belt().itemAt(BeltAny);
-			if (biid) {
-				ei.belt().remove(biid, BeltAny);
-				iid = biid;
+		if (ei.spec->conveyor && eo.spec->conveyor) {
+			uint ciid = ei.conveyor().itemAt();
+			if (ciid) {
+				ei.conveyor().remove(ciid);
+				iid = ciid;
 				stage = ToOutput;
 				return true;
 			}
@@ -334,8 +334,8 @@ void Arm::updateOutput() {
 			return;
 		}
 
-		if (eo.spec->belt) {
-			if (eo.belt().insert(iid, BeltAny)) {
+		if (eo.spec->conveyor) {
+			if (eo.conveyor().insert(iid)) {
 				iid = 0;
 				stage = ToInput;
 				return;

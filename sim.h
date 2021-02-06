@@ -18,15 +18,19 @@ namespace Sim {
 	extern TimeSeries statsEntity;
 	extern TimeSeries statsArm;
 	extern TimeSeries statsCrafter;
+	extern TimeSeries statsConveyor;
 	extern TimeSeries statsProjector;
 	extern TimeSeries statsPath;
 	extern TimeSeries statsVehicle;
-	extern TimeSeries statsBelt;
 	extern TimeSeries statsLift;
 	extern TimeSeries statsPipe;
 	extern TimeSeries statsShunt;
 	extern TimeSeries statsDepot;
 	extern TimeSeries statsDrone;
+	extern TimeSeries statsMissile;
+	extern TimeSeries statsExplosion;
+	extern TimeSeries statsTurret;
+	extern TimeSeries statsComputer;
 
 	void reset();
 	void save();

@@ -54,6 +54,7 @@ struct Point : Vector3 {
 	Point transform(Mat4) const;
 	float length() const;
 	Mat4 rotation();
+	Mat4 translation();
 };
 
 #endif

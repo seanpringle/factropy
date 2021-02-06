@@ -1,5 +1,4 @@
-#ifndef _H_arm
-#define _H_arm
+#pragma once
 
 struct Arm;
 
@@ -52,5 +51,3 @@ struct Arm {
 	Stack transferStoreToStore(Store& dst, Store& src);
 	Stack transferStoreToBelt(Store& src);
 };
-
-#endif

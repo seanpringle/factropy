@@ -386,7 +386,6 @@ int main(int argc, char const *argv[]) {
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x990000ff)->gloss(16),
-		(new PartSpinner(thingFan, 4))->paint(0xccccccff)->translate(0,1.1,0)->gloss(32),
 	};
 	spec->store = true;
 	spec->capacity = Mass::kg(1000);
@@ -641,28 +640,112 @@ int main(int argc, char const *argv[]) {
 	auto beltSurface = Thing("models/belt-surface-hd.stl", "models/belt-surface-ld.stl");
 	auto beltRidge = Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl");
 
-	spec = new Spec("belt");
-	spec->collision = { w: 1, h: 1, d: 1 };
+	spec = new Spec("conveyor");
+	spec->collision = { w: 1, h: 2, d: 1 };
 	spec->rotate = true;
-	spec->belt = true;
+	spec->conveyor = true;
+	spec->conveyorInput = Point::North;
+	spec->conveyorOutput = Point::South;
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(1);
 	spec->health = 10;
 
-	spec->parts = {
-		(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0),
-		(new Part(beltSurface))->paint(0x000000ff)->translate(0,-0.5,0),
-		(new PartCycle(beltRidge, BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-0.5,0)->ld(false),
-	};
+	{
+		Point base = Point::South * 0.5f;
+		Point step = Point::North * (1.0f/30.0f);
+		for (int i = 0; i < 30; i++) {
+			Point p = base + (step * (float)i);
+			spec->conveyorTransforms.push_back(p.translation());
+		}
+	}
 
-	View::beltPillar1 = (new Part(Thing("models/belt-pillar-hd.stl", "models/belt-pillar-hd.stl")))->paint(0xcccc00ff)->translate(0,-0.5,0);
-	View::beltPillar2 = (new Part(Thing("models/belt-pillar-hd.stl", "models/belt-pillar-hd.stl")))->paint(0xcccc00ff)->scale(1.0f, 2.1f, 1.0f)->translate(0,-1.5,0);
+	{
+		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
+		spec->parts = {
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,0),
+			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,0),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+		};
+	}
+
+	spec = new Spec("conveyor-right");
+	spec->build = false;
+	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->rotate = true;
+	spec->conveyor = true;
+	spec->conveyorInput = Point::East;
+	spec->conveyorOutput = Point::South;
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(1);
+	spec->health = 10;
+
+	{
+		Point base = Point::North*0.5f;
+		Mat4 a = Mat4::translate(Point::South*0.5f + Point::East*0.5f);
+		float step = -(90.0f/30.0f)*DEG2RAD;
+		for (int i = 29; i >= 0; i--) {
+			Mat4 r = Mat4::rotateY(step * (float)i);
+			Mat4 t = Mat4::translate(base.transform(r * a));
+			Mat4 d = Mat4::rotateY(-step * (float)(29-i));
+			spec->conveyorTransforms.push_back(d * t);
+		}
+	}
+
+	{
+		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
+		spec->parts = {
+			(new Part(Thing("models/belt-right-base-hd.stl", "models/belt-right-base-ld.stl")))
+				->paint(0xcccc00ff)->scale(0.001, 0.001, 0.001)->translate(0,-1.5,0),
+			(new Part(Thing("models/belt-right-surface-hd.stl")))->paint(0x000000ff)->translate(0,-1.5,0),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+		};
+	}
+
+	spec = new Spec("conveyor-left");
+	spec->build = false;
+	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->rotate = true;
+	spec->conveyor = true;
+	spec->conveyorInput = Point::West;
+	spec->conveyorOutput = Point::South;
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(1);
+	spec->health = 10;
+
+	{
+		Point base = Point::North*0.5f;
+		Mat4 a = Mat4::translate(Point::South*0.5f + Point::West*0.5f);
+		float step = (90.0f/30.0f)*DEG2RAD;
+		for (int i = 29; i >= 0; i--) {
+			Mat4 r = Mat4::rotateY(step * (float)i);
+			Mat4 t = Mat4::translate(base.transform(r * a));
+			Mat4 d = Mat4::rotateY(-step * (float)(29-i));
+			spec->conveyorTransforms.push_back(d * t);
+		}
+	}
+
+	{
+		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
+		spec->parts = {
+			(new Part(Thing("models/belt-left-base-hd.stl")))->paint(0xcccc00ff)->translate(0,-1.5,0),
+			(new Part(Thing("models/belt-left-surface-hd.stl")))->paint(0x000000ff)->translate(0,-1.5,0),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+		};
+	}
+
+	// conveyors are modelled for output==direction, but it seems easier to visualise in-game
+	// as input==direction. So the cycle order is reversed for a clockwise rotation
+	Spec::byName("conveyor")->cycle = Spec::byName("conveyor-left");
+	Spec::byName("conveyor-left")->cycle = Spec::byName("conveyor-right");
+	Spec::byName("conveyor-right")->cycle = Spec::byName("conveyor");
+
+	Spec::byName("conveyor-right")->pipette = Spec::byName("conveyor");
+	Spec::byName("conveyor-left")->pipette = Spec::byName("conveyor");
 
 	spec = new Spec("loader");
 	spec->collision = { w: 1, h: 2, d: 1 };
 	spec->setCornerSupports();
 	spec->rotate = true;
-	spec->belt = true;
 	spec->loader = true;
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(10);
@@ -671,7 +754,7 @@ int main(int argc, char const *argv[]) {
 	spec->parts = {
 		(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1,0),
 		(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1,0),
-		(new PartCycle(beltRidge, BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-1,0)->ld(false),
+		//(new PartCycle(beltRidge, BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-1,0)->ld(false),
 	};
 
 	spec = new Spec("fluid-tank");
@@ -741,6 +824,7 @@ int main(int argc, char const *argv[]) {
 		auto part = "models/" + name + ".stl";
 
 		spec = new Spec(name);
+		spec->build = false;
 		spec->collision = { w: 2, h: 1, d: 2 };
 		spec->setCornerSupports();
 		spec->health = 100;
@@ -782,6 +866,7 @@ int main(int argc, char const *argv[]) {
 	std::vector<Spec*> trees;
 
 	spec = new Spec("tree1");
+	spec->build = false;
 	spec->collision = { w: 2, h: 5, d: 2 };
 	spec->setCornerSupports();
 	spec->pivot = true;
@@ -797,6 +882,7 @@ int main(int argc, char const *argv[]) {
 	trees.push_back(spec);
 
 	spec = new Spec("tree2");
+	spec->build = false;
 	spec->collision = { w: 2, h: 6, d: 2 };
 	spec->setCornerSupports();
 	spec->pivot = true;
@@ -919,6 +1005,7 @@ int main(int argc, char const *argv[]) {
 	auto thingDroneRotor = Thing("models/drone-rotor-hd.stl", "models/drone-rotor-ld.stl");
 
 	spec = new Spec("drone");
+	spec->select = false;
 	spec->health = 10;
 	spec->collision = { w: 1, h: 1, d: 1 };
 	spec->parts = {
@@ -1291,6 +1378,7 @@ int main(int argc, char const *argv[]) {
 	spec->turretBulletSpec = "bullet";
 
 	spec = new Spec("bullet");
+	spec->build = false;
 	spec->explodes = true;
 	spec->explosionSpec = "bullet-impact1";
 	spec->health = 0;
@@ -1304,6 +1392,7 @@ int main(int argc, char const *argv[]) {
 	spec->missileBallistic = true;
 
 	spec = new Spec("bullet-impact1");
+	spec->build = false;
 	spec->align = false;
 	spec->explosion = true;
 	spec->explosionDamage = 10;
@@ -1369,6 +1458,24 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
+	spec = new Spec("computer");
+	spec->health = 10;
+	spec->rotate = true;
+	spec->computer = true;
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(1);
+	spec->energyDrain = Energy::kW(1);
+	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->setCornerSupports();
+	spec->parts = {
+		(new Part(Thing("models/computer-rack-hd.stl", "models/computer-rack-ld.stl")))->paint(0x666666ff)->translate(0,-1,0),
+	};
+	spec->materials = {
+		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("copper-wire")->id, 10 },
+		{ Item::byName("circuit-board")->id, 10 },
+	};
+
 	recipe = new Recipe(Recipe::next(), "sell-iron-ingots1");
 	recipe->energyUsage = Energy::MJ(100);
 	recipe->tags = {"teleporting"};
@@ -1425,7 +1532,7 @@ int main(int argc, char const *argv[]) {
 	Chunk::material.shader = shader;
 	Chunk::material.maps[MAP_DIFFUSE].color = WHITE;
 
-	Popup* popup = NULL;
+	Popup* popup = nullptr;
 	StatsPopup2* statsPopup = new StatsPopup2(camera);
 	WaypointsPopup* waypointsPopup = new WaypointsPopup(camera);
 	TechPopup* techPopup = new TechPopup(camera);
@@ -1438,9 +1545,9 @@ int main(int argc, char const *argv[]) {
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)GetWindowHandle(), true);
-	ImGui_ImplOpenGL3_Init(NULL);
+	ImGui_ImplOpenGL3_Init(nullptr);
 
-	//ImPlot::CreateContext();
+	ImPlot::CreateContext();
 
 	auto& imGuiIO = ImGui::GetIO();
 	auto& imGuiStyle = ImGui::GetStyle();
@@ -1456,7 +1563,7 @@ int main(int argc, char const *argv[]) {
 	//imGuiIO.FontGlobalScale = 1.5f;
 
 	MessagePopup *status = new MessagePopup(camera);
-	status->text = std::string(quotes[(uint)std::time(NULL)%(sizeof(quotes)/sizeof(char*))]);
+	status->text = std::string(quotes[(uint)std::time(nullptr)%(sizeof(quotes)/sizeof(char*))]);
 
 	std::function<void(void)> loadingScreen = [&]() {
 		ensure(!WindowShouldClose());
@@ -1504,6 +1611,14 @@ int main(int argc, char const *argv[]) {
 				if (!spec->texture.id) break;
 				DrawTextureEx(spec->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 0.5, WHITE);
 				advance();
+			}
+
+			for (auto pair: Chunk::all) {
+				Chunk* chunk = pair.second;
+				if (!chunk->regenerate) {
+					DrawRectangle(x+2, y+2, 124, 124, GREEN);
+					advance();
+				}
 			}
 
 			status->draw();
@@ -1682,36 +1797,12 @@ int main(int argc, char const *argv[]) {
 		Sim::locked(Sim::update);
 		mod->update();
 
-		camera->update();
-		camSec->update();
+		bool worldFocused = !popup || !popup->visible || (popup && popup->visible && !popup->mouseOver);
 
-		if (true) {
+		camera->update(worldFocused);
+		camSec->update(worldFocused);
 
-			if (IsKeyReleased(KEY_ONE) && camera->hovering && camera->hovering->spec->belt) {
-				Sim::locked([&]() {
-					Entity& en = Entity::get(camera->hovering->id);
-					en.belt().insert(Item::byName("iron-ore")->id, BeltAny);
-				});
-			}
-
-			if (IsKeyReleased(KEY_F1)) {
-				if (popup) popup->show(false);
-				popup = statsPopup;
-				popup->show(true);
-			}
-
-			if (IsKeyReleased(KEY_F2) && camera->hovering) {
-				waypointsPopup->useEntity(camera->hovering->id);
-				if (popup) popup->show(false);
-				popup = waypointsPopup;
-				popup->show(true);
-			}
-
-			if (IsKeyReleased(KEY_F3)) {
-				if (popup) popup->show(false);
-				popup = techPopup;
-				popup->show(true);
-			}
+		if (worldFocused) {
 
 			if (IsKeyReleased(KEY_F9)) {
 				camSec->pos = camera->position;
@@ -1719,26 +1810,43 @@ int main(int argc, char const *argv[]) {
 			}
 
 			if (IsKeyReleased(KEY_Q)) {
+				if (camera->placing) delete camera->placing;
+				camera->placing = nullptr;
+
 				if (camera->selecting && camera->selected.size()) {
+					camera->placing = new Plan(camera->selected[0]->pos);
 					Sim::locked([&]() {
-						delete camera->placing;
-						camera->placing = new Plan(camera->selected[0]->pos);
 						for (auto se: camera->selected) {
-							auto ge = new GuiFakeEntity(se->spec);
-							ge->move(se->pos);
-							ge->dir = se->dir;
-							camera->placing->add(ge);
+							if (Entity::exists(se->id)) {
+								Entity& en = Entity::get(se->id);
+								auto ge = new GuiFakeEntity(se->spec);
+								ge->dir = en.dir;
+								ge->move(en.pos);
+								ge->getConfig(en);
+								camera->placing->add(ge);
+							}
 						}
 					});
-					camera->selection = {0,0,0,0};
+					camera->selection = {Point::Zero, Point::Zero};
 					camera->selecting = false;
 				}
 				else
 				if (camera->hovering) {
-					camera->build(camera->hovering->spec);
-				}
-				else {
-					camera->build(NULL);
+					camera->placing = new Plan(camera->hovering->pos);
+					Sim::locked([&]() {
+						auto se = camera->hovering;
+						if (Entity::exists(se->id)) {
+							Entity& en = Entity::get(se->id);
+							auto ge = new GuiFakeEntity(se->spec->pipette ? se->spec->pipette: se->spec);
+							ge->dir = en.dir;
+							if (en.spec->pipette && en.spec->conveyor) {
+								ge->dir = en.spec->conveyorOutput.transform(en.dir.rotation());
+							}
+							ge->move(en.pos);
+							ge->getConfig(en);
+							camera->placing->add(ge);
+						}
+					});
 				}
 			}
 
@@ -1754,6 +1862,12 @@ int main(int argc, char const *argv[]) {
 								.rotate();
 						}
 					});
+				}
+			}
+
+			if (IsKeyReleased(KEY_C)) {
+				if (camera->placing) {
+					camera->placing->cycle();
 				}
 			}
 
@@ -1776,33 +1890,18 @@ int main(int argc, char const *argv[]) {
 				camera->buildLevel = std::max(0.0f, std::round(camera->buildLevel-1.0f));
 			}
 
-			if (IsKeyReleased(KEY_E)) {
-				bool wasBuildPopup = popup == buildPopup;
-				bool wasVisible = popup && popup->visible;
-
-				if (popup) {
-					popup->show(false);
-					popup = nullptr;
-				}
-
-				if (!wasBuildPopup || (wasBuildPopup && !wasVisible)) {
-					popup = buildPopup;
-					popup->show(true);
-				}
-			}
-
 			if (IsKeyReleased(KEY_G)) {
 				camera->showGrid = !camera->showGrid;
 			}
 
-			if (camera->mouse.left.clicked && IsKeyDown(KEY_LEFT_SHIFT)) {
+			if (camera->mouse.left.clicked && IsKeyDown(KEY_LEFT_CONTROL)) {
 				if (camera->hovering && camera->hovering->spec->vehicle) {
 					delete camera->directing;
 					camera->directing = new GuiEntity(camera->hovering->id);
 				}
 			}
 
-			if (camera->mouse.right.clicked && IsKeyDown(KEY_LEFT_SHIFT)) {
+			if (camera->mouse.right.clicked && IsKeyDown(KEY_LEFT_CONTROL)) {
 				Sim::locked([&]() {
 					if (camera->directing && camera->directing->spec->vehicle && Entity::exists(camera->directing->id)) {
 						RayHitInfo spot = GetCollisionRayGround(camera->mouse.ray, 0);
@@ -1811,7 +1910,7 @@ int main(int argc, char const *argv[]) {
 				});
 			}
 
-			if (camera->mouse.left.down && camera->placing) {
+			if (camera->mouse.left.down && camera->placing && !IsKeyDown(KEY_LEFT_CONTROL)) {
 				bool force = IsKeyDown(KEY_LEFT_SHIFT);
 				Sim::locked([&]() {
 					if (force || camera->placing->fits()) {
@@ -1819,17 +1918,38 @@ int main(int argc, char const *argv[]) {
 							auto te = camera->placing->entities[i];
 							// Plan will fit over existing entities in the right positions, but don't double up
 							if (Entity::fits(te->spec, te->pos, te->dir)) {
-								Entity::create(Entity::next(), te->spec)
+								Entity& en = Entity::create(Entity::next(), te->spec)
 									.construct()
 									.look(te->dir)
-									.move(camera->placing->position + camera->placing->offsets[i]);
+									.move(te->pos);
+								te->setConfig(en);
+							} else {
+								uint eid = Entity::at(te->pos);
+								if (eid) {
+									Entity& en = Entity::get(eid);
+									if (en.spec == te->spec) {
+										en.look(te->dir);
+										te->setConfig(en);
+									}
+								}
+							}
+						}
+						if (camera->placing->entities.size() == 1) {
+							auto ge = camera->placing->entities[0];
+
+							if (ge->spec->pipette && ge->spec->conveyor) {
+								auto pe = new GuiFakeEntity(ge->spec->pipette);
+								pe->dir = ge->spec->conveyorOutput.transform(ge->dir.rotation());
+								pe->move(ge->pos);
+								camera->placing->entities[0] = pe;
+								delete ge;
 							}
 						}
 					}
 				});
 			}
 
-			if (camera->mouse.left.clicked && !camera->placing && camera->hovering) {
+			if (camera->mouse.left.clicked && !camera->placing && camera->hovering && !IsKeyDown(KEY_LEFT_CONTROL)) {
 				if (popup) popup->show(false);
 				popup = entityPopup;
 				popup->show(true);
@@ -1857,20 +1977,71 @@ int main(int argc, char const *argv[]) {
 				}
 			}
 
-			if (IsKeyReleased(KEY_ESCAPE)) {
-				if (popup) {
-					popup = NULL;
-				}
-				else
-				if (camera->placing) {
-					delete camera->placing;
-					camera->placing = NULL;
-				}
+			if (camera->hovering && IsKeyReleased(KEY_F11)) {
+				Sim::locked([&]() {
+					int id = camera->hovering->id;
+					if (Entity::exists(id)) {
+						Entity& en = Entity::get(id);
+						if (en.spec->conveyor) {
+							en.conveyor().insert(Item::byName("copper-wire")->id);
+						}
+					}
+				});
+			}
+		}
+
+		if (IsKeyReleased(KEY_F1)) {
+			if (popup) popup->show(false);
+			popup = statsPopup;
+			popup->show(true);
+		}
+
+		if (IsKeyReleased(KEY_F2) && camera->hovering) {
+			waypointsPopup->useEntity(camera->hovering->id);
+			if (popup) popup->show(false);
+			popup = waypointsPopup;
+			popup->show(true);
+		}
+
+		if (IsKeyReleased(KEY_F3)) {
+			if (popup) popup->show(false);
+			popup = techPopup;
+			popup->show(true);
+		}
+
+		if (IsKeyReleased(KEY_E)) {
+			bool wasBuildPopup = popup == buildPopup;
+			bool wasVisible = popup && popup->visible;
+
+			if (popup) {
+				popup->show(false);
+				popup = nullptr;
 			}
 
-			if (IsKeyReleased(KEY_F5)) {
-				Sim::save("autosave");
+			if (!wasBuildPopup || (wasBuildPopup && !wasVisible)) {
+				popup = buildPopup;
+				popup->show(true);
 			}
+		}
+
+		if (IsKeyReleased(KEY_ESCAPE)) {
+			if (popup) {
+				popup = nullptr;
+			}
+			else
+			if (camera->placing) {
+				delete camera->placing;
+				camera->placing = nullptr;
+			}
+			else
+			if (camera->directing) {
+				delete camera->directing;
+				camera->directing = nullptr;
+			}
+		}
+
+		if (IsKeyReleased(KEY_F5)) {
+			Sim::save("autosave");
 		}
 
 		for (auto part: Part::all) {
@@ -1897,7 +2068,7 @@ int main(int argc, char const *argv[]) {
 
 			camera->draw();
 
-			ImGui::Begin("hudV", NULL, ImGuiWindowFlags_NoDecoration);
+			ImGui::Begin("hudV", nullptr, ImGuiWindowFlags_NoDecoration);
 			ImGui::SetWindowSize({(float)400,0.0f}, ImGuiCond_Always);
 			ImGui::SetWindowPos({(float)(GetScreenWidth()-400),0}, ImGuiCond_Always);
 
@@ -2028,7 +2199,7 @@ int main(int argc, char const *argv[]) {
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
-	//ImPlot::DestroyContext();
+	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
 
 	UnloadRenderTexture(secondary);

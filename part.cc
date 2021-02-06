@@ -73,7 +73,6 @@ Thing::Thing(Mesh hd, Mesh ld) {
 }
 
 Mesh Thing::loadSTL(std::string stl) {
-	auto in = std::ifstream(stl);
 
 	struct Triangle {
 		size_t count;
@@ -82,41 +81,82 @@ Mesh Thing::loadSTL(std::string stl) {
 	};
 
 	std::vector<Triangle> triangles;
-
-	auto facet = std::regex("facet normal ([^ ]+) ([^ ]+) ([^ ]+)");
-	auto vertex = std::regex("vertex ([^ ]+) ([^ ]+) ([^ ]+)");
 	Triangle triangle; ZERO(triangle);
 
-	for (std::string line; std::getline(in, line);) {
-		trim(line);
+	auto peek = std::ifstream(stl, std::ifstream::binary);
+	char tmp[5]; ZERO(tmp);
+	peek.read(tmp, 5);
+	peek.close();
 
-		std::smatch fm;
-		if (std::regex_match(line, fm, facet)) {
-			float x = (float)std::stod(fm[1].str());
-			float y = (float)std::stod(fm[2].str());
-			float z = (float)std::stod(fm[3].str());
-			triangle.normal = (Vector3){x,y,z};
-			continue;
-		}
+	if (memcmp(tmp, "solid", 5) == 0) {
 
-		std::smatch vm;
-		if (std::regex_match(line, vm, vertex)) {
-			float x = (float)std::stod(vm[1].str());
-			float y = (float)std::stod(vm[2].str());
-			float z = (float)std::stod(vm[3].str());
-			triangle.vertices[triangle.count++] = (Vector3){x,y,z};
+		// https://en.wikipedia.org/wiki/STL_%28file_format%29#ASCII_STL
+		auto in = std::ifstream(stl);
 
-			if (triangle.count == 3) {
-				triangles.push_back(triangle);
-				triangle.count = 0;
+		struct Triangle {
+			size_t count;
+			Vector3 vertices[3];
+			Vector3 normal;
+		};
+
+		auto facet = std::regex("facet normal ([^ ]+) ([^ ]+) ([^ ]+)");
+		auto vertex = std::regex("vertex ([^ ]+) ([^ ]+) ([^ ]+)");
+
+		for (std::string line; std::getline(in, line);) {
+			trim(line);
+
+			std::smatch fm;
+			if (std::regex_match(line, fm, facet)) {
+				float x = (float)std::stod(fm[1].str());
+				float y = (float)std::stod(fm[2].str());
+				float z = (float)std::stod(fm[3].str());
+				triangle.normal = (Vector3){x,y,z};
+				continue;
 			}
 
-			continue;
+			std::smatch vm;
+			if (std::regex_match(line, vm, vertex)) {
+				float x = (float)std::stod(vm[1].str());
+				float y = (float)std::stod(vm[2].str());
+				float z = (float)std::stod(vm[3].str());
+				triangle.vertices[triangle.count++] = (Vector3){x,y,z};
+
+				if (triangle.count == 3) {
+					triangles.push_back(triangle);
+					triangle.count = 0;
+				}
+
+				continue;
+			}
 		}
+
+		in.close();
+
+	} else {
+
+		// https://en.wikipedia.org/wiki/STL_%28file_format%29#Binary_STL
+		auto in = std::ifstream(stl, std::ifstream::binary);
+		in.seekg(80, in.beg);
+
+		uint32_t count = 0;
+		in.read((char*)&count, sizeof(uint32_t));
+
+		char buf[50];
+
+		for (uint i = 0; i < count; i++) {
+			in.read(buf, 50);
+
+			triangle.count = 3;
+			triangle.normal = *(Vector3*)(buf+0);
+			triangle.vertices[0] = *(Vector3*)(buf+12);
+			triangle.vertices[1] = *(Vector3*)(buf+24);
+			triangle.vertices[2] = *(Vector3*)(buf+36);
+
+			triangles.push_back(triangle);
+		}
+
+		in.close();
 	}
-
-	in.close();
-
 
 	Mesh mesh; ZERO(mesh);
 	mesh.vertexCount = (int)triangles.size()*3;
@@ -429,6 +469,25 @@ void PartCycle::update() {
 }
 
 Mat4 PartCycle::specInstance(Spec* spec, uint slot, uint state, Mat4 trx) {
+	if (spec->states.size() > 0) {
+		Mat4 i = specInstanceState(spec, slot, state);
+		return ((shunt * i) * srt) * trx;
+	}
+	return ssrt * trx;
+}
+
+PartCycle2::PartCycle2(Thing thing, std::vector<Mat4> ttransforms) : Part(thing) {
+	transforms = ttransforms;
+}
+
+void PartCycle2::update() {
+	Part::update();
+	uint i = Sim::tick % transforms.size();
+	shunt = transform * transforms[i];
+	ssrt = shunt * srt;
+}
+
+Mat4 PartCycle2::specInstance(Spec* spec, uint slot, uint state, Mat4 trx) {
 	if (spec->states.size() > 0) {
 		Mat4 i = specInstanceState(spec, slot, state);
 		return ((shunt * i) * srt) * trx;

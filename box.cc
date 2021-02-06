@@ -19,6 +19,16 @@ Box::Box(Point p, Volume v) {
 	d = v.d;
 }
 
+Box::Box(Point a, Point b) {
+	Point c = a + ((b - a) * 0.5f);
+	x = c.x;
+	y = c.y;
+	z = c.z;
+	w = std::abs(b.x - a.x);
+	h = std::abs(b.y - a.y);
+	d = std::abs(b.z - a.z);
+}
+
 Box::Box(std::initializer_list<float> l) {
 	auto i = l.begin();
 	x = *i++;

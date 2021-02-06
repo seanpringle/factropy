@@ -16,7 +16,7 @@ struct GuiFakeEntity;
 #include "ghost.h"
 #include "store.h"
 #include "arm.h"
-#include "belt.h"
+#include "conveyor.h"
 #include "lift.h"
 #include "pipe.h"
 #include "crafter.h"
@@ -29,6 +29,7 @@ struct GuiFakeEntity;
 #include "burner.h"
 #include "generator.h"
 #include "turret.h"
+#include "computer.h"
 #include <set>
 #include <vector>
 
@@ -129,7 +130,7 @@ struct Entity {
 	Projector& projector();
 	Vehicle& vehicle();
 	Arm& arm();
-	Belt& belt();
+	Conveyor& conveyor();
 	Lift& lift();
 	Pipe& pipe();
 	Drone& drone();
@@ -139,6 +140,7 @@ struct Entity {
 	Burner& burner();
 	Generator& generator();
 	Turret& turret();
+	Computer& computer();
 };
 
 struct GuiEntity {
@@ -178,11 +180,17 @@ struct GuiEntity {
 		float radius;
 	} explosion;
 
+	struct {
+		uint iid;
+		uint offset;
+	} conveyor;
+
 	GuiEntity();
 	GuiEntity(uint id);
 	~GuiEntity();
 
 	Box box();
+	Box southBox();
 	Box miningBox();
 	Box supportBox();
 	Point ground();
@@ -194,6 +202,8 @@ struct GuiFakeEntity : GuiEntity {
 	GuiFakeEntity(Spec* spec);
 	~GuiFakeEntity();
 
+	GuiFakeEntity* getConfig(Entity& en);
+	GuiFakeEntity* setConfig(Entity& en);
 	GuiFakeEntity* move(Point p);
 	GuiFakeEntity* move(float x, float y, float z);
 	GuiFakeEntity* floor(float level);
