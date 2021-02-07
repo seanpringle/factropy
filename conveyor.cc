@@ -14,7 +14,27 @@ void Conveyor::tick() {
 	}
 	for (auto& pair: all) {
 		if (pair.second.ticked < Sim::tick) {
-			pair.second.update();
+			Conveyor& main = pair.second;
+			// everything left should be circular belts
+			ensure(main.next && main.prev);
+			if (main.iid && main.offset == 0) {
+				uint iid = main.iid;
+				main.iid = 0;
+				main.update();
+				get(main.next).deliver(iid);
+				continue;
+			}
+			if (main.iid && main.offset > 0) {
+				uint iid = main.iid;
+				uint offset = main.offset;
+				main.iid = 0;
+				main.offset = 0;
+				main.update();
+				main.iid = iid;
+				main.offset = offset-1;
+				continue;
+			}
+			main.update();
 		}
 	}
 }
