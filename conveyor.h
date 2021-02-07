@@ -6,6 +6,10 @@ struct Conveyor;
 #include "entity.h"
 #include <list>
 
+// @todo improvements:
+// a) materialize conveyor belt lines to vectors for better interation locality
+// b) store relative offsets so only one gap per belt is decremented without iteration
+
 struct Conveyor {
 	static void reset();
 	static void tick();
@@ -16,13 +20,20 @@ struct Conveyor {
 	static Conveyor& create(uint id);
 	static Conveyor& get(uint id);
 
+	static inline bool rebuild = true;
+	static inline std::vector<uint> leadersStraight;
+	static inline std::vector<uint> leadersCircular;
+
 	uint id;
 	uint iid;
 	uint offset;
 	uint steps;
 	uint prev;
 	uint next;
-	uint64_t ticked;
+	Conveyor* cnext;
+	Conveyor* cprev;
+	bool marked;
+	bool managed;
 
 	void destroy();
 	Conveyor& manage();

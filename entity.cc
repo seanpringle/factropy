@@ -159,6 +159,7 @@ Entity& Entity::create(uint id, Spec *spec) {
 }
 
 void Entity::destroy() {
+	unmanage();
 	unindex();
 
 	if (isGhost()) {

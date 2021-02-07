@@ -7,35 +7,106 @@ void Conveyor::reset() {
 }
 
 void Conveyor::tick() {
-	for (auto& pair: all) {
-		if (!pair.second.next) {
-			pair.second.update();
+	if (rebuild) {
+		rebuild = false;
+
+		leadersStraight.clear();
+		leadersCircular.clear();
+		for (auto& pair: all) {
+			Conveyor& conveyor = pair.second;
+			conveyor.marked = false;
+			conveyor.managed = !Entity::get(conveyor.id).isGhost();
+		}
+
+		for (auto& pair: all) {
+			if (!pair.second.managed) continue;
+
+			if (!pair.second.next) {
+				Conveyor& leader = pair.second;
+				leadersStraight.push_back(leader.id);
+				leader.marked = true;
+				uint prev = leader.prev;
+				while (prev) {
+					Conveyor& before = get(prev);
+					ensure(!before.marked);
+					before.marked = true;
+					prev = before.prev;
+				}
+			}
+		}
+
+		for (auto& pair: all) {
+			if (!pair.second.managed) continue;
+
+			if (!pair.second.marked) {
+				Conveyor& leader = pair.second;
+				ensure(leader.next && leader.prev);
+				leadersCircular.push_back(leader.id);
+				leader.marked = true;
+				uint prev = leader.prev;
+				while (prev) {
+					Conveyor& before = get(prev);
+					ensure(before.next && before.prev);
+					if (before.marked) break;
+					before.marked = true;
+					prev = before.prev;
+				}
+			}
+		}
+
+		for (auto id: leadersStraight) {
+			Conveyor& leader = get(id);
+			leader.cnext = nullptr;
+			leader.cprev = leader.prev ? &all[leader.prev]: nullptr;
+			uint prev = leader.prev;
+			while (prev) {
+				Conveyor& before = get(prev);
+				before.cnext = before.next ? &all[before.next]: nullptr;
+				before.cprev = before.prev ? &all[before.prev]: nullptr;
+				prev = before.prev;
+			}
+		}
+
+		for (auto id: leadersCircular) {
+			Conveyor& leader = get(id);
+			leader.cnext = nullptr;
+			leader.cprev = leader.prev ? &all[leader.prev]: nullptr;
+			uint prev = leader.prev;
+			while (prev && prev != leader.id) {
+				Conveyor& before = get(prev);
+				before.cnext = before.next ? &all[before.next]: nullptr;
+				before.cprev = before.prev ? &all[before.prev]: nullptr;
+				prev = before.prev;
+			}
+			get(leader.next).cprev = nullptr;
 		}
 	}
-	for (auto& pair: all) {
-		if (pair.second.ticked < Sim::tick) {
-			Conveyor& main = pair.second;
-			// everything left should be circular belts
-			ensure(main.next && main.prev);
-			if (main.iid && main.offset == 0) {
-				uint iid = main.iid;
-				main.iid = 0;
-				main.update();
-				get(main.next).deliver(iid);
-				continue;
-			}
-			if (main.iid && main.offset > 0) {
-				uint iid = main.iid;
-				uint offset = main.offset;
-				main.iid = 0;
-				main.offset = 0;
-				main.update();
-				main.iid = iid;
-				main.offset = offset-1;
-				continue;
-			}
-			main.update();
+
+	for (auto id: leadersStraight) {
+		Conveyor& leader = get(id);
+		leader.update();
+	}
+
+	for (auto id: leadersCircular) {
+		Conveyor& leader = get(id);
+		if (leader.iid && leader.offset == 0) {
+			uint iid = leader.iid;
+			leader.iid = 0;
+			leader.update();
+			get(leader.next).deliver(iid);
+			continue;
 		}
+		if (leader.iid && leader.offset > 0) {
+			uint iid = leader.iid;
+			uint offset = leader.offset;
+			leader.iid = 0;
+			leader.offset = 0;
+			leader.update();
+			leader.iid = iid;
+			leader.offset = offset-1;
+			continue;
+		}
+		leader.update();
 	}
 }
 
@@ -48,7 +119,10 @@ Conveyor& Conveyor::create(uint id) {
 	conveyor.steps = en.spec->conveyorTransforms.size();
 	conveyor.prev = 0;
 	conveyor.next = 0;
-	conveyor.ticked = 0;
+	conveyor.cnext = nullptr;
+	conveyor.cprev = nullptr;
+	conveyor.marked = false;
+	conveyor.managed = false;
 	return conveyor;
 }
 
@@ -58,9 +132,7 @@ Conveyor& Conveyor::get(uint id) {
 }
 
 void Conveyor::destroy() {
-	if (prev || next) {
-		unmanage();
-	}
+	ensuref(!managed, "attempt to destroy managed conveyor %d", id);
 	all.erase(id);
 }
 
@@ -83,6 +155,9 @@ Point Conveyor::output() {
 Conveyor& Conveyor::manage() {
 	ensure(!prev);
 	ensure(!next);
+
+	rebuild = true;
+	managed = true;
 
 	Entity& en = Entity::get(id);
 
@@ -124,6 +199,9 @@ Conveyor& Conveyor::manage() {
 
 Conveyor& Conveyor::unmanage() {
 
+	rebuild = true;
+	managed = false;
+
 	if (prev) {
 		ensure(get(prev).next == id);
 		get(prev).next = 0;
@@ -149,27 +227,19 @@ bool Conveyor::deliver(uint iiid) {
 }
 
 void Conveyor::update() {
-	if (Sim::tick == ticked) {
-		return;
-	}
-
-	ticked = Sim::tick;
-
 	for(;;) {
 		if (!iid) {
 			break;
 		}
 
-		uint nextOffset = next ? get(next).offset: 0;
+		uint nextOffset = cnext ? cnext->offset: 0;
 
-		if (next && nextOffset && offset <= nextOffset) {
+		if (cnext && nextOffset && offset <= nextOffset) {
 			break;
 		}
 
-		if (!next) {
-			if (offset <= steps/2) {
-				break;
-			}
+		if (!cnext && offset <= steps/2) {
+			break;
 		}
 
 		if (offset > 0) {
@@ -177,18 +247,18 @@ void Conveyor::update() {
 			break;
 		}
 
-		if (next && get(next).deliver(iid)) {
+		if (cnext && cnext->deliver(iid)) {
 			iid = 0;
 		}
 
 		break;
 	}
 
-	if (!prev) {
+	if (!cprev) {
 		return;
 	}
 
-	get(prev).update();
+	cprev->update();
 }
 
 bool Conveyor::insert(uint iiid) {
