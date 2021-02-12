@@ -733,6 +733,67 @@ int main(int argc, char const *argv[]) {
 		};
 	}
 
+	spec = new Spec("conveyor-down");
+	spec->collision = { w: 1, h: 3, d: 1 };
+	spec->rotate = true;
+	spec->conveyor = true;
+	spec->conveyorInput = Point::North + (Point::Up*0.5f);
+	spec->conveyorOutput = Point::South + (Point::Down*0.5f);
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(1);
+	spec->health = 10;
+
+	{
+		Point base = (Point::South * 0.5f) + (Point::Down * 0.5f);
+		Point hstep = Point::North * (1.0f/30.0f);
+		Point vstep = Point::Up * (1.0f/30.0f);
+		for (int i = 0; i < 30; i++) {
+			Point p = base + (hstep * (float)i) + (vstep * (float)i);
+			spec->conveyorTransforms.push_back(p.translation());
+		}
+	}
+
+	{
+		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
+		spec->parts = {
+			(new Part(Thing("models/belt-slope-base.stl")))->paint(0xcccc00ff)->scale(0.001, 0.001, 0.001)->translate(0,-1.5,0),
+			(new Part(Thing("models/belt-slope-surface.stl")))->paint(0x000000ff)->scale(0.001, 0.001, 0.001)->translate(0,-1.5,0),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+		};
+	}
+
+	spec = new Spec("conveyor-up");
+	spec->collision = { w: 1, h: 3, d: 1 };
+	spec->rotate = true;
+	spec->conveyor = true;
+	spec->conveyorInput = Point::North + (Point::Down*0.5f);
+	spec->conveyorOutput = Point::South + (Point::Up*0.5f);
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(1);
+	spec->health = 10;
+
+	{
+		Point base = (Point::South * 0.5f) + (Point::Up * 0.5f);
+		Point hstep = Point::North * (1.0f/30.0f);
+		Point vstep = Point::Down * (1.0f/30.0f);
+		for (int i = 0; i < 30; i++) {
+			Point p = base + (hstep * (float)i) + (vstep * (float)i);
+			spec->conveyorTransforms.push_back(p.translation());
+		}
+	}
+
+	{
+		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
+		spec->parts = {
+			(new Part(Thing("models/belt-slope-base.stl")))->paint(0xcccc00ff)
+				->scale(0.001, 0.001, 0.001)->rotate(Point::Up, 180)->translate(0,-1.5,0),
+			(new Part(Thing("models/belt-slope-surface.stl")))->paint(0x000000ff)
+				->scale(0.001, 0.001, 0.001)->rotate(Point::Up, 180)->translate(0,-1.5,0),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)
+				->translate(0,-1.5,0)->ld(false),
+		};
+	}
+
 	// conveyors are modelled for output==direction, but it seems easier to visualise in-game
 	// as input==direction. So the cycle order is reversed for a clockwise rotation
 	Spec::byName("conveyor")->cycle = Spec::byName("conveyor-left");

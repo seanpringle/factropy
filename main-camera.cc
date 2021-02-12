@@ -362,7 +362,7 @@ void MainCamera::update(bool worldFocused) {
 		}
 
 		if (selecting) {
-			Box box = Box(selection.a, selection.b);
+			Box box = Box(selection.a, selection.b + (Point::Up*1000.0f));
 			for (auto ge: entities) {
 				if (!ge->spec->select) continue;
 				if (ge->box().intersects(box)) {
