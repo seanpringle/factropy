@@ -70,6 +70,10 @@ GuiEntity::GuiEntity(uint id) : GuiEntity() {
 		aim = en.turret().aim;
 	}
 
+	if (spec->ropeway) {
+		aim = en.ropeway().aim;
+	}
+
 	if (spec->conveyor) {
 		conveyor.iid = en.conveyor().iid;
 		conveyor.offset = en.conveyor().offset;
@@ -108,6 +112,10 @@ Mat4 GuiEntity::partTransform(Part* part) {
 		return r * t;
 	}
 	return transform;
+}
+
+bool GuiEntity::connectable(GuiEntity* other) {
+	return spec->ropeway && other->spec->ropeway && pos.distance(other->pos) < 50.0f;
 }
 
 // GuiFakeEntity

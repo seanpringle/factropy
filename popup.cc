@@ -569,6 +569,14 @@ void EntityPopup2::draw() {
 			PopID();
 		}
 
+		if (en.spec->ropeway) {
+			PushID("ropeway");
+
+			Print(fmtc("ropeway %fm", en.ropeway().length()));
+
+			PopID();
+		}
+
 		End();
 	});
 }

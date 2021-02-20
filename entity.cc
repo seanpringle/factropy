@@ -116,6 +116,14 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Conveyor::create(id);
 	}
 
+	if (spec->ropeway) {
+		Ropeway::create(id);
+	}
+
+	if (spec->ropewayBucket) {
+		RopewayBucket::create(id);
+	}
+
 	if (spec->lift) {
 		Lift::create(id);
 	}
@@ -206,6 +214,14 @@ void Entity::destroy() {
 		conveyor().destroy();
 	}
 
+	if (spec->ropeway) {
+		ropeway().destroy();
+	}
+
+	if (spec->ropewayBucket) {
+		ropewayBucket().destroy();
+	}
+
 	if (spec->lift) {
 		lift().destroy();
 	}
@@ -253,7 +269,6 @@ Entity& Entity::get(uint id) {
 
 bool Entity::fits(Spec *spec, Point pos, Point dir) {
 	Box bounds = spec->box(pos, dir).shrink(0.1);
-
 	if (intersecting(bounds).size()) return false;
 
 	switch (spec->place) {
@@ -666,6 +681,14 @@ Arm& Entity::arm() {
 
 Conveyor& Entity::conveyor() {
 	return Conveyor::get(id);
+}
+
+Ropeway& Entity::ropeway() {
+	return Ropeway::get(id);
+}
+
+RopewayBucket& Entity::ropewayBucket() {
+	return RopewayBucket::get(id);
 }
 
 Lift& Entity::lift() {

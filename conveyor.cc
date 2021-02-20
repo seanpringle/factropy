@@ -18,6 +18,7 @@ void Conveyor::tick() {
 			conveyor.managed = !Entity::get(conveyor.id).isGhost();
 		}
 
+		// identify belt leaders
 		for (auto& pair: all) {
 			if (!pair.second.managed) continue;
 

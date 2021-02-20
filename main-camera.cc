@@ -48,9 +48,10 @@ MainCamera::MainCamera(Point pos, Point dir) {
 	showGrid = true;
 	selecting = false;
 
-	hovering = NULL;
-	placing = NULL;
-	directing = NULL;
+	hovering = nullptr;
+	placing = nullptr;
+	directing = nullptr;
+	connecting = nullptr;
 
 	buildLevel = 0.0f;
 
@@ -71,7 +72,7 @@ void MainCamera::lookAt(Point p) {
 
 void MainCamera::build(Spec* spec, Point dir) {
 	delete placing;
-	placing = NULL;
+	placing = nullptr;
 	if (spec) {
 		placing = new Plan(Point::Zero);
 		auto ge = new GuiFakeEntity(spec);
@@ -288,7 +289,7 @@ void MainCamera::updateCamera() {
 
 void MainCamera::update(bool worldFocused) {
 	statsUpdate.track(frame, [&]() {
-		hovering = NULL;
+		hovering = nullptr;
 		hovered.clear();
 		selected.clear();
 		placingFits = false;
@@ -306,7 +307,7 @@ void MainCamera::update(bool worldFocused) {
 		if (IsKeyReleased(KEY_ESCAPE)) {
 			if (placing) {
 				delete placing;
-				placing = NULL;
+				placing = nullptr;
 			}
 			else
 			if (selecting) {
@@ -331,13 +332,24 @@ void MainCamera::update(bool worldFocused) {
 
 			if (directing && !Entity::exists(directing->id)) {
 				delete directing;
-				directing = NULL;
+				directing = nullptr;
 			}
 
 			if (directing) {
 				uint id = directing->id;
 				delete directing;
 				directing = new GuiEntity(id);
+			}
+
+			if (connecting && !Entity::exists(connecting->id)) {
+				delete connecting;
+				connecting = nullptr;
+			}
+
+			if (connecting) {
+				uint id = connecting->id;
+				delete connecting;
+				connecting = new GuiEntity(id);
 			}
 
 			placingFits = !placing || placing->fits();
@@ -354,7 +366,7 @@ void MainCamera::update(bool worldFocused) {
 			float distance = 0.0f;
 			for (auto ge: hovered) {
 				float d = ge->pos.distance(position);
-				if (hovering == NULL || d < distance) {
+				if (hovering == nullptr || d < distance) {
 					hovering = ge;
 					distance = d;
 				}
@@ -566,6 +578,21 @@ void MainCamera::draw() {
 						(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(t1));
 					}
 				}
+
+				if (!ge->ghost && ge->spec->ropeway) {
+					Ropeway& ropeway = en.ropeway();
+
+					if (ropeway.next) {
+						Entity& sibling = Entity::get(ropeway.next);
+
+						Point a = ropeway.arrive();
+						Point b = sibling.ropeway().arrive();
+						DrawLine3D(a, b, BLACK);
+						Point c = ropeway.depart();
+						Point d = sibling.ropeway().depart();
+						DrawLine3D(c, d, BLACK);
+					}
+				}
 			}
 
 			for (auto [part,batch]: extant_ld) {
@@ -658,6 +685,14 @@ void MainCamera::draw() {
 						}
 					});
 				}
+
+				if (hovering->spec->ropeway) {
+					Sim::locked([&]() {
+						Entity& en = Entity::get(hovering->id);
+						DrawCube(en.ropeway().arrive(), 0.25f, 0.25f, 0.25f, GREEN);
+						DrawCube(en.ropeway().depart(), 0.25f, 0.25f, 0.25f, RED);
+					});
+				}
 			}
 
 			if (selecting) {
@@ -704,6 +739,22 @@ void MainCamera::draw() {
 
 			if (directing) {
 				drawBox(directing->southBox(), directing->dir, ORANGE);
+			}
+
+			if (connecting) {
+				drawBox(connecting->southBox(), connecting->dir, BLUE);
+
+				if (placing) {
+					for (auto& ge: placing->entities) {
+						if (connecting->connectable(ge)) {
+							DrawLine3D(connecting->pos, ge->pos, GREEN);
+						}
+					}
+				}
+
+				if (hovering && connecting->connectable(hovering)) {
+					DrawLine3D(connecting->pos, hovering->pos, GREEN);
+				}
 			}
 
 			if (Path::jobs.size() > 0) {

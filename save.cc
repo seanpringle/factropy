@@ -77,6 +77,8 @@ namespace Sim {
 		Pipe::saveAll(name);
 		Conveyor::saveAll(name);
 		Computer::saveAll(name);
+		RopewayBucket::saveAll(name);
+		Ropeway::saveAll(name);
 
 		Ledger::save(name);
 		Recipe::save(name);
@@ -133,6 +135,8 @@ namespace Sim {
 		Pipe::loadAll(name);
 		Conveyor::loadAll(name);
 		Computer::loadAll(name);
+		RopewayBucket::loadAll(name);
+		Ropeway::loadAll(name);
 
 		Ledger::load(name);
 		Recipe::load(name);
@@ -945,4 +949,80 @@ void Computer::loadAll(const char* name) {
 	//}
 
 	//in.close();
+}
+
+void Ropeway::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/ropeways.json");
+
+	for (auto& pair: all) {
+		auto ropeway = pair.second;
+
+		json state;
+		state["id"] = ropeway.id;
+		state["prev"] = ropeway.prev;
+		state["next"] = ropeway.next;
+		state["cycle"] = ropeway.cycle;
+
+		int i = 0;
+		for (auto& bid: ropeway.buckets) {
+			state["buckets"][i++] = bid;
+		}
+
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Ropeway::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/ropeways.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Ropeway& ropeway = get(state["id"]);
+		ropeway.prev = state["prev"];
+		ropeway.next = state["next"];
+		ropeway.cycle = state["cycle"];
+
+		for (uint bid: state["buckets"]) {
+			ropeway.buckets.push_back(bid);
+		}
+
+		ropeway.check = true;
+	}
+
+	in.close();
+}
+
+void RopewayBucket::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/ropeway-buckets.json");
+
+	for (auto& pair: all) {
+		auto bucket = pair.second;
+
+		json state;
+		state["id"] = bucket.id;
+		state["rid"] = bucket.rid;
+		state["step"] = bucket.step;
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void RopewayBucket::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/ropeway-buckets.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		RopewayBucket& bucket = get(state["id"]);
+		bucket.rid = state["rid"];
+		bucket.step = state["step"];
+	}
+
+	in.close();
 }

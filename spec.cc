@@ -97,6 +97,12 @@ Spec::Spec(std::string name) {
 
 	conveyor = false;
 
+	ropeway = false;
+	ropewayTower = false;
+	ropewayTerminus = false;
+	ropewayCableEast = Point::Zero;
+	ropewayBucket = false;
+
 	computer = false;
 	networker = false;
 

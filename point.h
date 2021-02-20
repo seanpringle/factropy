@@ -55,6 +55,8 @@ struct Point : Vector3 {
 	float length() const;
 	Mat4 rotation();
 	Mat4 translation();
+	Point nearestPointOnLine(Point l0, Point l1) const;
+	static bool linesCrossOnGround(Point a0, Point a1, Point b0, Point b1);
 };
 
 #endif

@@ -148,6 +148,12 @@ struct Spec {
 	Point conveyorOutput;
 	std::vector<Mat4> conveyorTransforms;
 
+	bool ropeway;
+	bool ropewayTerminus;
+	bool ropewayTower;
+	bool ropewayBucket;
+	Point ropewayCableEast;
+
 	bool computer;
 	bool networker;
 

@@ -276,3 +276,64 @@ Mat4 Point::rotation() {
 Mat4 Point::translation() {
 	return Mat4::translate(*this);
 }
+
+Point Point::nearestPointOnLine(Point start, Point end) const {
+	auto line = (end - start);
+	float len = line.length();
+	auto nline = line.normalize();
+
+	auto v = *this - start;
+	float d = v.dot(nline);
+	d = std::max(0.0f, std::min(len, d));
+	return start + nline * d;
+}
+
+bool
+Point::linesCrossOnGround(Point a0, Point a1, Point b0, Point b1) //, float *i_x, float *i_y)
+{
+	// https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+	float ax0 = a0.x;
+	float ay0 = a0.z;
+	float ax1 = a1.x;
+	float ay1 = a1.z;
+	float bx0 = b0.x;
+	float by0 = b0.z;
+	float bx1 = b1.x;
+	float by1 = b1.z;
+
+	float s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, s_numer, t_numer, denom; //, t;
+
+	s10_x = ax1 - ax0;
+	s10_y = ay1 - ay0;
+	s32_x = bx1 - bx0;
+	s32_y = by1 - by0;
+
+	denom = s10_x * s32_y - s32_x * s10_y;
+	if (denom == 0)
+		return 0; // Collinear
+	bool denomPositive = denom > 0;
+
+	s02_x = ax0 - bx0;
+	s02_y = ay0 - by0;
+	s_numer = s10_x * s02_y - s10_y * s02_x;
+
+	if ((s_numer < 0) == denomPositive)
+		return 0; // No collision
+
+	t_numer = s32_x * s02_y - s32_y * s02_x;
+
+	if ((t_numer < 0) == denomPositive)
+		return 0; // No collision
+
+	if (((s_numer > denom) == denomPositive) || ((t_numer > denom) == denomPositive))
+		return 0; // No collision
+
+	// Collision detected
+	//t = t_numer / denom;
+	//if (i_x != NULL)
+	//    *i_x = ax0 + (t * s10_x);
+	//if (i_y != NULL)
+	//    *i_y = ay0 + (t * s10_y);
+
+	return 1;
+}

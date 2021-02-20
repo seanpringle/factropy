@@ -17,6 +17,7 @@ struct GuiFakeEntity;
 #include "store.h"
 #include "arm.h"
 #include "conveyor.h"
+#include "ropeway.h"
 #include "lift.h"
 #include "pipe.h"
 #include "crafter.h"
@@ -131,6 +132,8 @@ struct Entity {
 	Vehicle& vehicle();
 	Arm& arm();
 	Conveyor& conveyor();
+	Ropeway& ropeway();
+	RopewayBucket& ropewayBucket();
 	Lift& lift();
 	Pipe& pipe();
 	Drone& drone();
@@ -196,6 +199,8 @@ struct GuiEntity {
 	Point ground();
 	void updateTransform();
 	Mat4 partTransform(Part* part);
+
+	bool connectable(GuiEntity* other);
 };
 
 struct GuiFakeEntity : GuiEntity {
