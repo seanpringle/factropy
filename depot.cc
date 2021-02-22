@@ -7,8 +7,8 @@ void Depot::reset() {
 }
 
 void Depot::tick() {
-	for (auto& pair: all) {
-		pair.second.update();
+	for (auto& depot: all) {
+		depot.update();
 	}
 }
 
@@ -20,7 +20,7 @@ Depot& Depot::create(uint id) {
 }
 
 Depot& Depot::get(uint id) {
-	ensuref(all.count(id) > 0, "invalid depot access %d", id);
+	ensuref(all.has(id) > 0, "invalid depot access %d", id);
 	return all[id];
 }
 

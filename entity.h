@@ -36,6 +36,7 @@ struct GuiFakeEntity;
 #include <vector>
 
 struct Entity {
+	uint id;
 
 	static const uint32_t GHOST = 1<<0;
 	static const uint32_t CONSTRUCTION = 1<<1;
@@ -54,7 +55,7 @@ struct Entity {
 	static inline std::set<uint> electricityConsumers;
 	static inline std::set<uint> electricityGenerators;
 
-	static inline slabmap<uint,Entity> all;
+	static inline slabmap<Entity,uint,&Entity::id> all;
 	static inline uint sequence = 0;
 	static uint next();
 
@@ -77,7 +78,6 @@ struct Entity {
 
 	static std::vector<uint> enemiesInRange(Point pos, float radius);
 
-	uint id;
 	uint32_t flags;
 	Spec* spec;
 	Point pos;

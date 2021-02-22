@@ -11,16 +11,16 @@ struct Crafter;
 #include <map>
 
 struct Crafter {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,Crafter> all;
+	static inline slabmap<Crafter,uint,&Crafter::id> all;
 	static Crafter& create(uint id);
 	static Crafter& get(uint id);
 
-	uint id;
 	bool working;
 	float progress;
 	float efficiency;

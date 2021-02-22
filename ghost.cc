@@ -8,8 +8,7 @@ void Ghost::reset() {
 }
 
 void Ghost::tick() {
-	for (auto it = all.begin(); it != all.end(); ) {
-		Ghost& ghost = it->second; it++;
+	for (auto& ghost: all) {
 		ghost.update();
 	}
 }
@@ -22,7 +21,7 @@ Ghost& Ghost::create(uint id, uint sid) {
 }
 
 Ghost& Ghost::get(uint id) {
-	ensuref(all.count(id) > 0, "invalid ghost access %d", id);
+	ensuref(all.has(id) > 0, "invalid ghost access %d", id);
 	return all[id];
 }
 

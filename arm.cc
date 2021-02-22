@@ -7,13 +7,13 @@ void Arm::reset() {
 }
 
 void Arm::tick() {
-	for (auto& pair: all) {
-		pair.second.update();
+	for (auto& arm: all) {
+		arm.update();
 	}
 }
 
 Arm& Arm::create(uint id) {
-	ensuref(!all.count(id), "double-create arm %d", id);
+	ensuref(!all.has(id), "double-create arm %d", id);
 	Arm& arm = all[id];
 	arm.id = id;
 	arm.iid = 0;
@@ -25,7 +25,7 @@ Arm& Arm::create(uint id) {
 }
 
 Arm& Arm::get(uint id) {
-	ensuref(all.count(id) > 0, "invalid arm access %d", id);
+	ensuref(all.has(id) > 0, "invalid arm access %d", id);
 	return all[id];
 }
 

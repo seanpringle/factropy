@@ -11,12 +11,13 @@ struct Conveyor;
 // b) store relative offsets so only one gap per belt is decremented without iteration
 
 struct Conveyor {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<uint,Conveyor> all;
+	static inline slabmap<Conveyor,uint,&Conveyor::id> all;
 	static Conveyor& create(uint id);
 	static Conveyor& get(uint id);
 
@@ -24,7 +25,6 @@ struct Conveyor {
 	static inline std::vector<uint> leadersStraight;
 	static inline std::vector<uint> leadersCircular;
 
-	uint id;
 	uint iid;
 	uint offset;
 	uint steps;

@@ -7,12 +7,13 @@ struct Drone;
 #include "slabmap.h"
 
 struct Drone {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<uint,Drone> all;
+	static inline slabmap<Drone,uint,&Drone::id> all;
 	static Drone& create(uint id);
 	static Drone& get(uint id);
 
@@ -23,7 +24,6 @@ struct Drone {
 		Stranded,
 	};
 
-	uint id;
 	uint iid;
 	uint dep;
 	uint src;

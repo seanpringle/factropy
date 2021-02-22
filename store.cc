@@ -11,11 +11,11 @@ void Store::tick() {
 	for (Store& store: all) {
 		store.update();
 	}
-	for (auto& pair: Burner::all) {
-		pair.second.store.update();
+	for (auto& burner: Burner::all) {
+		burner.store.update();
 	}
-	for (auto& pair: Ghost::all) {
-		pair.second.store.update();
+	for (auto& ghost: Ghost::all) {
+		ghost.store.update();
 	}
 }
 

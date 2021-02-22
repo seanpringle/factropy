@@ -616,8 +616,7 @@ void Arm::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/arms.json");
 
-	for (auto& pair: all) {
-		Arm& arm = pair.second;
+	for (auto& arm: all) {
 
 		json state;
 		state["id"] = arm.id;
@@ -657,8 +656,7 @@ void Crafter::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/crafters.json");
 
-	for (auto& pair: all) {
-		Crafter& crafter = pair.second;
+	for (auto& crafter: all) {
 
 		json state;
 		state["id"] = crafter.id;
@@ -693,8 +691,7 @@ void Depot::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/depots.json");
 
-	for (auto& pair: all) {
-		Depot& depot = pair.second;
+	for (auto& depot: all) {
 
 		json state;
 		state["id"] = depot.id;
@@ -771,10 +768,10 @@ void Burner::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/burners.json");
 
-	for (auto& [id,burner]: all) {
+	for (auto& burner: all) {
 
 		json state;
-		state["id"] = id;
+		state["id"] = burner.id;
 		state["energy"] = burner.energy.value;
 		state["buffer"] = burner.buffer.value;
 

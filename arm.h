@@ -2,18 +2,19 @@
 
 struct Arm;
 
-#include "sparse.h"
+#include "slabmap.h"
 #include "item.h"
 #include "entity.h"
 #include <map>
 
 struct Arm {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,Arm> all;
+	static inline slabmap<Arm,uint,&Arm::id> all;
 	static Arm& create(uint id);
 	static Arm& get(uint id);
 
@@ -27,7 +28,6 @@ struct Arm {
 		Unparking,
 	};
 
-	uint id;
 	uint iid;
 	uint inputId;
 	uint inputStoreId;

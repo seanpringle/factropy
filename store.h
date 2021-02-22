@@ -10,12 +10,13 @@ struct Store;
 #include <set>
 
 struct Store {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<uint,Store> all;
+	static inline slabmap<Store,uint,&Store::id> all;
 	static Store& create(uint id, uint sid, Mass cap);
 	static Store& get(uint id);
 
@@ -27,7 +28,6 @@ struct Store {
 		uint reserved;
 	};
 
-	uint id;
 	uint sid;
 	uint64_t activity;
 	Mass capacity;

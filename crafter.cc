@@ -7,8 +7,8 @@ void Crafter::reset() {
 }
 
 void Crafter::tick() {
-	for (auto& pair: all) {
-		pair.second.update();
+	for (auto& crafter: all) {
+		crafter.update();
 	}
 }
 
@@ -26,7 +26,7 @@ Crafter& Crafter::create(uint id) {
 }
 
 Crafter& Crafter::get(uint id) {
-	ensuref(all.count(id) > 0, "invalid crafter access %d", id);
+	ensuref(all.has(id) > 0, "invalid crafter access %d", id);
 	return all[id];
 }
 

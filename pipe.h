@@ -10,18 +10,18 @@ struct PipeNetwork;
 #include <set>
 
 struct Pipe {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<uint,Pipe> all;
+	static inline slabmap<Pipe,uint,&Pipe::id> all;
 	static Pipe& create(uint id);
 	static Pipe& get(uint id);
 
 	static std::vector<uint> servicing(Box box);
 
-	uint id;
 	PipeNetwork* network;
 	uint cacheFid;
 	int cacheTally;

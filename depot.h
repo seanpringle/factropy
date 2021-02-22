@@ -3,21 +3,20 @@
 
 struct Depot;
 
-#include "sparse.h"
+#include "slabmap.h"
 #include "entity.h"
-#include <map>
 
 struct Depot {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,Depot> all;
+	static inline slabmap<Depot,uint,&Depot::id> all;
 	static Depot& create(uint id);
 	static Depot& get(uint id);
 
-	uint id;
 	uint64_t pause;
 	std::set<uint> drones;
 

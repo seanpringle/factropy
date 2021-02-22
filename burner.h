@@ -3,18 +3,19 @@
 
 struct Burner;
 
+#include "slabmap.h"
 #include "store.h"
 
 struct Burner {
+	uint id;
 	static void reset();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,Burner> all;
+	static inline slabmap<Burner,uint,&Burner::id> all;
 	static Burner& create(uint id, uint sid);
 	static Burner& get(uint id);
 
-	uint id;
 	Energy energy;
 	Energy buffer;
 	Store store;

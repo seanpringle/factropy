@@ -1,103 +1,125 @@
 #pragma once
 
-#include <list>
 #include <vector>
 #include <functional>
 #include <cassert>
+#include <new>
 
-template <class K, class V>
+// A hash-table/slab-allocator that:
+// - stores objects that contain their own key as a field
+// - allocates object memory in pages (iteration locality)
+// - uses vectors for hash chain buckets for (lookup locality)
+// - allows element removal during iteration
+// - optimizes for read over write
+
+template <class V, typename K, auto ID>
 class slabmap {
 private:
 
-	static inline uint minWidth = 1<<4;
-	static inline uint maxWidth = 1<<16;
-	#define slabSize 1024
+	#define minWidth (uint)(1<<4)
+	#define maxWidth (uint)(1<<16)
+	#define slabSize (uint)1024
 
-	uint width = minWidth;
 	uint entries = 0;
-	float load = 4.0f;
 
-	struct smpair {
-		K key;
-		V val;
-		bool used;
-
-		smpair() {
-			memset((uint8_t*)&key, 0, sizeof(K));
-			memset((uint8_t*)&val, 0, sizeof(V));
-			used = false;
+	struct item : V {
+		item() : V() {
 		}
-
-		smpair(K k, V v) {
-			key = k;
-			val = v;
-			used = true;
+		~item() {
 		}
 	};
 
-	struct smref {
+	struct slot {
 		uint slab;
 		uint cell;
 
-		smref() {
+		slot() {
 			slab = 0;
 			cell = 0;
 		}
 
-		smref(uint s, uint c) {
+		slot(uint s, uint c) {
 			slab = s;
 			cell = c;
 		}
 	};
 
-	std::vector<smref> queue;
-	std::vector<std::array<smpair,slabSize>> slabs;
-	std::vector<std::vector<smref>> index;
+	std::vector<slot> queue;
+	std::vector<item*> slabs;
+	std::vector<bool*> flags;
+	std::vector<std::vector<slot>> index;
 
 	std::size_t chain(const K& k) const {
 		std::hash<K> hash;
-		return hash(k) % width;
+		assert(index.size() > 0);
+		return hash(k) % index.size();
 	}
 
-	void reindex(uint w) {
-		width = w;
-		index.clear();
-		index.shrink_to_fit();
-		index.resize(width);
-		for (uint s = 0; s < slabs.size(); s++) {
-			for (int i = 0; i < slabSize; i++) {
-				if (slabs[s][i].used) {
-					auto& k = slabs[s][i].key;
-					index[chain(k)].push_back(smref(s, i));
+public:
+
+	float load = 4.0f;
+	bool autogrow = true;
+
+	slabmap<V,K,ID>() {
+	}
+
+	~slabmap<V,K,ID>() {
+		clear();
+	}
+
+	void reindex() {
+
+		uint width = std::max(minWidth, (uint)index.size());
+		float current = (float)entries/(float)width;
+
+		if (current > load && width < maxWidth) {
+			width *= 2;
+		}
+
+		if (current < (load*0.5) && width > minWidth) {
+			width /= 2;
+		}
+
+		if (width != index.size()) {
+			index.clear();
+			index.shrink_to_fit();
+			index.resize(width);
+			for (uint s = 0; s < slabs.size(); s++) {
+				for (uint i = 0; i < slabSize; i++) {
+					if (flags[s][i]) {
+						auto& k = slabs[s][i].*ID;
+						index[chain(k)].push_back(slot(s, i));
+					}
 				}
 			}
 		}
 	}
 
-public:
-
-	slabmap<K,V>() {
-	}
-
-	~slabmap<K,V>() {
-	}
-
 	void clear() {
+		for (uint i = 0; i < slabs.size(); i++) {
+			for (uint j = 0; j < slabSize; j++) {
+				if (flags[i][j]) {
+					slabs[i][j].~item();
+					flags[i][j] = false;
+				}
+			}
+			std::free(slabs[i]);
+			std::free(flags[i]);
+		}
 		slabs.clear();
 		slabs.shrink_to_fit();
 		queue.clear();
 		queue.shrink_to_fit();
 		index.clear();
 		index.shrink_to_fit();
-		width = minWidth;
 		entries = 0;
 	}
 
 	bool has(const K& k) const {
 		if (!entries) return false;
 
-		for (smref ref: index[chain(k)]) {
-			if (slabs[ref.slab][ref.cell].key == k) {
+		for (slot ref: index[chain(k)]) {
+			if (slabs[ref.slab][ref.cell].*ID == k) {
 				return true;
 			}
 		}
@@ -119,18 +141,17 @@ public:
 
 		for (auto it = bucket.begin(); it != bucket.end(); it++) {
 			auto& ref = *it;
-			smpair* pair = &slabs[ref.slab][ref.cell];
-			assert(pair->used);
+			assert(flags[ref.slab][ref.cell]);
 
-			if (pair->key == k) {
-				pair->used = false;
+			if (slabs[ref.slab][ref.cell].*ID == k) {
+				slabs[ref.slab][ref.cell].~item();
+				flags[ref.slab][ref.cell] = false;
 				queue.push_back(ref);
 				bucket.erase(it);
 				entries--;
 
-				if (width > minWidth && (float)entries/(float)width < load) {
-					reindex(width/2);
-				}
+				if (entries && autogrow) reindex();
+				if (!entries) clear();
 
 				return true;
 			}
@@ -139,79 +160,40 @@ public:
 	}
 
 	V& operator[](const K& k) {
-		if (!entries) reindex(minWidth);
+		if (!entries) reindex();
 
-		for (smref ref: index[chain(k)]) {
-			smpair* pair = &slabs[ref.slab][ref.cell];
-			assert(pair->used);
-			if (pair->key == k) {
-				return pair->val;
+		for (slot ref: index[chain(k)]) {
+			assert(flags[ref.slab][ref.cell]);
+			if (slabs[ref.slab][ref.cell].*ID == k) {
+				return slabs[ref.slab][ref.cell];
 			}
 		}
 
 		if (!queue.size()) {
-			slabs.push_back(std::array<smpair,slabSize>());
+			slabs.push_back((item*)std::calloc(slabSize, sizeof(item)));
+			flags.push_back((bool*)std::calloc(slabSize, sizeof(bool)));
 			for (int i = slabSize-1; i >= 0; i--) {
-				queue.push_back(smref(slabs.size()-1, (uint)i));
+				queue.push_back(slot(slabs.size()-1, (uint)i));
 			}
 		}
 
-		smref next = queue.back();
-		slabs[next.slab][next.cell] = smpair();
-		smpair* pair = &slabs[next.slab][next.cell];
-		pair->key = k;
-		pair->used = true;
+		slot next = queue.back();
+		flags[next.slab][next.cell] = true;
+		new (&slabs[next.slab][next.cell]) item;
+		slabs[next.slab][next.cell].*ID = k;
 		queue.pop_back();
 		index[chain(k)].push_back(next);
 		entries++;
 
-		if ((float)entries/(float)width > load && width < maxWidth)  {
-			reindex(width*2);
-		}
+		if (autogrow) reindex();
 
-		return slabs[next.slab][next.cell].val;
+		return slabs[next.slab][next.cell];
 	}
 
-	std::vector<K> keys() const {
-		std::vector<K> out;
-		for (auto& slab: slabs) {
-			for (auto& cell: slab) {
-				if (cell.used) {
-					out.push_back(cell.key);
-				}
-			}
-		}
-		return out;
-	}
-
-	std::vector<V> vals() const {
-		std::vector<V> out;
-		for (auto& slab: slabs) {
-			for (auto& cell: slab) {
-				if (cell.used) {
-					out.push_back(cell.val);
-				}
-			}
-		}
-		return out;
-	}
-
-	std::vector<std::pair<K,V>> pairs() const {
-		std::vector<K,V> out;
-		for (auto& slab: slabs) {
-			for (auto& cell: slab) {
-				if (cell.used) {
-					out.push_back(std::pair(cell.key,cell.val));
-				}
-			}
-		}
-		return out;
-	}
-
-	class viter {
+	class iterator {
 		uint si;
 		uint ci;
-		slabmap<K,V> *sm;
+		slabmap<V,K,ID> *sm;
 
 	public:
 		typedef V value_type;
@@ -220,25 +202,25 @@ public:
 		typedef V& reference;
 		typedef std::input_iterator_tag iterator_category;
 
-		explicit viter(slabmap<K,V> *ssm, uint ssi, uint cci) {
+		explicit iterator(slabmap<V,K,ID> *ssm, uint ssi, uint cci) {
 			sm = ssm;
 			si = ssi;
 			ci = cci;
 		}
 
 		V& operator*() const {
-			return sm->slabs[si][ci].val;
+			return sm->slabs[si][ci];
 		}
 
-		bool operator==(const viter& other) const {
+		bool operator==(const iterator& other) const {
 			return si == other.si && ci == other.ci;
 		}
 
-		bool operator!=(const viter& other) const {
+		bool operator!=(const iterator& other) const {
 			return si != other.si || ci != other.ci;
 		}
 
-		viter& operator++() {
+		iterator& operator++() {
 			for (;;) {
 				ci++;
 				if (ci == slabSize) {
@@ -248,7 +230,7 @@ public:
 				if (sm->slabs.size() == si) {
 					break;
 				}
-				if (sm->slabs[si][ci].used) {
+				if (sm->flags[si][ci]) {
 					break;
 				}
 			}
@@ -256,7 +238,7 @@ public:
 		}
 	};
 
-	viter begin() {
+	iterator begin() {
 		uint si = 0;
 		uint ci = 0;
 		for (;;) {
@@ -267,15 +249,15 @@ public:
 			if (slabs.size() == si) {
 				break;
 			}
-			if (slabs[si][ci].used) {
+			if (flags[si][ci]) {
 				break;
 			}
 			ci++;
 		}
-		return viter(this, si, ci);
+		return iterator(this, si, ci);
 	}
 
-	viter end() {
-		return viter(this, slabs.size(), 0);
+	iterator end() {
+		return iterator(this, slabs.size(), 0);
 	}
 };
