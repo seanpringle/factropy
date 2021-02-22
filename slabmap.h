@@ -4,6 +4,7 @@
 #include <functional>
 #include <cassert>
 #include <new>
+#include <type_traits>
 
 // A hash-table/slab-allocator that:
 // - stores objects that contain their own key as a field
@@ -29,7 +30,7 @@ private:
 		}
 	};
 
-	typedef decltype(std::declval<V>().*ID) K;
+	typedef typename std::remove_reference<decltype(std::declval<V>().*ID)>::type K;
 
 	struct slot {
 		uint slab;
@@ -53,9 +54,8 @@ private:
 
 	std::size_t chain(const K& k) const {
 		assert(index.size() > 0);
-		auto kk = k;
-		std::hash<decltype(kk)> hash;
-		return hash(kk) % index.size();
+		std::hash<K> hash;
+		return hash(k) % index.size();
 	}
 
 public:
@@ -71,7 +71,6 @@ public:
 	}
 
 	void reindex() {
-
 		uint width = std::max(minWidth, (uint)index.size());
 		float current = (float)entries/(float)width;
 
@@ -120,7 +119,7 @@ public:
 		entries = 0;
 	}
 
-	bool has(const K& k) const {
+	bool has(const K& k) {
 		if (!entries) return false;
 
 		for (slot ref: index[chain(k)]) {
@@ -131,11 +130,11 @@ public:
 		return false;
 	}
 
-	bool contains(const K& k) const {
+	bool contains(const K& k) {
 		return has(k);
 	}
 
-	uint count(const K& k) const {
+	uint count(const K& k) {
 		return has(k) ? 1: 0;
 	}
 
@@ -162,6 +161,19 @@ public:
 			}
 		}
 		return false;
+	}
+
+	V& refer(const K& k) {
+		if (!entries) throw k;
+
+		for (slot ref: index[chain(k)]) {
+			assert(flags[ref.slab][ref.cell]);
+			if (slabs[ref.slab][ref.cell].*ID == k) {
+				return slabs[ref.slab][ref.cell];
+			}
+		}
+
+		throw k;
 	}
 
 	V& operator[](const K& k) {
@@ -220,11 +232,17 @@ public:
 		}
 
 		bool operator==(const iterator& other) const {
-			return (si == other.si && ci == other.ci) || (end && other.end);
+			if (end && !other.end) return false;
+			if (other.end && !end) return false;
+			if (end && other.end) return true;
+			return si == other.si && ci == other.ci;
 		}
 
 		bool operator!=(const iterator& other) const {
-			return !operator==(other);
+			if (end && !other.end) return true;
+			if (other.end && !end) return true;
+			if (end && other.end) return false;
+			return si != other.si || ci != other.ci;
 		}
 
 		iterator& operator++() {

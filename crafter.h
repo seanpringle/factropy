@@ -3,7 +3,7 @@
 
 struct Crafter;
 
-#include "sparse.h"
+#include "slabmap.h"
 #include "item.h"
 #include "fluid.h"
 #include "entity.h"

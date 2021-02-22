@@ -8,8 +8,7 @@ void Turret::reset() {
 }
 
 void Turret::tick() {
-	for (auto& pair: all) {
-		Turret& turret = pair.second;
+	for (auto& turret: all) {
 		turret.update();
 	}
 }
@@ -24,7 +23,7 @@ Turret& Turret::create(uint id) {
 }
 
 Turret& Turret::get(uint id) {
-	ensuref(all.count(id), "invalid turret access %d", id);
+	ensuref(all.has(id), "invalid turret access %d", id);
 	return all[id];
 }
 

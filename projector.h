@@ -3,7 +3,7 @@
 
 struct Projector;
 
-#include "sparse.h"
+#include "slabmap.h"
 #include "item.h"
 #include "fluid.h"
 #include "entity.h"
@@ -11,16 +11,16 @@ struct Projector;
 #include <map>
 
 struct Projector {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,Projector> all;
+	static inline slabmap<Projector,&Projector::id> all;
 	static Projector& create(uint id);
 	static Projector& get(uint id);
 
-	uint id;
 	uint iid;
 	uint fid;
 

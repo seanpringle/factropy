@@ -19,8 +19,7 @@ Pipe& Pipe::create(uint id) {
 }
 
 Pipe& Pipe::get(uint id) {
-	ensuref(all.count(id), "invalid pipe access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Pipe::destroy() {

@@ -2,7 +2,6 @@
 #include "item.h"
 #include "entity.h"
 #include "chunk.h"
-#include "sparse.h"
 
 #include <map>
 #include <stdio.h>
@@ -263,8 +262,7 @@ bool Entity::exists(uint id) {
 }
 
 Entity& Entity::get(uint id) {
-	ensuref(id > 0 && all.has(id), "invalid id %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 bool Entity::fits(Spec *spec, Point pos, Point dir) {

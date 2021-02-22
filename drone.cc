@@ -26,8 +26,7 @@ Drone& Drone::create(uint id) {
 }
 
 Drone& Drone::get(uint id) {
-	ensuref(all.has(id), "invalid drone access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Drone::destroy() {

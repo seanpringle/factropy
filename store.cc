@@ -107,8 +107,7 @@ void Store::burnerInit(uint bid, uint bsid, Mass cap) {
 }
 
 Store& Store::get(uint id) {
-	ensuref(all.has(id), "invalid store access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Store::destroy() {

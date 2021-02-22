@@ -21,8 +21,7 @@ Ghost& Ghost::create(uint id, uint sid) {
 }
 
 Ghost& Ghost::get(uint id) {
-	ensuref(all.has(id) > 0, "invalid ghost access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Ghost::destroy() {

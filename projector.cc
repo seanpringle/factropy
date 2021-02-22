@@ -7,8 +7,8 @@ void Projector::reset() {
 }
 
 void Projector::tick() {
-	for (auto& pair: all) {
-		pair.second.update();
+	for (auto& projector: all) {
+		projector.update();
 	}
 }
 
@@ -20,7 +20,7 @@ Projector& Projector::create(uint id) {
 }
 
 Projector& Projector::get(uint id) {
-	ensuref(all.count(id) > 0, "invalid projector access %d", id);
+	ensuref(all.has(id) > 0, "invalid projector access %d", id);
 	return all[id];
 }
 

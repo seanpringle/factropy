@@ -5,7 +5,6 @@ struct Entity;
 struct GuiEntity;
 struct GuiFakeEntity;
 
-#include "sparse.h"
 #include "slabmap.h"
 #include "spec.h"
 #include "recipe.h"
