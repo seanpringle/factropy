@@ -7,13 +7,13 @@ void Drone::reset() {
 }
 
 void Drone::tick() {
-	for (Drone& drone: all) {
+	for (auto& drone: all) {
 		drone.update();
 	}
 }
 
 Drone& Drone::create(uint id) {
-	Drone& drone = all.ref(id);
+	Drone& drone = all[id];
 	drone.id = id;
 	drone.iid = 0;
 	drone.dep = 0;
@@ -27,14 +27,14 @@ Drone& Drone::create(uint id) {
 
 Drone& Drone::get(uint id) {
 	ensuref(all.has(id), "invalid drone access %d", id);
-	return all.ref(id);
+	return all[id];
 }
 
 void Drone::destroy() {
 	if (dep && Entity::exists(dep)) {
 		Entity::get(dep).depot().drones.erase(id);
 	}
-	all.drop(id);
+	all.erase(id);
 }
 
 bool Drone::travel(uint eid) {

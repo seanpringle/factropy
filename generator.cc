@@ -7,7 +7,7 @@ void Generator::reset() {
 }
 
 Generator& Generator::create(uint id, uint sid) {
-	Generator& generator = all.ref(id);
+	Generator& generator = all[id];
 	generator.id = id;
 	generator.supplying = false;
 	generator.monitor = Energy(0);
@@ -15,12 +15,12 @@ Generator& Generator::create(uint id, uint sid) {
 }
 
 Generator& Generator::get(uint id) {
-	ensuref(all.has(id), "invalid generator access %d", id);
-	return all.ref(id);
+	ensuref(all.count(id), "invalid generator access %d", id);
+	return all[id];
 }
 
 void Generator::destroy() {
-	all.drop(id);
+	all.erase(id);
 }
 
 Energy Generator::consume(Energy e) {

@@ -11,8 +11,8 @@ void Store::tick() {
 	for (Store& store: all) {
 		store.update();
 	}
-	for (Burner& burner: Burner::all) {
-		burner.store.update();
+	for (auto& pair: Burner::all) {
+		pair.second.store.update();
 	}
 	for (auto& pair: Ghost::all) {
 		pair.second.store.update();
@@ -80,7 +80,7 @@ void Store::update() {
 }
 
 Store& Store::create(uint id, uint sid, Mass cap) {
-	Store& store = all.ref(id);
+	Store& store = all[id];
 	store.id = id;
 	store.sid = sid;
 	store.activity = 0;
@@ -108,12 +108,12 @@ void Store::burnerInit(uint bid, uint bsid, Mass cap) {
 
 Store& Store::get(uint id) {
 	ensuref(all.has(id), "invalid store access %d", id);
-	return all.ref(id);
+	return all[id];
 }
 
 void Store::destroy() {
 	stacks.clear();
-	all.drop(id);
+	all.erase(id);
 }
 
 void Store::ghostDestroy() {

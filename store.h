@@ -3,7 +3,7 @@
 
 struct Store;
 
-#include "sparse.h"
+#include "slabmap.h"
 #include "item.h"
 #include "mass.h"
 #include <vector>
@@ -15,7 +15,7 @@ struct Store {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline SparseArray<Store> all = (MaxEntity);
+	static inline slabmap<uint,Store> all;
 	static Store& create(uint id, uint sid, Mass cap);
 	static Store& get(uint id);
 

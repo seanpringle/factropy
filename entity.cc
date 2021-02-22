@@ -66,7 +66,7 @@ uint Entity::next() {
 }
 
 Entity& Entity::create(uint id, Spec *spec) {
-	Entity& en = all.ref(id);
+	Entity& en = all[id];
 	en.id = id;
 	en.spec = spec;
 	en.dir = Point::South;
@@ -255,7 +255,7 @@ void Entity::destroy() {
 	}
 
 	names.erase(id);
-	all.drop(id);
+	all.erase(id);
 }
 
 bool Entity::exists(uint id) {
@@ -264,7 +264,7 @@ bool Entity::exists(uint id) {
 
 Entity& Entity::get(uint id) {
 	ensuref(id > 0 && all.has(id), "invalid id %d", id);
-	return all.ref(id);
+	return all[id];
 }
 
 bool Entity::fits(Spec *spec, Point pos, Point dir) {

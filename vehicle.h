@@ -4,7 +4,6 @@
 struct Vehicle;
 
 #include "entity.h"
-#include "sparse.h"
 #include "path.h"
 #include <list>
 #include <vector>
@@ -64,7 +63,7 @@ struct Vehicle {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline SparseArray<Vehicle> all = (MaxEntity);
+	static inline std::map<uint,Vehicle> all;
 	static Vehicle& create(int id);
 	static Vehicle& get(int id);
 

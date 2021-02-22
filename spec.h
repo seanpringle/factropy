@@ -152,6 +152,7 @@ struct Spec {
 	bool ropewayTerminus;
 	bool ropewayTower;
 	bool ropewayBucket;
+	Spec* ropewayBucketSpec;
 	Point ropewayCableEast;
 
 	bool computer;

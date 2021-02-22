@@ -102,6 +102,7 @@ Spec::Spec(std::string name) {
 	ropewayTerminus = false;
 	ropewayCableEast = Point::Zero;
 	ropewayBucket = false;
+	ropewayBucketSpec = nullptr;
 
 	computer = false;
 	networker = false;

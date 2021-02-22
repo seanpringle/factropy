@@ -25,6 +25,7 @@ struct Ropeway {
 	Point aim;
 	std::vector<Point> steps;
 	std::list<uint> buckets;
+	uint handover;
 
 	void destroy();
 

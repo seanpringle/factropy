@@ -12,14 +12,14 @@ void Ropeway::tick() {
 		if (!ropeway.next && ropeway.check) {
 			ropeway.reorient();
 			ropeway.rebucket();
+			get(ropeway.deputy()).rebucket();
 			ropeway.check = false;
 		}
 	}
 	for (auto& pair: all) {
 		auto& ropeway = pair.second;
-		if (!ropeway.next) {
-			ropeway.update();
-		}
+		if (ropeway.next && ropeway.prev) continue;
+		ropeway.update();
 	}
 }
 
@@ -31,6 +31,7 @@ Ropeway& Ropeway::create(uint id) {
 	ropeway.cycle = 0;
 	ropeway.check = false;
 	ropeway.aim = Point::Zero;
+	ropeway.handover = 0;
 	return ropeway;
 }
 
@@ -54,7 +55,7 @@ uint Ropeway::deputy() {
 }
 
 bool Ropeway::complete() {
-	return Entity::get(leader()).spec->ropewayTerminus && Entity::get(deputy()).spec->ropewayTerminus;
+	return leader() != deputy() && Entity::get(leader()).spec->ropewayTerminus && Entity::get(deputy()).spec->ropewayTerminus;
 }
 
 void Ropeway::reorient() {
@@ -96,68 +97,74 @@ void Ropeway::reorient() {
 }
 
 void Ropeway::rebucket() {
-	ensuref(!next, "ropeway rebucketing needs a leader");
+	ensuref(!next || !prev, "ropeway rebucketing needs a terminus");
 
 	steps.clear();
 	float step = 1.0f/30.0f;
 
-	if (!prev) {
+	if (!next && !prev) {
 		for (auto bid: buckets) {
 			Entity::get(bid).remove();
 		}
 		return;
 	}
 
-	uint towerA = id;
-	uint towerB = prev;
+	if (!next) {
 
-	Point pos = depart();
-	Point end = get(towerB).depart();
-	Point dir = (end - pos).normalize();
-	Point inc = dir * step;
+		uint towerA = id;
+		uint towerB = prev;
 
-	for (;;) {
-		steps.push_back(pos);
+		Point pos = get(towerA).depart();
+		Point end = get(towerB).depart();
+		Point dir = (end - pos).normalize();
+		Point inc = dir * step;
 
-		if (pos.distance(end) < step) {
-			towerA = towerB;
-			towerB = get(towerB).prev;
-			if (!towerB) break;
+		for (;;) {
+			steps.push_back(pos);
 
-			pos = end;
-			end = get(towerB).depart();
-			dir = (end - pos).normalize();
-			inc = dir * step;
-			continue;
+			if (pos.distance(end) < step) {
+				towerA = towerB;
+				towerB = get(towerB).prev;
+				if (!towerB) break;
+
+				pos = end;
+				end = get(towerB).depart();
+				dir = (end - pos).normalize();
+				inc = dir * step;
+				continue;
+			}
+
+			pos += inc;
 		}
-
-		pos += inc;
 	}
 
-	// towerA is the end of the line
-	towerB = get(towerA).next;
+	if (!prev) {
 
-	pos = get(towerA).arrive();
-	end = get(towerB).arrive();
-	dir = (end - pos).normalize();
-	inc = dir * step;
+		uint towerA = id;
+		uint towerB = next;
 
-	for (;;) {
-		steps.push_back(pos);
+		Point pos = get(towerA).arrive();
+		Point end = get(towerB).arrive();
+		Point dir = (end - pos).normalize();
+		Point inc = dir * step;
 
-		if (pos.distance(end) < step) {
-			towerA = towerB;
-			towerB = get(towerB).next;
-			if (!towerB) break;
+		for (;;) {
+			steps.push_back(pos);
 
-			pos = end;
-			end = get(towerB).arrive();
-			dir = (end - pos).normalize();
-			inc = dir * step;
-			continue;
+			if (pos.distance(end) < step) {
+				towerA = towerB;
+				towerB = get(towerB).next;
+				if (!towerB) break;
+
+				pos = end;
+				end = get(towerB).arrive();
+				dir = (end - pos).normalize();
+				inc = dir * step;
+				continue;
+			}
+
+			pos += inc;
 		}
-
-		pos += inc;
 	}
 
 	// remove buckets no longer on valid position
@@ -188,6 +195,7 @@ void Ropeway::connect(uint tid) {
 	if (prev) return;
 	Ropeway& other = get(tid);
 	if (other.next) return;
+	if (other.complete()) return;
 	other.next = id;
 	prev = other.id;
 
@@ -252,30 +260,65 @@ float Ropeway::length() {
 }
 
 void Ropeway::update() {
-	if (!prev) return;
-	uint gap = 30*10;
+	if (next && prev) return;
+	if (!steps.size()) return;
+	if (!complete()) return;
 
-	bool newBucket = complete() && cycle == 0;
+	uint gap = 30*10;
+	bool newBucket = cycle == 0;
 
 	cycle++;
 	if (cycle == gap) cycle = 0;
 
-	if (newBucket && buckets.size() > 0) {
-		int bid = buckets.back();
-		auto& bucket = RopewayBucket::get(bid);
-		if (bucket.step == steps.size()-1) {
-			buckets.push_front(bid);
-			buckets.pop_back();
-			bucket.step = 0;
-			newBucket = false;
+	// leader
+	if (prev) {
+
+		if (buckets.size() > 0) {
+			uint bid = buckets.back();
+			auto& bucket = RopewayBucket::get(bid);
+			if (bucket.step == steps.size()-1) {
+				auto& partner = get(deputy());
+				ensure(!partner.handover);
+				partner.handover = bid;
+				buckets.pop_back();
+			}
+		}
+
+		if (handover) {
+			Entity::get(handover).remove();
+			handover = 0;
+		}
+
+		if (newBucket) {
+			auto& en = Entity::get(id);
+			auto& eb = Entity::create(Entity::next(), en.spec->ropewayBucketSpec);
+			eb.move(depart()).materialize();
+			RopewayBucket::get(eb.id).rid = id;
+			buckets.push_front(eb.id);
 		}
 	}
 
-	if (newBucket) {
-		auto& eb = Entity::create(Entity::next(), Spec::byName("ropeway-bucket"));
-		eb.move(depart()).materialize();
-		RopewayBucket::get(eb.id).rid = id;
-		buckets.push_front(eb.id);
+	// deputy
+	if (next) {
+
+		if (buckets.size() > 0) {
+			uint bid = buckets.back();
+			auto& bucket = RopewayBucket::get(bid);
+			if (bucket.step == steps.size()-1) {
+				auto& partner = get(leader());
+				ensure(!partner.handover);
+				partner.handover = bid;
+				buckets.pop_back();
+			}
+		}
+
+		if (handover) {
+			buckets.push_front(handover);
+			auto& bucket = RopewayBucket::get(handover);
+			bucket.rid = id;
+			bucket.step = 0;
+			handover = 0;
+		}
 	}
 }
 

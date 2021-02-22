@@ -3,7 +3,6 @@
 
 struct Burner;
 
-#include "sparse.h"
 #include "store.h"
 
 struct Burner {
@@ -11,7 +10,7 @@ struct Burner {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline SparseArray<Burner> all = (MaxEntity);
+	static inline std::map<uint,Burner> all;
 	static Burner& create(uint id, uint sid);
 	static Burner& get(uint id);
 

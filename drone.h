@@ -3,8 +3,8 @@
 
 struct Drone;
 
-#include "sparse.h"
 #include "item.h"
+#include "slabmap.h"
 
 struct Drone {
 	static void reset();
@@ -12,7 +12,7 @@ struct Drone {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline SparseArray<Drone> all = (MaxEntity);
+	static inline slabmap<uint,Drone> all;
 	static Drone& create(uint id);
 	static Drone& get(uint id);
 

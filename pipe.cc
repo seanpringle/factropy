@@ -10,7 +10,7 @@ void Pipe::tick() {
 }
 
 Pipe& Pipe::create(uint id) {
-	Pipe& pipe = all.ref(id);
+	Pipe& pipe = all[id];
 	pipe.id = id;
 	pipe.network = NULL;
 	pipe.cacheFid = 0;
@@ -19,12 +19,12 @@ Pipe& Pipe::create(uint id) {
 }
 
 Pipe& Pipe::get(uint id) {
-	ensuref(all.has(id), "invalid pipe access %d", id);
-	return all.ref(id);
+	ensuref(all.count(id), "invalid pipe access %d", id);
+	return all[id];
 }
 
 void Pipe::destroy() {
-	all.drop(id);
+	all.erase(id);
 }
 
 void Pipe::manage() {
@@ -105,7 +105,7 @@ void PipeNetwork::tick() {
 			}
 		};
 
-		for (Pipe& pipe: Pipe::all) {
+		for (auto& pipe: Pipe::all) {
 			Entity& en = Entity::get(pipe.id);
 			if (en.isGhost()) continue;
 
@@ -116,7 +116,7 @@ void PipeNetwork::tick() {
 			}
 		}
 
-		for (Pipe& pipe: Pipe::all) {
+		for (auto& pipe: Pipe::all) {
 			Entity& en = Entity::get(pipe.id);
 			if (en.isGhost()) continue;
 

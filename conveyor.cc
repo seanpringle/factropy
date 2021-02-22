@@ -12,18 +12,16 @@ void Conveyor::tick() {
 
 		leadersStraight.clear();
 		leadersCircular.clear();
-		for (auto& pair: all) {
-			Conveyor& conveyor = pair.second;
+		for (auto& conveyor: all) {
 			conveyor.marked = false;
 			conveyor.managed = !Entity::get(conveyor.id).isGhost();
 		}
 
 		// identify belt leaders
-		for (auto& pair: all) {
-			if (!pair.second.managed) continue;
+		for (auto& leader: all) {
+			if (!leader.managed) continue;
 
-			if (!pair.second.next) {
-				Conveyor& leader = pair.second;
+			if (!leader.next) {
 				leadersStraight.push_back(leader.id);
 				leader.marked = true;
 				uint prev = leader.prev;
@@ -36,11 +34,10 @@ void Conveyor::tick() {
 			}
 		}
 
-		for (auto& pair: all) {
-			if (!pair.second.managed) continue;
+		for (auto& leader: all) {
+			if (!leader.managed) continue;
 
-			if (!pair.second.marked) {
-				Conveyor& leader = pair.second;
+			if (!leader.marked) {
 				ensure(leader.next && leader.prev);
 				leadersCircular.push_back(leader.id);
 				leader.marked = true;

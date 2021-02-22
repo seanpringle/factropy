@@ -794,6 +794,8 @@ int main(int argc, char const *argv[]) {
 	Spec::byName("ropeway-terminus")->cycle = Spec::byName("ropeway-tower");
 	Spec::byName("ropeway-tower")->cycle = Spec::byName("ropeway-terminus");
 
+	Spec::byName("ropeway-terminus")->ropewayBucketSpec = Spec::byName("ropeway-bucket");
+
 	spec = new Spec("loader");
 	spec->collision = { w: 1, h: 2, d: 1 };
 	spec->setCornerSupports();

@@ -4,9 +4,9 @@
 struct Pipe;
 struct PipeNetwork;
 
-#include "sparse.h"
 #include "fluid.h"
 #include "entity.h"
+#include "slabmap.h"
 #include <set>
 
 struct Pipe {
@@ -15,7 +15,7 @@ struct Pipe {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline SparseArray<Pipe> all = (MaxEntity);
+	static inline slabmap<uint,Pipe> all;
 	static Pipe& create(uint id);
 	static Pipe& get(uint id);
 

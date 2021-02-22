@@ -3,7 +3,6 @@
 
 struct Generator;
 
-#include "sparse.h"
 #include "store.h"
 
 struct Generator {
@@ -11,7 +10,7 @@ struct Generator {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline SparseArray<Generator> all = (MaxEntity);
+	static inline std::map<uint,Generator> all;
 	static Generator& create(uint id, uint sid);
 	static Generator& get(uint id);
 

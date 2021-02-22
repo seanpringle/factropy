@@ -7,13 +7,13 @@ void Vehicle::reset() {
 }
 
 void Vehicle::tick() {
-	for (auto& vehicle: all) {
-		vehicle.update();
+	for (auto& pair: all) {
+		pair.second.update();
 	}
 }
 
 Vehicle& Vehicle::create(int id) {
-	Vehicle& vehicle = all.ref(id);
+	Vehicle& vehicle = all[id];
 	vehicle.id = id;
 	vehicle.pause = 0;
 	vehicle.patrol = false;
@@ -24,8 +24,8 @@ Vehicle& Vehicle::create(int id) {
 }
 
 Vehicle& Vehicle::get(int id) {
-	ensuref(all.has(id), "invalid vehicle access %d", id);
-	return all.ref(id);
+	ensuref(all.count(id), "invalid vehicle access %d", id);
+	return all[id];
 }
 
 void Vehicle::destroy() {
@@ -34,7 +34,7 @@ void Vehicle::destroy() {
 		delete pathRequest;
 		pathRequest = NULL;
 	}
-	all.drop(id);
+	all.erase(id);
 }
 
 void Vehicle::update() {

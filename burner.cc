@@ -7,7 +7,7 @@ void Burner::reset() {
 }
 
 Burner& Burner::create(uint id, uint sid) {
-	Burner& burner = all.ref(id);
+	Burner& burner = all[id];
 	burner.id = id;
 	burner.energy = 0;
 	burner.buffer = Energy::MJ(1);
@@ -16,13 +16,13 @@ Burner& Burner::create(uint id, uint sid) {
 }
 
 Burner& Burner::get(uint id) {
-	ensuref(all.has(id), "invalid burner access %d", id);
-	return all.ref(id);
+	ensuref(all.count(id), "invalid burner access %d", id);
+	return all[id];
 }
 
 void Burner::destroy() {
 	store.burnerDestroy();
-	all.drop(id);
+	all.erase(id);
 }
 
 Energy Burner::consume(Energy e) {

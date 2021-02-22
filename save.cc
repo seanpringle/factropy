@@ -514,9 +514,10 @@ void Vehicle::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/vehicles.json");
 
-	for (Vehicle& vehicle: all) {
+	for (auto& [id,vehicle]: all) {
 		json state;
-		state["id"] = vehicle.id;
+
+		state["id"] = id;
 		state["pause"] = vehicle.pause;
 		state["patrol"] = vehicle.patrol;
 		state["handbrake"] = vehicle.handbrake;
@@ -770,10 +771,10 @@ void Burner::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/burners.json");
 
-	for (auto& burner: all) {
+	for (auto& [id,burner]: all) {
 
 		json state;
-		state["id"] = burner.id;
+		state["id"] = id;
 		state["energy"] = burner.energy.value;
 		state["buffer"] = burner.buffer.value;
 
@@ -889,8 +890,7 @@ void Conveyor::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/conveyors.json");
 
-	for (auto& pair: all) {
-		auto conveyor = pair.second;
+	for (auto& conveyor: all) {
 
 		json state;
 		state["id"] = conveyor.id;

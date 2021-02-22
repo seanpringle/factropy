@@ -4,7 +4,7 @@
 struct Conveyor;
 
 #include "entity.h"
-#include <list>
+#include "slabmap.h"
 
 // @todo improvements:
 // a) materialize conveyor belt lines to vectors for better interation locality
@@ -16,7 +16,7 @@ struct Conveyor {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,Conveyor> all;
+	static inline slabmap<uint,Conveyor> all;
 	static Conveyor& create(uint id);
 	static Conveyor& get(uint id);
 

@@ -6,6 +6,7 @@ struct GuiEntity;
 struct GuiFakeEntity;
 
 #include "sparse.h"
+#include "slabmap.h"
 #include "spec.h"
 #include "recipe.h"
 #include "chunk.h"
@@ -53,7 +54,7 @@ struct Entity {
 	static inline std::set<uint> electricityConsumers;
 	static inline std::set<uint> electricityGenerators;
 
-	static inline SparseArray<Entity> all = (MaxEntity);
+	static inline slabmap<uint,Entity> all;
 	static inline uint sequence = 0;
 	static uint next();
 
