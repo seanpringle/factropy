@@ -14,7 +14,7 @@ struct Arm {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<Arm,uint,&Arm::id> all;
+	static inline slabmap<Arm,&Arm::id> all;
 	static Arm& create(uint id);
 	static Arm& get(uint id);
 

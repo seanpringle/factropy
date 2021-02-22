@@ -16,7 +16,7 @@ struct Pipe {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<Pipe,uint,&Pipe::id> all;
+	static inline slabmap<Pipe,&Pipe::id> all;
 	static Pipe& create(uint id);
 	static Pipe& get(uint id);
 

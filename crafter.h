@@ -17,7 +17,7 @@ struct Crafter {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<Crafter,uint,&Crafter::id> all;
+	static inline slabmap<Crafter,&Crafter::id> all;
 	static Crafter& create(uint id);
 	static Crafter& get(uint id);
 

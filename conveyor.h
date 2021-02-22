@@ -17,7 +17,7 @@ struct Conveyor {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<Conveyor,uint,&Conveyor::id> all;
+	static inline slabmap<Conveyor,&Conveyor::id> all;
 	static Conveyor& create(uint id);
 	static Conveyor& get(uint id);
 

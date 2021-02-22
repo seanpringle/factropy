@@ -235,7 +235,7 @@ void TechPopup::draw() {
 			ImGui::Print(fmtc("%s %s", name, tech->cost.format()));
 		} else {
 			if (ImGui::Button(fmtc("%s %s##%d", name, tech->cost.format(), n++))) {
-				Sim::locked([&]() {
+				Sim::locked([tech=tech]() {
 					tech->buy();
 				});
 			}

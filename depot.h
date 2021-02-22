@@ -13,7 +13,7 @@ struct Depot {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<Depot,uint,&Depot::id> all;
+	static inline slabmap<Depot,&Depot::id> all;
 	static Depot& create(uint id);
 	static Depot& get(uint id);
 

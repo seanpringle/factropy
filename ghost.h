@@ -13,7 +13,7 @@ struct Ghost {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<Ghost,uint,&Ghost::id> all;
+	static inline slabmap<Ghost,&Ghost::id> all;
 	static Ghost& create(uint id, uint sid);
 	static Ghost& get(uint id);
 

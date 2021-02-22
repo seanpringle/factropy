@@ -16,7 +16,7 @@ struct Store {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<Store,uint,&Store::id> all;
+	static inline slabmap<Store,&Store::id> all;
 	static Store& create(uint id, uint sid, Mass cap);
 	static Store& get(uint id);
 

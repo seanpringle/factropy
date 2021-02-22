@@ -521,10 +521,10 @@ PartSmoke::PartSmoke(int pm, int ppt, float pr, float er, float sf, float th, fl
 
 	for (int i = 0; i < particlesMax; i++) {
 		particles.push_back({
-			offset: Point::Zero,
-			spread: Point::Zero,
-			tickDV: 0,
-			life: 0,
+			.offset = Point::Zero,
+			.spread = Point::Zero,
+			.tickDV = 0,
+			.life = 0,
 		});
 	}
 }
@@ -567,10 +567,10 @@ void PartSmoke::drawInstanced(bool hd, int count, Mat4* trx) {
 			if (p.life > Sim::tick) {
 				Point v = pos + p.offset;
 				batch[used++] = (Vector4) {
-					x: v.x,
-					y: v.y,
-					z: v.z,
-					w: s,
+					.x = v.x,
+					.y = v.y,
+					.z = v.z,
+					.w = s,
 				};
 			}
 		}
@@ -580,6 +580,6 @@ void PartSmoke::drawInstanced(bool hd, int count, Mat4* trx) {
 		drawParticleBatch(color, specular, hd, used, batch);
 	}
 
-	delete batch;
+	delete[] batch;
 }
 

@@ -43,11 +43,11 @@ void SiteCamera::draw(RenderTexture canvas) {
 	if (Sim::tick%refresh != 0) return;
 
 	Camera3D camera = {
-		position : pos,
-		target   : groundTarget(0.0f),
-		up       : Point::Up,
-		fovy     : fovy,
-		type     : CAMERA_PERSPECTIVE,
+		.position = pos,
+		.target   = groundTarget(0.0f),
+		.up       = Point::Up,
+		.fovy     = fovy,
+		.type     = CAMERA_PERSPECTIVE,
 	};
 
 	BeginTextureMode(canvas);

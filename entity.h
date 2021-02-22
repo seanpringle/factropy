@@ -55,7 +55,7 @@ struct Entity {
 	static inline std::set<uint> electricityConsumers;
 	static inline std::set<uint> electricityGenerators;
 
-	static inline slabmap<Entity,uint,&Entity::id> all;
+	static inline slabmap<Entity,&Entity::id> all;
 	static inline uint sequence = 0;
 	static uint next();
 

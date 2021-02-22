@@ -382,7 +382,7 @@ int main(int argc, char const *argv[]) {
 	recipe->parts = Item::byName("electric-motor")->parts;
 
 	Spec* spec = new Spec("provider-container");
-	spec->collision = { w: 2, h: 2, d: 5 };
+	spec->collision = Volume(2, 2, 5);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x990000ff)->gloss(16),
@@ -398,7 +398,7 @@ int main(int argc, char const *argv[]) {
 	};
 
 	spec = new Spec("requester-container");
-	spec->collision = { w: 2, h: 2, d: 5 };
+	spec->collision = Volume(2, 2, 5);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x0044ccff)->gloss(16),
@@ -415,7 +415,7 @@ int main(int argc, char const *argv[]) {
 	};
 
 	spec = new Spec("buffer-container");
-	spec->collision = { w: 2, h: 2, d: 5 };
+	spec->collision = Volume(2, 2, 5);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x006600ff)->gloss(16),
@@ -441,7 +441,7 @@ int main(int argc, char const *argv[]) {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(300);
 	spec->energyDrain = Energy::kW(30);
-	spec->collision = { w: 6, h: 3, d: 6 };
+	spec->collision = Volume(6, 3, 6);
 	spec->setCornerSupports();
 	spec->health = 10;
 	spec->pipeInputConnections = {
@@ -516,7 +516,7 @@ int main(int argc, char const *argv[]) {
 	}
 
 	spec = new Spec("furnace");
-	spec->collision = { w: 4, h: 4, d: 4 };
+	spec->collision = Volume(4, 4, 4);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/furnace-hd.stl", "models/furnace-ld.stl")))->paint(0xcc6600ff),
@@ -580,7 +580,7 @@ int main(int argc, char const *argv[]) {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
 	spec->energyDrain = Energy::kW(10);
-	spec->collision = { w: 5, h: 5, d: 10 };
+	spec->collision = Volume(5, 5, 10);
 	spec->setCornerSupports();
 	spec->health = 10;
 	spec->parts = {
@@ -613,7 +613,7 @@ int main(int argc, char const *argv[]) {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
 	spec->energyDrain = Energy::kW(10);
-	spec->collision = { w: 3, h: 3, d: 3 };
+	spec->collision = Volume(3, 3, 3);
 	spec->crafter = true;
 	spec->recipeTags = {"offshore-pumping"};
 	spec->health = 10;
@@ -641,7 +641,7 @@ int main(int argc, char const *argv[]) {
 	auto beltRidge = Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl");
 
 	spec = new Spec("conveyor");
-	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->collision = Volume(1, 2, 1);
 	spec->rotate = true;
 	spec->conveyor = true;
 	spec->conveyorInput = Point::North;
@@ -670,7 +670,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("conveyor-right");
 	spec->build = false;
-	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->collision = Volume(1, 2, 1);
 	spec->rotate = true;
 	spec->conveyor = true;
 	spec->conveyorInput = Point::East;
@@ -703,7 +703,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("conveyor-left");
 	spec->build = false;
-	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->collision = Volume(1, 2, 1);
 	spec->rotate = true;
 	spec->conveyor = true;
 	spec->conveyorInput = Point::West;
@@ -743,7 +743,7 @@ int main(int argc, char const *argv[]) {
 	Spec::byName("conveyor-left")->pipette = Spec::byName("conveyor");
 
 	spec = new Spec("ropeway-terminus");
-	spec->collision = { w: 5, h: 10, d: 5 };
+	spec->collision = Volume(5, 10, 5);
 	spec->setCornerSupports();
 	spec->rotate = false;
 	spec->ropeway = true;
@@ -762,7 +762,7 @@ int main(int argc, char const *argv[]) {
 	};
 
 	spec = new Spec("ropeway-tower");
-	spec->collision = { w: 3, h: 10, d: 3 };
+	spec->collision = Volume(3, 10, 3);
 	spec->setCornerSupports();
 	spec->rotate = false;
 	spec->ropeway = true;
@@ -779,7 +779,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("ropeway-bucket");
 	spec->build = false;
-	spec->collision = { w: 2, h: 4, d: 2 };
+	spec->collision = Volume(2, 4, 2);
 	spec->rotate = false;
 	spec->ropewayBucket = true;
 	spec->align = false;
@@ -797,7 +797,7 @@ int main(int argc, char const *argv[]) {
 	Spec::byName("ropeway-terminus")->ropewayBucketSpec = Spec::byName("ropeway-bucket");
 
 	spec = new Spec("loader");
-	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->collision = Volume(1, 2, 1);
 	spec->setCornerSupports();
 	spec->rotate = true;
 	spec->loader = true;
@@ -813,7 +813,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("fluid-tank");
 	spec->pipe = true;
-	spec->collision = { w: 5, h: 3, d: 5 };
+	spec->collision = Volume(5, 3, 5);
 	spec->setCornerSupports();
 	spec->pipeConnections = {Point::North*2.5f+Point::Down, Point::South*2.5f+Point::Down, Point::East*2.5f+Point::Down, Point::West*2.5f+Point::Down};
 	spec->pipeCapacity = Liquid::l(50000);
@@ -826,7 +826,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("pipe-straight");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
-	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->collision = Volume(1, 1, 1);
 	spec->rotate = true;
 	spec->pipeConnections = {Point::North*0.5f, Point::South*0.5f};
 	spec->health = 10;
@@ -838,7 +838,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("pipe-cross");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
-	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->collision = Volume(1, 1, 1);
 	spec->rotate = true;
 	spec->pipeConnections = {Point::North*0.5f, Point::South*0.5f, Point::East*0.5f, Point::West*0.5f};
 	spec->health = 10;
@@ -850,7 +850,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("pipe-tee");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
-	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->collision = Volume(1, 1, 1);
 	spec->rotate = true;
 	spec->pipeConnections = {Point::South*0.5f, Point::East*0.5f, Point::West*0.5f};
 	spec->health = 10;
@@ -862,7 +862,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("pipe-elbow");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
-	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->collision = Volume(1, 1, 1);
 	spec->rotate = true;
 	spec->pipeConnections = {Point::South*0.5f, Point::East*0.5f};
 	spec->health = 10;
@@ -879,7 +879,7 @@ int main(int argc, char const *argv[]) {
 
 		spec = new Spec(name);
 		spec->build = false;
-		spec->collision = { w: 2, h: 1, d: 2 };
+		spec->collision = Volume(2, 1, 2);
 		spec->setCornerSupports();
 		spec->health = 100;
 		spec->pivot = true;
@@ -921,7 +921,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("tree1");
 	spec->build = false;
-	spec->collision = { w: 2, h: 5, d: 2 };
+	spec->collision = Volume(2, 5, 2);
 	spec->setCornerSupports();
 	spec->pivot = true;
 	spec->junk = true;
@@ -937,7 +937,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("tree2");
 	spec->build = false;
-	spec->collision = { w: 2, h: 6, d: 2 };
+	spec->collision = Volume(2, 6, 2);
 	spec->setCornerSupports();
 	spec->pivot = true;
 	spec->junk = true;
@@ -975,7 +975,7 @@ int main(int argc, char const *argv[]) {
 	});
 
 	spec = new Spec("truck-engineer");
-	spec->collision = { w: 2, h: 2, d: 3 };
+	spec->collision = Volume(2, 2, 3);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xff6600ff)->translate(0,0.3,0),
@@ -1014,7 +1014,7 @@ int main(int argc, char const *argv[]) {
 	};
 
 	spec = new Spec("truck-hauler");
-	spec->collision = { w: 2, h: 2, d: 3 };
+	spec->collision = Volume(2, 2, 3);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xffcc00ff)->translate(0,0.3,0),
@@ -1045,7 +1045,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("truck-stop");
 	spec->health = 10;
-	spec->collision = { w: 3, h: 0.1, d: 3 };
+	spec->collision = Volume(3, 0.1, 3);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/truck-stop.stl")))->paint(0x662222ff),
@@ -1061,7 +1061,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("drone");
 	spec->select = false;
 	spec->health = 10;
-	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->collision = Volume(1, 1, 1);
 	spec->parts = {
 		(new Part(thingDroneChassis))->paint(0x660000ff),
 		(new Part(thingDroneSpars))->paint(0x444444ff)->rotate(Point::Up, 45),
@@ -1075,7 +1075,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("arm");
 	spec->health = 10;
-	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->collision = Volume(1, 2, 1);
 	spec->setCornerSupports();
 	spec->arm = true;
 	spec->armOffset = 1.0f;
@@ -1167,7 +1167,7 @@ int main(int argc, char const *argv[]) {
 	}
 
 	spec = new Spec("long-arm");
-	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->collision = Volume(1, 2, 1);
 	spec->setCornerSupports();
 	spec->arm = true;
 	spec->armOffset = 2.0f;
@@ -1274,7 +1274,7 @@ int main(int argc, char const *argv[]) {
 	}
 
 	spec = new Spec("lift");
-	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->collision = Volume(1, 2, 1);
 	spec->setCornerSupports();
 	spec->lift = true;
 	spec->rotate = true;
@@ -1317,9 +1317,9 @@ int main(int argc, char const *argv[]) {
 	}
 
 	spec = new Spec("utility-pole");
-	spec->collision = { w: 1, h: 6, d: 1 };
+	spec->collision = Volume(1, 6, 1);
 	spec->setCornerSupports();
-	spec->electrical = { area: { w: 7.1, d: 7.1 }, rate: Energy::kW(-10) };
+	spec->electrical = { .area = Area(7.1, 7.1), .rate = Energy::kW(-10) };
 	spec->rotate = true;
 	spec->health = 10;
 	spec->parts = {
@@ -1329,7 +1329,7 @@ int main(int argc, char const *argv[]) {
 	auto steamEnginewheel = Thing("models/steam-engine-wheel-hd.stl", "models/steam-engine-wheel-ld.stl");
 
 	spec = new Spec("boiler");
-	spec->collision = { w: 3, h: 2, d: 2 };
+	spec->collision = Volume(3, 2, 2);
 	spec->setCornerSupports();
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
@@ -1372,9 +1372,9 @@ int main(int argc, char const *argv[]) {
 	recipe->parts = {steamDroplet};
 
 	spec = new Spec("steam-engine");
-	spec->collision = { w: 4, h: 4, d: 5 };
+	spec->collision = Volume(4, 4, 5);
 	spec->setCornerSupports();
-	spec->electrical = { area: { w: 5, d: 6 }, rate: Energy::MW(1) };
+	spec->electrical = { .area = Area(5,6), .rate = Energy::MW(1) };
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->pipeConnections = {{-0.5f, -1.5f, 2.5f}, {0.5f, -1.5f, 2.5f}};
@@ -1416,7 +1416,7 @@ int main(int argc, char const *argv[]) {
 
 	spec = new Spec("turret");
 	spec->health = 100;
-	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->collision = Volume(1, 1, 1);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/turret-chassis.stl")))->paint(0x51412dff)->translate(0,-0.5,0),
@@ -1436,7 +1436,7 @@ int main(int argc, char const *argv[]) {
 	spec->explodes = true;
 	spec->explosionSpec = "bullet-impact1";
 	spec->health = 0;
-	spec->collision = { w: 0.1, h: 0.1, d: 0.1 };
+	spec->collision = Volume(0.1, 0.1, 0.1);
 	spec->parts = {
 		(new Part(Thing("models/bullet.stl")))->paint(0x660000ff),
 	};
@@ -1457,7 +1457,7 @@ int main(int argc, char const *argv[]) {
 	spec->explodes = true;
 	spec->explosionSpec = "missile-explosion1";
 	spec->health = 100;
-	spec->collision = { w: 1, h: 1, d: 2 };
+	spec->collision = Volume(1, 1, 2);
 	spec->parts = {
 		(new Part(Thing("models/missile-chassis.stl")))->paint(0x660000ff),
 	};
@@ -1483,7 +1483,7 @@ int main(int argc, char const *argv[]) {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::MW(10);
 	spec->energyDrain = Energy::kW(100);
-	spec->collision = { w: 8, h: 8, d: 8 };
+	spec->collision = Volume(8, 8, 8);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/teleporter-base-hd.stl")))->paint(0x0044ccff)->translate(0,-2.5,0),
@@ -1519,7 +1519,7 @@ int main(int argc, char const *argv[]) {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(1);
 	spec->energyDrain = Energy::kW(1);
-	spec->collision = { w: 1, h: 2, d: 1 };
+	spec->collision = Volume(1, 2, 1);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/computer-rack-hd.stl", "models/computer-rack-ld.stl")))->paint(0x666666ff)->translate(0,-1,0),
@@ -1551,7 +1551,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("block");
 	spec->block = true;
 	spec->health = 100;
-	spec->collision = { w: 1, h: 1, d: 1 };
+	spec->collision = Volume(1, 1, 1);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/block-hd.stl", "models/block-ld.stl")))->paint(0x666666ff)->gloss(16),
@@ -1560,7 +1560,7 @@ int main(int argc, char const *argv[]) {
 	spec = new Spec("projector");
 	spec->health = 10;
 	spec->projector = true;
-	spec->collision = { w: 1, h: 0.1, d: 1 };
+	spec->collision = Volume(1, 0.1, 1);
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/projector.stl")))->paint(0x666666ff),
@@ -1696,11 +1696,11 @@ int main(int argc, char const *argv[]) {
 			ClearBackground(GetColor(0x0));
 
 			BeginMode3D((Camera3D){
-				position: (Vector3){0.9,1,0.9},
-				target:   (Vector3){0,0.25,0},
-				up:       -Point::Up,
-				fovy:     45.0f,
-				type:     CAMERA_PERSPECTIVE,
+				.position = (Vector3){0.9,1,0.9},
+				.target =   (Vector3){0,0.25,0},
+				.up =       -Point::Up,
+				.fovy =     45.0f,
+				.type =     CAMERA_PERSPECTIVE,
 			});
 
 			for (uint i = 0; i < item->parts.size(); i++) {
@@ -1726,11 +1726,11 @@ int main(int argc, char const *argv[]) {
 			ClearBackground(GetColor(0x0));
 
 			BeginMode3D((Camera3D){
-				position: (Vector3){0.9,1,0.9},
-				target:   (Vector3){0,0.25,0},
-				up:       -Point::Up,
-				fovy:     45.0f,
-				type:     CAMERA_PERSPECTIVE,
+				.position = (Vector3){0.9,1,0.9},
+				.target =   (Vector3){0,0.25,0},
+				.up =       -Point::Up,
+				.fovy =     45.0f,
+				.type =     CAMERA_PERSPECTIVE,
 			});
 
 			auto drop = new Part(droplet);
@@ -1757,11 +1757,11 @@ int main(int argc, char const *argv[]) {
 			ClearBackground(GetColor(0x0));
 
 			BeginMode3D((Camera3D){
-				position: (Vector3){0.9,1,0.9},
-				target:   (Vector3){0,0.25,0},
-				up:       -Point::Up,
-				fovy:     45.0f,
-				type:     CAMERA_PERSPECTIVE,
+				.position = (Vector3){0.9,1,0.9},
+				.target =   (Vector3){0,0.25,0},
+				.up =       -Point::Up,
+				.fovy =     45.0f,
+				.type =     CAMERA_PERSPECTIVE,
 			});
 
 			for (Part* part: recipe->parts) {
@@ -1787,11 +1787,11 @@ int main(int argc, char const *argv[]) {
 			ClearBackground(GetColor(0x0));
 
 			BeginMode3D((Camera3D){
-				position: Point(1.0f, 1.0f, 1.0f) * Point(spec->collision).length(),
-				target:   Point(0.0f, spec->collision.h/4.0f, 0.0f),
-				up:       -Point::Up,
-				fovy:     45.0f,
-				type:     CAMERA_PERSPECTIVE,
+				.position = Point(1.0f, 1.0f, 1.0f) * Point(spec->collision).length(),
+				.target =   Point(0.0f, spec->collision.h/4.0f, 0.0f),
+				.up =       -Point::Up,
+				.fovy =     45.0f,
+				.type =     CAMERA_PERSPECTIVE,
 			});
 
 			for (Part* part: spec->parts) {

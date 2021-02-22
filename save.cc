@@ -196,8 +196,8 @@ void Ledger::load(const char* name) {
 	for (std::string line; std::getline(in, line);) {
 		auto state = json::parse(line);
 		Ledger::transactions.push_back({
-			delta: Currency(state["delta"]),
-			desc: state["desc"],
+			.delta = Currency(state["delta"]),
+			.desc = state["desc"],
 		});
 	}
 
@@ -455,11 +455,11 @@ void Store::loadAll(const char* name) {
 
 		for (auto level: state["levels"]) {
 			store.levels.push_back({
-				iid: Item::byName(level[0])->id,
-				lower: level[1],
-				upper: level[2],
-				promised: level[3],
-				reserved: level[4],
+				.iid = Item::byName(level[0])->id,
+				.lower = level[1],
+				.upper = level[2],
+				.promised = level[3],
+				.reserved = level[4],
 			});
 		}
 
@@ -830,11 +830,11 @@ void Burner::loadAll(const char* name) {
 
 		for (auto level: state["store"]["levels"]) {
 			burner.store.levels.push_back({
-				iid: Item::byName(level[0])->id,
-				lower: level[1],
-				upper: level[2],
-				promised: level[3],
-				reserved: level[4],
+				.iid = Item::byName(level[0])->id,
+				.lower = level[1],
+				.upper = level[2],
+				.promised = level[3],
+				.reserved = level[4],
 			});
 		}
 

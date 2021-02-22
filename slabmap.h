@@ -12,7 +12,7 @@
 // - allows element removal during iteration
 // - optimizes for read over write
 
-template <class V, typename K, auto ID>
+template <class V, auto ID>
 class slabmap {
 private:
 
@@ -28,6 +28,8 @@ private:
 		~item() {
 		}
 	};
+
+	typedef decltype(std::declval<V>().*ID) K;
 
 	struct slot {
 		uint slab;
@@ -50,9 +52,10 @@ private:
 	std::vector<std::vector<slot>> index;
 
 	std::size_t chain(const K& k) const {
-		std::hash<K> hash;
 		assert(index.size() > 0);
-		return hash(k) % index.size();
+		auto kk = k;
+		std::hash<decltype(kk)> hash;
+		return hash(kk) % index.size();
 	}
 
 public:
@@ -60,10 +63,10 @@ public:
 	float load = 4.0f;
 	bool autogrow = true;
 
-	slabmap<V,K,ID>() {
+	slabmap<V,ID>() {
 	}
 
-	~slabmap<V,K,ID>() {
+	~slabmap<V,ID>() {
 		clear();
 	}
 
@@ -108,6 +111,8 @@ public:
 		}
 		slabs.clear();
 		slabs.shrink_to_fit();
+		flags.clear();
+		flags.shrink_to_fit();
 		queue.clear();
 		queue.shrink_to_fit();
 		index.clear();
@@ -193,7 +198,8 @@ public:
 	class iterator {
 		uint si;
 		uint ci;
-		slabmap<V,K,ID> *sm;
+		bool end;
+		slabmap<V,ID> *sm;
 
 	public:
 		typedef V value_type;
@@ -202,10 +208,11 @@ public:
 		typedef V& reference;
 		typedef std::input_iterator_tag iterator_category;
 
-		explicit iterator(slabmap<V,K,ID> *ssm, uint ssi, uint cci) {
+		explicit iterator(slabmap<V,ID> *ssm, uint ssi, uint cci, bool eend) {
 			sm = ssm;
 			si = ssi;
 			ci = cci;
+			end = eend;
 		}
 
 		V& operator*() const {
@@ -213,21 +220,22 @@ public:
 		}
 
 		bool operator==(const iterator& other) const {
-			return si == other.si && ci == other.ci;
+			return (si == other.si && ci == other.ci) || (end && other.end);
 		}
 
 		bool operator!=(const iterator& other) const {
-			return si != other.si || ci != other.ci;
+			return !operator==(other);
 		}
 
 		iterator& operator++() {
-			for (;;) {
+			while (!end) {
 				ci++;
 				if (ci == slabSize) {
 					ci = 0;
 					si++;
 				}
-				if (sm->slabs.size() == si) {
+				if (sm->slabs.size() <= si) {
+					end = true;
 					break;
 				}
 				if (sm->flags[si][ci]) {
@@ -236,17 +244,25 @@ public:
 			}
 			return *this;
 		}
+
+		iterator operator++(int) {
+			iterator tmp(*this);
+			++tmp;
+			return tmp;
+		};
 	};
 
 	iterator begin() {
 		uint si = 0;
 		uint ci = 0;
+		bool end = false;
 		for (;;) {
 			if (ci == slabSize) {
 				ci = 0;
 				si++;
 			}
-			if (slabs.size() == si) {
+			if (slabs.size() <= si) {
+				end = true;
 				break;
 			}
 			if (flags[si][ci]) {
@@ -254,10 +270,10 @@ public:
 			}
 			ci++;
 		}
-		return iterator(this, si, ci);
+		return iterator(this, si, ci, end);
 	}
 
 	iterator end() {
-		return iterator(this, slabs.size(), 0);
+		return iterator(this, 0, 0, true);
 	}
 };

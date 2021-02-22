@@ -89,11 +89,11 @@ Point MainCamera::groundTarget(float ground) {
 
 Camera3D MainCamera::raylibCamera() {
 	return (Camera3D){
-		position : position,
-		target   : groundTarget(buildLevel),
-		up       : up,
-		fovy     : fovy,
-		type     : CAMERA_PERSPECTIVE,
+		.position = position,
+		.target   = groundTarget(buildLevel),
+		.up       = up,
+		.fovy     = fovy,
+		.type     = CAMERA_PERSPECTIVE,
 	};
 }
 
@@ -102,14 +102,14 @@ void MainCamera::updateMouseState() {
 	Vector2 pos = GetMousePosition();
 
 	mouse = (MouseState) {
-		x : (int)pos.x,
-		y : (int)pos.y,
-		dx : (int)pos.x - last.x,
-		dy : (int)pos.y - last.y,
-		wheel : GetMouseWheelMove(),
-		rH : last.rH,
-		rV : last.rV,
-		zW : last.zW,
+		.x = (int)pos.x,
+		.y = (int)pos.y,
+		.dx = (int)pos.x - last.x,
+		.dy = (int)pos.y - last.y,
+		.wheel = GetMouseWheelMove(),
+		.rH = last.rH,
+		.rV = last.rV,
+		.zW = last.zW,
 	};
 
 	mouse.left = last.left;
@@ -399,11 +399,11 @@ void MainCamera::draw() {
 		};
 
 		Camera3D camera = {
-			position : position,
-			target   : groundTarget(buildLevel),
-			up       : up,
-			fovy     : fovy,
-			type     : CAMERA_PERSPECTIVE,
+			.position = position,
+			.target   = groundTarget(buildLevel),
+			.up       = up,
+			.fovy     = fovy,
+			.type     = CAMERA_PERSPECTIVE,
 		};
 
 		ClearBackground(SKYBLUE);

@@ -263,9 +263,9 @@ void Store::levelSet(uint iid, uint lower, uint upper) {
 		return;
 	}
 	levels.push_back({
-		iid: iid,
-		lower: lower,
-		upper: upper,
+		.iid = iid,
+		.lower = lower,
+		.upper = upper,
 	});
 }
 

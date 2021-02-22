@@ -13,7 +13,7 @@ struct Drone {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline slabmap<Drone,uint,&Drone::id> all;
+	static inline slabmap<Drone,&Drone::id> all;
 	static Drone& create(uint id);
 	static Drone& get(uint id);
 

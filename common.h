@@ -8,6 +8,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
+#include <stdexcept>
 
 #define ZERO(s) memset(&s, 0, sizeof(s))
 

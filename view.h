@@ -23,7 +23,7 @@ struct View {
 
 	View();
 	virtual ~View();
-	virtual void update();
+	virtual void update(bool worldFocused);
 	virtual void draw();
 	virtual void draw(RenderTexture canvas);
 };
@@ -36,8 +36,8 @@ struct SiteCamera : View {
 
 	SiteCamera(Point, Point);
 	~SiteCamera();
-	virtual void update(bool worldFocused);
-	virtual void draw(RenderTexture canvas);
+	void update(bool worldFocused);
+	void draw(RenderTexture canvas);
 	Point groundTarget(float ground);
 };
 
@@ -101,8 +101,8 @@ struct MainCamera : View {
 
 	MainCamera(Point, Point);
 	~MainCamera();
-	virtual void update(bool worldFocused);
-	virtual void draw();
+	void update(bool worldFocused);
+	void draw();
 
 	Point groundTarget(float ground);
 	Camera3D raylibCamera();

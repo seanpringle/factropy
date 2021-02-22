@@ -14,5 +14,5 @@ void View::draw() {
 void View::draw(RenderTexture canvas) {
 }
 
-void View::update() {
+void View::update(bool worldFocused) {
 }

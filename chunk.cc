@@ -69,12 +69,12 @@ Chunk* Chunk::get(int x, int y) {
 					offset += 1000000;
 				}
 
-				chunk->tiles[ty][tx] = {
-					x : x*Chunk::size+tx,
-					y : y*Chunk::size+ty,
-					hill : NULL,
-					elevation : elevation,
-					mineral : {mineral, (uint)(resource*20.0f)},
+				chunk->tiles[ty][tx] = (Tile){
+					.x = x*Chunk::size+tx,
+					.y = y*Chunk::size+ty,
+					.hill = NULL,
+					.elevation = elevation,
+					.mineral = {mineral, (uint)(resource*20.0f)},
 				};
 
 				// minables visible on hills
