@@ -192,6 +192,10 @@ void Crafter::update() {
 			}
 		}
 
+		if (outputReady && recipe->mine) {
+			outputReady = !en.store().isFull();
+		}
+
 		bool miningReady = !recipe->mine || Chunk::canMine(en.miningBox(), recipe->mine);
 
 		if (itemsReady && fluidsReady && miningReady && outputReady) {

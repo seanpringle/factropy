@@ -76,6 +76,7 @@ namespace Sim {
 		Burner::saveAll(name);
 		Pipe::saveAll(name);
 		Conveyor::saveAll(name);
+		Unveyor::saveAll(name);
 		Computer::saveAll(name);
 		RopewayBucket::saveAll(name);
 		Ropeway::saveAll(name);
@@ -134,6 +135,7 @@ namespace Sim {
 		Burner::loadAll(name);
 		Pipe::loadAll(name);
 		Conveyor::loadAll(name);
+		Unveyor::loadAll(name);
 		Computer::loadAll(name);
 		RopewayBucket::loadAll(name);
 		Ropeway::loadAll(name);
@@ -912,6 +914,44 @@ void Conveyor::loadAll(const char* name) {
 		conveyor.offset = state["offset"];
 		conveyor.prev = state["prev"];
 		conveyor.next = state["next"];
+	}
+
+	in.close();
+}
+
+void Unveyor::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/unveyors.json");
+
+	for (auto& unveyor: all) {
+
+		json state;
+		state["id"] = unveyor.id;
+		state["partner"] = unveyor.partner;
+
+		for (uint i = 0; i < unveyor.items.size(); i++) {
+			auto& item = unveyor.items[i];
+			state["items"][i] = { item.offset, item.iid };
+		}
+
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Unveyor::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/unveyors.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Unveyor& unveyor = get(state["id"]);
+		unveyor.partner = state["partner"];
+
+		for (auto item: state["items"]) {
+			unveyor.items.push_back((Unveyor::item){ .offset = item[0], .iid = item[1] });
+		}
 	}
 
 	in.close();

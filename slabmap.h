@@ -52,9 +52,10 @@ private:
 	std::vector<bool*> flags;
 	std::vector<std::vector<slot>> index;
 
+	std::hash<K> hash;
+
 	std::size_t chain(const K& k) const {
 		assert(index.size() > 0);
-		std::hash<K> hash;
 		return hash(k) % index.size();
 	}
 
@@ -119,7 +120,7 @@ public:
 		entries = 0;
 	}
 
-	bool has(const K& k) {
+	bool has(const K& k) const {
 		if (!entries) return false;
 
 		for (slot ref: index[chain(k)]) {
@@ -130,11 +131,11 @@ public:
 		return false;
 	}
 
-	bool contains(const K& k) {
+	bool contains(const K& k) const {
 		return has(k);
 	}
 
-	uint count(const K& k) {
+	uint count(const K& k) const {
 		return has(k) ? 1: 0;
 	}
 
@@ -163,7 +164,7 @@ public:
 		return false;
 	}
 
-	V& refer(const K& k) {
+	V& refer(const K& k) const {
 		if (!entries) throw k;
 
 		for (slot ref: index[chain(k)]) {

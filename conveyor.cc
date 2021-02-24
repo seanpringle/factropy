@@ -163,7 +163,7 @@ Conveyor& Conveyor::manage() {
 	Box ob = output().box().grow(0.1f);
 
 	for (auto oid: Entity::intersecting(ob)) {
-		ensure(oid != id);
+		if (oid == id) continue;
 		Entity& eo = Entity::get(oid);
 		if (eo.isGhost()) continue;
 		if (eo.spec->conveyor) {
@@ -178,7 +178,7 @@ Conveyor& Conveyor::manage() {
 	}
 
 	for (auto oid: Entity::intersecting(ib)) {
-		ensure(oid != id);
+		if (oid == id) continue;
 		Entity& ei = Entity::get(oid);
 		if (ei.isGhost()) continue;
 		if (ei.spec->conveyor) {
@@ -216,7 +216,7 @@ Conveyor& Conveyor::unmanage() {
 }
 
 bool Conveyor::deliver(uint iiid) {
-	if (!iid || !prev) {
+	if (!iid) {
 		iid = iiid;
 		offset = steps-1;
 		return true;

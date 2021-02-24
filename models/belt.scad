@@ -60,20 +60,11 @@ module beltLeft() {
 	mirror([1,0,0]) beltRight();
 }
 
-module baseSlope() {
-	translate([0,0,950]) intersection() {
-		rotate([45,0,0]) difference() {
-			box([1000, 3000, 100]);
-			translate([0,0,50]) box([900, 3100, 100]);
-		};
-		box([1000,1000,2000]);
-	};
-}
-
-module beltSlope() {
-	translate([0,0,995]) intersection() {
-		rotate([45,0,0]) box([850, 2000, 10]);
-		box([1000,1000,2000]);
+module unveyor() {
+	translate([0,0,1000]) difference() {
+		box([1000,2000,1500]);
+		translate([0,501,0]) box([900,1001,1400]);
+		translate([0,-1800,0]) rotate([-36.5,0,0]) box([2000,2000,5000]);
 	}
 }
 
@@ -98,5 +89,5 @@ module beltSlope() {
 //beltLeft($fn=72);
 //beltLeft($fn=36);
 
-//baseSlope();
-beltSlope();
+//base();
+unveyor();

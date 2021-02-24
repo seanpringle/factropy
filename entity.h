@@ -17,6 +17,7 @@ struct GuiFakeEntity;
 #include "store.h"
 #include "arm.h"
 #include "conveyor.h"
+#include "unveyor.h"
 #include "ropeway.h"
 #include "lift.h"
 #include "pipe.h"
@@ -132,6 +133,7 @@ struct Entity {
 	Vehicle& vehicle();
 	Arm& arm();
 	Conveyor& conveyor();
+	Unveyor& unveyor();
 	Ropeway& ropeway();
 	RopewayBucket& ropewayBucket();
 	Lift& lift();

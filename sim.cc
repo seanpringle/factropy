@@ -19,6 +19,7 @@ namespace Sim {
 	TimeSeries statsArm;
 	TimeSeries statsCrafter;
 	TimeSeries statsConveyor;
+	TimeSeries statsUnveyor;
 	TimeSeries statsRopeway;
 	TimeSeries statsRopewayBucket;
 	TimeSeries statsProjector;
@@ -42,6 +43,7 @@ namespace Sim {
 		statsArm.clear();
 		statsCrafter.clear();
 		statsConveyor.clear();
+		statsUnveyor.clear();
 		statsRopeway.clear();
 		statsRopewayBucket.clear();
 		statsProjector.clear();
@@ -134,6 +136,7 @@ namespace Sim {
 		statsPath.track(tick, Path::tick);
 		statsVehicle.track(tick, Vehicle::tick);
 		statsConveyor.track(tick, Conveyor::tick);
+		statsUnveyor.track(tick, Unveyor::tick);
 		statsRopeway.track(tick, Ropeway::tick);
 		statsRopewayBucket.track(tick, RopewayBucket::tick);
 		statsLift.track(tick, Lift::tick);

@@ -115,6 +115,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Conveyor::create(id);
 	}
 
+	if (spec->unveyor) {
+		Unveyor::create(id);
+	}
+
 	if (spec->ropeway) {
 		Ropeway::create(id);
 	}
@@ -211,6 +215,10 @@ void Entity::destroy() {
 
 	if (spec->conveyor) {
 		conveyor().destroy();
+	}
+
+	if (spec->unveyor) {
+		unveyor().destroy();
 	}
 
 	if (spec->ropeway) {
@@ -468,6 +476,9 @@ Entity& Entity::manage() {
 		if (spec->conveyor) {
 			conveyor().manage();
 		}
+		if (spec->unveyor) {
+			unveyor().manage();
+		}
 		if (spec->pipe) {
 			pipe().manage();
 		}
@@ -479,6 +490,9 @@ Entity& Entity::unmanage() {
 	if (!isGhost()) {
 		if (spec->conveyor) {
 			conveyor().unmanage();
+		}
+		if (spec->unveyor) {
+			unveyor().unmanage();
 		}
 		if (spec->pipe) {
 			pipe().unmanage();
@@ -576,8 +590,12 @@ Entity& Entity::rotate() {
 }
 
 Entity& Entity::toggle() {
-	if (spec->lift) {
-		lift().toggle();
+	if (spec->toggle) {
+		unmanage();
+		if (spec->lift) {
+			lift().toggle();
+		}
+		manage();
 	}
 	return *this;
 }
@@ -679,6 +697,10 @@ Arm& Entity::arm() {
 
 Conveyor& Entity::conveyor() {
 	return Conveyor::get(id);
+}
+
+Unveyor& Entity::unveyor() {
+	return Unveyor::get(id);
 }
 
 Ropeway& Entity::ropeway() {

@@ -54,6 +54,7 @@ struct Spec {
 	bool shunt;
 	bool drone;
 	bool rotate;
+	bool toggle;
 	bool junk;
 	bool named;
 	bool block;
@@ -147,6 +148,10 @@ struct Spec {
 	Point conveyorInput;
 	Point conveyorOutput;
 	std::vector<Mat4> conveyorTransforms;
+
+	bool unveyor;
+	bool unveyorEntry;
+	float unveyorRange;
 
 	bool ropeway;
 	bool ropewayTerminus;

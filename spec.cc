@@ -30,6 +30,8 @@ Spec::Spec(std::string name) {
 	junk = false;
 	named = false;
 	block = false;
+	rotate = false;
+	toggle = false;
 
 	health = 0;
 	explosionSpec = "";
@@ -96,6 +98,9 @@ Spec::Spec(std::string name) {
 	missileBallistic = false;
 
 	conveyor = false;
+	unveyor = false;
+	unveyorRange = 0.0f;
+	unveyorEntry = false;
 
 	ropeway = false;
 	ropewayTower = false;

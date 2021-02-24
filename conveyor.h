@@ -1,4 +1,3 @@
-
 #pragma once
 
 struct Conveyor;
@@ -32,6 +31,7 @@ struct Conveyor {
 	uint next;
 	Conveyor* cnext;
 	Conveyor* cprev;
+	Conveyor* clink;
 	bool marked;
 	bool managed;
 

@@ -742,6 +742,75 @@ int main(int argc, char const *argv[]) {
 	Spec::byName("conveyor-right")->pipette = Spec::byName("conveyor");
 	Spec::byName("conveyor-left")->pipette = Spec::byName("conveyor");
 
+	spec = new Spec("unveyor-entry");
+	spec->collision = Volume(1, 2, 2);
+	spec->rotate = true;
+	spec->unveyor = true;
+	spec->unveyorEntry = true;
+	spec->unveyorRange = 10.0f;
+	spec->conveyor = true;
+	spec->conveyorInput = Point::North*1.5f;
+	spec->conveyorOutput = Point::Zero;
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(1);
+	spec->health = 10;
+
+	{
+		Point base = Point::Zero;
+		Point step = Point::North * (1.0f/30.0f);
+		for (int i = 0; i < 30; i++) {
+			Point p = base + (step * (float)i);
+			spec->conveyorTransforms.push_back(p.translation());
+		}
+	}
+
+	{
+		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
+		spec->parts = {
+			(new Part(Thing("models/unveyor-base-hd.stl", "models/unveyor-base-ld.stl")))
+				->scale(0.001, 0.001, 0.001)->paint(0xcccc00ff)->translate(0,-1.25,0),
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,-0.5),
+			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,-0.5),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+		};
+	}
+
+	spec = new Spec("unveyor-exit");
+	spec->collision = Volume(1, 2, 2);
+	spec->rotate = true;
+	spec->unveyor = true;
+	spec->unveyorEntry = false;
+	spec->unveyorRange = 10.0f;
+	spec->conveyor = true;
+	spec->conveyorInput = Point::Zero;
+	spec->conveyorOutput = Point::South*1.5f;
+	spec->consumeElectricity = true;
+	spec->energyConsume = Energy::kW(1);
+	spec->health = 10;
+
+	{
+		Point base = Point::South;
+		Point step = Point::North * (1.0f/30.0f);
+		for (int i = 0; i < 30; i++) {
+			Point p = base + (step * (float)i);
+			spec->conveyorTransforms.push_back(p.translation());
+		}
+	}
+
+	{
+		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
+		spec->parts = {
+			(new Part(Thing("models/unveyor-base-hd.stl", "models/unveyor-base-ld.stl")))->paint(0xcccc00ff)
+				->scale(0.001, 0.001, 0.001)->rotate(Point::Up, 180)->translate(0,-1.25,0),
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,0.5),
+			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,0.5),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+		};
+	}
+
+	Spec::byName("unveyor-entry")->cycle = Spec::byName("unveyor-exit");
+	Spec::byName("unveyor-exit")->cycle = Spec::byName("unveyor-entry");
+
 	spec = new Spec("ropeway-terminus");
 	spec->collision = Volume(5, 10, 5);
 	spec->setCornerSupports();
@@ -1278,6 +1347,7 @@ int main(int argc, char const *argv[]) {
 	spec->setCornerSupports();
 	spec->lift = true;
 	spec->rotate = true;
+	spec->toggle = true;
 	spec->health = 10;
 	spec->parts = {
 		(new Part(Thing("models/lift-base-hd.stl", "models/lift-base-ld.stl")))->translate(0,-1,0)->paint(0xcccc00ff),

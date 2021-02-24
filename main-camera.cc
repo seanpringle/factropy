@@ -686,6 +686,19 @@ void MainCamera::draw() {
 					});
 				}
 
+				if (hovering->spec->unveyor) {
+					Sim::locked([&]() {
+						Entity& en = Entity::get(hovering->id);
+						drawBox(en.unveyor().range(), Point::South, YELLOW);
+
+						if (en.unveyor().partner) {
+							Entity& ep = Entity::get(en.unveyor().partner);
+							drawBox(en.spec->southBox(en.pos), en.dir, YELLOW);
+							drawBox(ep.spec->southBox(ep.pos), ep.dir, YELLOW);
+						}
+					});
+				}
+
 				if (hovering->spec->ropeway) {
 					Sim::locked([&]() {
 						Entity& en = Entity::get(hovering->id);
