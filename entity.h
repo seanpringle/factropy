@@ -6,6 +6,7 @@ struct GuiEntity;
 struct GuiFakeEntity;
 
 #include "slabmap.h"
+#include "gridmap.h"
 #include "spec.h"
 #include "recipe.h"
 #include "chunk.h"
@@ -42,7 +43,7 @@ struct Entity {
 	static const uint32_t DECONSTRUCTION = 1<<2;
 	static const uint32_t ENABLED = 1<<3;
 
-	static inline std::map<Chunk::XY,std::set<uint>> grid;
+	static inline gridmap<32,uint> grid;
 	static inline std::set<uint> removing;
 	static inline std::set<uint> exploding;
 

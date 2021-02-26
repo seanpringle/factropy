@@ -6,7 +6,7 @@ struct Chunk;
 #include "raylib.h"
 #include "raymath.h"
 #include "item.h"
-#include "box.h"
+#include "gridwalk.h"
 #include <map>
 #include <set>
 #include <vector>
@@ -25,86 +25,21 @@ struct Chunk {
 
 	static inline std::set<Hill*> hills;
 
+	typedef gridwalk::xy XY;
+
 	struct Tile {
 		int x, y;
 		Hill* hill;
 		float elevation;
 		Stack mineral;
+
+		Chunk* chunk();
 	};
 
-	struct XY {
-		int x, y;
-		bool operator==(const XY &o) const;
-		bool operator<(const XY &o) const;
-	};
+	static XY tileXYtoChunkXY(int x, int y);
+	static XY tileXYtoOffsetXY(int x, int y);
 
-	struct Coords {
-		float x;
-		float y;
-		int tx;
-		int ty;
-		int cx;
-		int cy;
-		int ox;
-		int oy;
-
-		inline Coords(){};
-		Coords(float x, float y);
-	};
-
-	struct ChunkWalkerIter {
-		int cx0, cy0;
-		int cx1, cy1;
-		int cx, cy;
-
-		typedef XY value_type;
-		typedef std::ptrdiff_t difference_type;
-		typedef XY* pointer;
-		typedef XY& reference;
-		typedef std::input_iterator_tag iterator_category;
-
-		XY operator*() const;
-		bool operator==(const ChunkWalkerIter& other) const;
-		bool operator!=(const ChunkWalkerIter& other) const;
-		ChunkWalkerIter& operator++();
-	};
-
-	struct ChunkWalker {
-		Coords a;
-		Coords b;
-		ChunkWalker(Box box);
-		ChunkWalkerIter begin();
-		ChunkWalkerIter end();
-	};
-
-	static ChunkWalker walk(Box);
-
-	struct TileWalkerIter {
-		int tx0, ty0;
-		int tx1, ty1;
-		int tx, ty;
-
-		typedef XY value_type;
-		typedef std::ptrdiff_t difference_type;
-		typedef XY* pointer;
-		typedef XY& reference;
-		typedef std::input_iterator_tag iterator_category;
-
-		XY operator*() const;
-		bool operator==(const TileWalkerIter& other) const;
-		bool operator!=(const TileWalkerIter& other) const;
-		TileWalkerIter& operator++();
-	};
-
-	struct TileWalker {
-		Coords a;
-		Coords b;
-		TileWalker(Box box);
-		TileWalkerIter begin();
-		TileWalkerIter end();
-	};
-
-	static TileWalker walkTiles(Box);
+	static gridwalk walkTiles(Box);
 
 	static inline std::map<XY,Chunk*> all;
 

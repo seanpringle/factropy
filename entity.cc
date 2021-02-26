@@ -331,39 +331,20 @@ bool Entity::fits(Spec *spec, Point pos, Point dir) {
 }
 
 std::vector<uint> Entity::intersecting(Box box) {
-	std::vector<uint> hits;
-	for (auto xy: Chunk::walk(box.grow(1.0f))) {
-		for (uint id: grid[xy]) {
-			if (get(id).box().intersects(box)) {
-				hits.push_back(id);
-			}
-		}
-	}
-	deduplicate(hits);
+	auto hits = grid.search(box);
+	discard_if(hits, [&](uint id) { return !get(id).box().intersects(box); });
 	return hits;
 }
 
 std::vector<uint> Entity::intersecting(Point pos, float radius) {
-	std::vector<uint> hits;
-	for (auto id: intersecting(pos.box().grow(radius))) {
-		Entity& en = get(id);
-		if (en.pos.distance(pos) < radius) {
-			hits.push_back(id);
-		}
-	}
+	auto hits = intersecting(pos.box().grow(radius));
+	discard_if(hits, [&](uint id) { return !(get(id).pos.distance(pos) < radius); });
 	return hits;
 }
 
 uint Entity::at(Point p) {
-	Box box = p.box();
-	for (auto xy: Chunk::walk(box.grow(1.0f))) {
-		for (uint id: grid[xy]) {
-			if (get(id).box().intersects(box)) {
-				return id;
-			}
-		}
-	}
-	return 0;
+	auto hits = intersecting(p.box());
+	return hits.size() ? hits.front(): 0;
 }
 
 std::vector<uint> Entity::enemiesInRange(Point pos, float radius) {
@@ -474,17 +455,12 @@ bool Entity::lookAtPivot(Point o) {
 }
 
 Entity& Entity::index() {
-	//unindex();
-	for (auto xy: Chunk::walk(box().grow(1.0f))) {
-		grid[xy].insert(id);
-	}
+	grid.insert(box(), id);
 	return *this;
 }
 
 Entity& Entity::unindex() {
-	for (auto xy: Chunk::walk(box().grow(1.0f))) {
-		grid[xy].erase(id);
-	}
+	grid.remove(box(), id);
 	return *this;
 }
 

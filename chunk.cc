@@ -3,23 +3,26 @@
 #include "part.h"
 #include "sim.h"
 
-bool Chunk::XY::operator==(const XY &o) const {
-	return x == o.x && y == o.y;
+gridwalk Chunk::walkTiles(Box box) {
+	return gridwalk(1, box);
 }
 
-bool Chunk::XY::operator<(const XY &o) const {
-	return x < o.x || (x == o.x && y < o.y);
+Chunk::XY Chunk::tileXYtoChunkXY(int x, int y) {
+	int cx = std::floor((float)x/Chunk::size);
+	int cy = std::floor((float)y/Chunk::size);
+	return {cx, cy};
 }
 
-Chunk::Coords::Coords(float xx, float yy) {
-	x = xx;
-	y = yy;
-	tx = (int)std::floor(x);
-	ty = (int)std::floor(y);
-	cx = (int)std::floor((float)tx/Chunk::size);
-	cy = (int)std::floor((float)ty/Chunk::size);
-	ox = tx - (cx*Chunk::size);
-	oy = ty - (cy*Chunk::size);
+Chunk::XY Chunk::tileXYtoOffsetXY(int x, int y) {
+	auto [cx, cy] = tileXYtoChunkXY(x, y);
+	int ox = x-(cx*Chunk::size);
+	int oy = y-(cy*Chunk::size);
+	return {ox, oy};
+}
+
+Chunk* Chunk::Tile::chunk() {
+	auto [cx, cy] = Chunk::tileXYtoChunkXY(x, y);
+	return tryGet(cx, cy);
 }
 
 void Chunk::generator(Chunk::Generator fn) {
@@ -28,7 +31,7 @@ void Chunk::generator(Chunk::Generator fn) {
 
 Chunk* Chunk::tryGet(int x, int y) {
 	XY xy = {x,y};
-	return all.count(xy) == 1 ? all[xy]: NULL;
+	return all.count(xy) ? all[xy]: NULL;
 }
 
 Chunk* Chunk::get(int x, int y) {
@@ -94,9 +97,10 @@ Chunk* Chunk::get(int x, int y) {
 }
 
 Chunk::Tile* Chunk::tileTryGet(int x, int y) {
-	auto co = Chunk::Coords(x, y);
-	Chunk *chunk = tryGet(co.cx, co.cy);
-	return (chunk != NULL) ? &chunk->tiles[co.oy][co.ox]: NULL;
+	auto [cx,cy] = tileXYtoChunkXY(x, y);
+	auto [ox,oy] = tileXYtoOffsetXY(x, y);
+	Chunk *chunk = tryGet(cx, cy);
+	return (chunk != NULL) ? &chunk->tiles[oy][ox]: NULL;
 }
 
 Chunk::Tile* Chunk::tileTryGet(Point p) {
@@ -182,8 +186,7 @@ void Chunk::flatten(Box b) {
 		Tile *tile = tileTryGet(x, y);
 		if (tile && tile->elevation > 0.0f) {
 			tile->elevation = 0.0f;
-			auto co = Coords(x, y);
-			Chunk::get(co.cx, co.cy)->regenerate = true;
+			tile->chunk()->regenerate = true;
 		}
 	}
 }
@@ -331,101 +334,5 @@ void Chunk::findHills() {
 			}
 		}
 	}
-}
-
-Chunk::ChunkWalker Chunk::walk(Box box) {
-	return ChunkWalker(box);
-}
-
-Chunk::ChunkWalker::ChunkWalker(Box box) {
-	a = Chunk::Coords(box.x-box.w/2, box.z-box.d/2);
-	b = Chunk::Coords(box.x+box.w/2, box.z+box.d/2);
-	if (a.cy == b.cy || b.ty > b.cy*Chunk::size) {
-		b.cy++;
-	}
-	if (a.cx == b.cx || b.tx > b.cx*Chunk::size) {
-		b.cx++;
-	}
-}
-
-Chunk::ChunkWalkerIter Chunk::ChunkWalker::begin() {
-	return (Chunk::ChunkWalkerIter){a.cx, a.cy, b.cx, b.cy, a.cx, a.cy};
-}
-
-Chunk::ChunkWalkerIter Chunk::ChunkWalker::end() {
-	return (Chunk::ChunkWalkerIter){a.cx, a.cy, b.cx, b.cy, b.cx, b.cy};
-}
-
-Chunk::XY Chunk::ChunkWalkerIter::operator*() const {
-	return (Chunk::XY){cx, cy};
-}
-
-bool Chunk::ChunkWalkerIter::operator==(const Chunk::ChunkWalkerIter& other) const {
-	return cx == other.cx && cy == other.cy;
-}
-
-bool Chunk::ChunkWalkerIter::operator!=(const Chunk::ChunkWalkerIter& other) const {
-	return cx != other.cx || cy != other.cy;
-}
-
-Chunk::ChunkWalkerIter& Chunk::ChunkWalkerIter::operator++() {
-	if (cx < cx1) {
-		cx++;
-	}
-	if (cx == cx1 && cy < cy1) {
-		cy++;
-		if (cy < cy1) {
-			cx = cx0;
-		}
-	}
-	return *this;
-}
-
-Chunk::TileWalker Chunk::walkTiles(Box box) {
-	return TileWalker(box);
-}
-
-Chunk::TileWalker::TileWalker(Box box) {
-	a = Chunk::Coords(box.x-box.w/2, box.z-box.d/2);
-	b = Chunk::Coords(box.x+box.w/2, box.z+box.d/2);
-	if (a.ty == b.ty || b.y > (float)b.ty) {
-		b.ty++;
-	}
-	if (a.tx == b.tx || b.x > (float)b.tx) {
-		b.tx++;
-	}
-}
-
-Chunk::TileWalkerIter Chunk::TileWalker::begin() {
-	return (Chunk::TileWalkerIter){a.tx, a.ty, b.tx, b.ty, a.tx, a.ty};
-}
-
-Chunk::TileWalkerIter Chunk::TileWalker::end() {
-	return (Chunk::TileWalkerIter){a.tx, a.ty, b.tx, b.ty, b.tx, b.ty};
-}
-
-Chunk::XY Chunk::TileWalkerIter::operator*() const {
-	return (Chunk::XY){tx, ty};
-}
-
-bool Chunk::TileWalkerIter::operator==(const Chunk::TileWalkerIter& other) const {
-	return tx == other.tx && ty == other.ty;
-}
-
-bool Chunk::TileWalkerIter::operator!=(const Chunk::TileWalkerIter& other) const {
-	return tx != other.tx || ty != other.ty;
-}
-
-Chunk::TileWalkerIter& Chunk::TileWalkerIter::operator++() {
-	if (tx < tx1) {
-		tx++;
-	}
-	if (tx == tx1 && ty < ty1) {
-		ty++;
-		if (ty < ty1) {
-			tx = tx0;
-		}
-	}
-	return *this;
 }
 

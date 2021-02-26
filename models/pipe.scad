@@ -27,6 +27,21 @@ module tee() {
 	}
 }
 
+module flange() {
+	cyl(0.475, 0.475, 0.1);
+}
+
+module ground() {
+	union() {
+		translate([-0.45,0,-0.45]) rotate([90,0,0]) intersection() {
+			rotate_extrude(convexity=10) translate([0.45,0,0]) circle(r=0.4);
+			translate([0.5,0.5,0]) box([1,1,1]);
+		}
+		translate([-0.45,0,0]) rotate([0,90,0]) flange();
+		translate([0,0,-0.45]) flange();
+	}
+}
+
 hd=72;
 ld=8;
 
@@ -37,4 +52,6 @@ ld=8;
 //elbow($fn=hd);
 //elbow($fn=ld);
 //tee($fn=hd);
-tee($fn=ld);
+//tee($fn=ld);
+ground($fn=hd);
+//ground($fn=ld);

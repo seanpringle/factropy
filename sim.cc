@@ -115,7 +115,6 @@ namespace Sim {
 		return true;
 	}
 
-
 	void update() {
 		statsElectricityDemand.set(tick, Entity::electricityDemand);
 		statsElectricityDemand.update(tick);

@@ -69,4 +69,9 @@ void deduplicate(C& c) {
   c.erase(std::unique(c.begin(), c.end()), c.end());
 }
 
+template <typename C, typename F>
+void discard_if(C& c, F fn) {
+  c.erase(std::remove_if(c.begin(), c.end(), fn), c.end());
+}
+
 #endif
