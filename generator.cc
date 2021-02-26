@@ -10,7 +10,7 @@ Generator& Generator::create(uint id, uint sid) {
 	Generator& generator = all[id];
 	generator.id = id;
 	generator.supplying = false;
-	generator.monitor = Energy(0);
+	generator.energy = Energy(0);
 	return generator;
 }
 
@@ -26,33 +26,33 @@ void Generator::destroy() {
 Energy Generator::consume(Energy e) {
 	Entity& en = Entity::get(id);
 
-	supplying = false;
-	if (monitor.value <= 0) monitor = en.spec->energyGenerate;
+	if (energy < e) {
+		if (en.spec->pipe) {
+			Pipe& pipe = Pipe::get(id);
 
-	if (en.spec->pipe) {
-		Pipe& pipe = Pipe::get(id);
+			if (pipe.network && pipe.network->fid && pipe.network->count(pipe.network->fid)) {
+				Fluid* fluid = Fluid::get(pipe.network->fid);
 
-		if (pipe.network && pipe.network->fid && pipe.network->count(pipe.network->fid)) {
-			Fluid* fluid = Fluid::get(pipe.network->fid);
+				if (fluid->thermal) {
 
-			if (fluid->thermal) {
-				supplying = true;
+					int remove = std::ceil((float)e.value / (float)fluid->thermal.value);
 
-				int remove = std::ceil((float)e.value / (float)fluid->thermal.value);
+					if (remove > 0) {
+						Amount removed = pipe.network->extract({pipe.network->fid, (uint)remove});
 
-				if (remove > 0) {
-					Amount removed = pipe.network->extract({pipe.network->fid, (uint)remove});
-
-					if (removed.size) {
-						int actual = std::min((int)removed.size, remove);
-						Energy transfer = fluid->thermal * (float)actual;
-						monitor -= transfer;
-						return transfer;
+						if (removed.size) {
+							int actual = std::min((int)removed.size, remove);
+							energy += fluid->thermal * (float)actual;
+						}
 					}
 				}
 			}
 		}
 	}
 
-	return 0;
+	e = std::min(e, energy);
+	energy -= e;
+	supplying = e;
+
+	return e;
 }

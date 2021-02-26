@@ -17,7 +17,6 @@ namespace Save {
 		state["secondMax"] = ts->secondMax;
 		state["minuteMax"] = ts->minuteMax;
 		state["hourMax"] = ts->hourMax;
-
 		for (uint i = 0; i < 60; i++) {
 			state["seconds"][i] = ts->seconds[i];
 		}
@@ -67,7 +66,6 @@ namespace Sim {
 		Chunk::saveAll(name);
 		Entity::saveAll(name);
 		Store::saveAll(name);
-		Lift::saveAll(name);
 		Arm::saveAll(name);
 		Vehicle::saveAll(name);
 		Crafter::saveAll(name);
@@ -97,7 +95,6 @@ namespace Sim {
 			state["statsConveyor"] = Save::timeSeriesSave(&Sim::statsConveyor);
 			state["statsPath"] = Save::timeSeriesSave(&Sim::statsPath);
 			state["statsVehicle"] = Save::timeSeriesSave(&Sim::statsVehicle);
-			state["statsLift"] = Save::timeSeriesSave(&Sim::statsLift);
 			state["statsPipe"] = Save::timeSeriesSave(&Sim::statsPipe);
 			state["statsShunt"] = Save::timeSeriesSave(&Sim::statsShunt);
 			state["statsDepot"] = Save::timeSeriesSave(&Sim::statsDepot);
@@ -126,7 +123,6 @@ namespace Sim {
 		Chunk::loadAll(name);
 		Entity::loadAll(name);
 		Store::loadAll(name);
-		Lift::loadAll(name);
 		Arm::loadAll(name);
 		Vehicle::loadAll(name);
 		Crafter::loadAll(name);
@@ -143,28 +139,27 @@ namespace Sim {
 		Ledger::load(name);
 		Recipe::load(name);
 
-		{
-			auto in = std::ifstream(path + "/time-series.json");
-
-			for (std::string line; std::getline(in, line);) {
-				auto state = json::parse(line);
-				Save::timeSeriesLoad(&Sim::statsElectricityDemand, state["statsElectricityDemand"]);
-				Save::timeSeriesLoad(&Sim::statsElectricitySupply, state["statsElectricitySupply"]);
-				Save::timeSeriesLoad(&Sim::statsEntity, state["statsEntity"]);
-				Save::timeSeriesLoad(&Sim::statsStore, state["statsStore"]);
-				Save::timeSeriesLoad(&Sim::statsArm, state["statsArm"]);
-				Save::timeSeriesLoad(&Sim::statsCrafter, state["statsCrafter"]);
-				Save::timeSeriesLoad(&Sim::statsPath, state["statsPath"]);
-				Save::timeSeriesLoad(&Sim::statsVehicle, state["statsVehicle"]);
-				Save::timeSeriesLoad(&Sim::statsLift, state["statsLift"]);
-				//Save::timeSeriesLoad(&Sim::statsPipe, state["statsPipe"]);
-				Save::timeSeriesLoad(&Sim::statsShunt, state["statsShunt"]);
-				Save::timeSeriesLoad(&Sim::statsDepot, state["statsDepot"]);
-				Save::timeSeriesLoad(&Sim::statsDrone, state["statsDrone"]);
-			}
-
-			in.close();
-		}
+//		{
+//			auto in = std::ifstream(path + "/time-series.json");
+//
+//			for (std::string line; std::getline(in, line);) {
+//				auto state = json::parse(line);
+//				Save::timeSeriesLoad(&Sim::statsElectricityDemand, state["statsElectricityDemand"]);
+//				Save::timeSeriesLoad(&Sim::statsElectricitySupply, state["statsElectricitySupply"]);
+//				Save::timeSeriesLoad(&Sim::statsEntity, state["statsEntity"]);
+//				Save::timeSeriesLoad(&Sim::statsStore, state["statsStore"]);
+//				Save::timeSeriesLoad(&Sim::statsArm, state["statsArm"]);
+//				Save::timeSeriesLoad(&Sim::statsCrafter, state["statsCrafter"]);
+//				Save::timeSeriesLoad(&Sim::statsPath, state["statsPath"]);
+//				Save::timeSeriesLoad(&Sim::statsVehicle, state["statsVehicle"]);
+//				//Save::timeSeriesLoad(&Sim::statsPipe, state["statsPipe"]);
+//				Save::timeSeriesLoad(&Sim::statsShunt, state["statsShunt"]);
+//				Save::timeSeriesLoad(&Sim::statsDepot, state["statsDepot"]);
+//				Save::timeSeriesLoad(&Sim::statsDrone, state["statsDrone"]);
+//			}
+//
+//			in.close();
+//		}
 	}
 }
 
@@ -393,6 +388,8 @@ void Entity::loadAll(const char* name) {
 		if (en.spec->named) {
 			en.rename(state["name"]);
 		}
+
+		en.setEnabled(true);
 	}
 
 	in.close();
@@ -468,45 +465,6 @@ void Store::loadAll(const char* name) {
 		for (uint did: state["drones"]) {
 			store.drones.insert(did);
 		}
-	}
-
-	in.close();
-}
-
-void Lift::saveAll(const char* name) {
-	auto path = std::string(name);
-	auto out = std::ofstream(path + "/lifts.json");
-
-	for (auto& pair: all) {
-		Lift& lift = pair.second;
-
-		json state;
-		state["id"] = lift.id;
-		if (lift.iid) state["item"] = Item::get(lift.iid)->name;
-		state["ascent"] = lift.ascent;
-		state["mode"] = lift.mode;
-		state["stage"] = lift.stage;
-		state["pause"] = lift.pause;
-
-		out << state << "\n";
-	}
-
-	out.close();
-}
-
-void Lift::loadAll(const char* name) {
-	auto path = std::string(name);
-	auto in = std::ifstream(path + "/lifts.json");
-
-	for (std::string line; std::getline(in, line);) {
-		auto state = json::parse(line);
-		Lift& lift = get(state["id"]);
-
-		lift.iid = state["item"].is_null() ? 0: Item::byName(state["item"])->id;
-		lift.ascent = state["ascent"];
-		lift.mode = state["mode"];
-		lift.stage = state["stage"];
-		lift.pause = state["pause"];
 	}
 
 	in.close();
@@ -897,6 +855,7 @@ void Conveyor::saveAll(const char* name) {
 		state["offset"] = conveyor.offset;
 		state["prev"] = conveyor.prev;
 		state["next"] = conveyor.next;
+		state["side"] = conveyor.side;
 		out << state << "\n";
 	}
 
@@ -914,6 +873,7 @@ void Conveyor::loadAll(const char* name) {
 		conveyor.offset = state["offset"];
 		conveyor.prev = state["prev"];
 		conveyor.next = state["next"];
+		conveyor.side = state["side"];
 	}
 
 	in.close();
@@ -1006,6 +966,16 @@ void Ropeway::saveAll(const char* name) {
 			state["buckets"][i++] = bid;
 		}
 
+		i = 0;
+		for (auto& iid: ropeway.inputFilters) {
+			state["inputFilters"][i++] = iid;
+		}
+
+		i = 0;
+		for (auto& iid: ropeway.outputFilters) {
+			state["outputFilters"][i++] = iid;
+		}
+
 		out << state << "\n";
 	}
 
@@ -1025,6 +995,14 @@ void Ropeway::loadAll(const char* name) {
 
 		for (uint bid: state["buckets"]) {
 			ropeway.buckets.push_back(bid);
+		}
+
+		for (uint bid: state["inputFilters"]) {
+			ropeway.inputFilters.insert(bid);
+		}
+
+		for (uint bid: state["outputFilters"]) {
+			ropeway.outputFilters.insert(bid);
 		}
 
 		ropeway.check = true;

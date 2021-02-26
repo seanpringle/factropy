@@ -40,6 +40,7 @@ struct Recipe {
 
 	uint mine;
 	Currency outputCurrency;
+	Currency inputCurrency;
 
 	Energy energyUsage;
 

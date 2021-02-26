@@ -73,6 +73,18 @@ Energy::operator bool() const {
 	return value != 0;
 }
 
+Energy::operator double() const {
+	return value;
+}
+
+Energy::operator float() const {
+	return value;
+}
+
+Energy::operator int() const {
+	return value;
+}
+
 std::string Energy::format() const {
 	if (value < 1000) {
 		return fmt("%dJ", value);
@@ -97,4 +109,14 @@ std::string Energy::formatRate() const {
 float Energy::portion(Energy o) {
 	if (o.value == 0) return 0.0f;
 	return std::max(0.0f, std::min(1.0f, (float)value / (float)o.value));
+}
+
+Energy Energy::magnitude() {
+	if (value == 0) return 1;
+	double n = value*60;
+	bool negative = n < 0;
+	double log = std::log10(std::abs(n));
+	double decimalPlaces = ((log > 0)) ? (std::ceil(log)) : (std::floor(log) + 1);
+	double rounded = std::pow(10, decimalPlaces)/60;
+	return std::round(negative ? -rounded : rounded);
 }

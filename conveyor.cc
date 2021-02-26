@@ -56,11 +56,14 @@ void Conveyor::tick() {
 			Conveyor& leader = get(id);
 			leader.cnext = nullptr;
 			leader.cprev = leader.prev ? &all[leader.prev]: nullptr;
+			leader.cside = leader.side ? &all[leader.side]: nullptr;
 			uint prev = leader.prev;
 			while (prev) {
 				Conveyor& before = get(prev);
 				before.cnext = before.next ? &all[before.next]: nullptr;
 				before.cprev = before.prev ? &all[before.prev]: nullptr;
+				ensure(!before.side);
+				before.cside = nullptr;
 				prev = before.prev;
 			}
 		}
@@ -69,11 +72,15 @@ void Conveyor::tick() {
 			Conveyor& leader = get(id);
 			leader.cnext = nullptr;
 			leader.cprev = leader.prev ? &all[leader.prev]: nullptr;
+			ensure(!leader.side);
+			leader.cside = nullptr;
 			uint prev = leader.prev;
 			while (prev && prev != leader.id) {
 				Conveyor& before = get(prev);
 				before.cnext = before.next ? &all[before.next]: nullptr;
 				before.cprev = before.prev ? &all[before.prev]: nullptr;
+				ensure(!before.side);
+				before.cside = nullptr;
 				prev = before.prev;
 			}
 			get(leader.next).cprev = nullptr;
@@ -117,6 +124,7 @@ Conveyor& Conveyor::create(uint id) {
 	conveyor.steps = en.spec->conveyorTransforms.size();
 	conveyor.prev = 0;
 	conveyor.next = 0;
+	conveyor.side = 0;
 	conveyor.cnext = nullptr;
 	conveyor.cprev = nullptr;
 	conveyor.marked = false;
@@ -192,10 +200,40 @@ Conveyor& Conveyor::manage() {
 		}
 	}
 
+	// another sideloading here
+	for (auto oid: Entity::intersecting(en.box().grow(0.5))) {
+		if (oid == id || oid == prev || oid == next) continue;
+		Entity& eo = Entity::get(oid);
+		if (eo.isGhost()) continue;
+		if (eo.dir.cardinalParallel(en.dir)) continue;
+		if (eo.spec->conveyor) {
+			Conveyor& co = eo.conveyor();
+			if (en.box().contains(co.output())) {
+				ensure(!co.side);
+				co.side = id;
+			}
+		}
+	}
+
+	// here sideloading to another
+	if (!next && !side) {
+		for (auto oid: Entity::intersecting(ob)) {
+			if (oid == id) continue;
+			Entity& eo = Entity::get(oid);
+			if (eo.isGhost()) continue;
+			if (eo.dir.cardinalParallel(en.dir)) continue;
+			if (eo.spec->conveyor) {
+				side = oid;
+				break;
+			}
+		}
+	}
+
 	return *this;
 }
 
 Conveyor& Conveyor::unmanage() {
+	Entity& en = Entity::get(id);
 
 	rebuild = true;
 	managed = false;
@@ -210,6 +248,19 @@ Conveyor& Conveyor::unmanage() {
 		ensure(get(next).prev == id);
 		get(next).prev = 0;
 		next = 0;
+	}
+
+	side = 0;
+
+	for (auto oid: Entity::intersecting(en.box().grow(0.5))) {
+		Entity& eo = Entity::get(oid);
+		if (eo.isGhost()) continue;
+		if (eo.spec->conveyor) {
+			Conveyor& co = get(oid);
+			if (co.side == id) {
+				co.side = 0;
+			}
+		}
 	}
 
 	return *this;
@@ -236,7 +287,7 @@ void Conveyor::update() {
 			break;
 		}
 
-		if (!cnext && offset <= steps/2) {
+		if (!cnext && offset <= steps/2 && !cside) {
 			break;
 		}
 
@@ -246,7 +297,11 @@ void Conveyor::update() {
 		}
 
 		if (cnext && cnext->deliver(iid)) {
-			iid = 0;
+			remove(iid);
+		}
+
+		if (cside && cside->insert(iid)) {
+			remove(iid);
 		}
 
 		break;

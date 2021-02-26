@@ -29,9 +29,10 @@ struct Conveyor {
 	uint steps;
 	uint prev;
 	uint next;
+	uint side;
 	Conveyor* cnext;
 	Conveyor* cprev;
-	Conveyor* clink;
+	Conveyor* cside;
 	bool marked;
 	bool managed;
 

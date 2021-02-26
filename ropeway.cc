@@ -264,7 +264,7 @@ void Ropeway::update() {
 	if (!steps.size()) return;
 	if (!complete()) return;
 
-	uint gap = 30*10;
+	uint gap = 30*30;
 	bool newBucket = cycle == 0;
 
 	cycle++;
@@ -285,6 +285,15 @@ void Ropeway::update() {
 		}
 
 		if (handover) {
+			auto& tstore = Store::get(id);
+			auto& bstore = Store::get(handover);
+			uint iid = bstore.wouldRemoveAny(inputFilters);
+			if (iid) {
+				uint count = bstore.countAvailable(iid);
+				Stack excess = tstore.insert({iid,count});
+				bstore.remove({iid,count-excess.size});
+			}
+
 			Entity::get(handover).remove();
 			handover = 0;
 		}
@@ -295,6 +304,15 @@ void Ropeway::update() {
 			eb.move(depart()).materialize();
 			RopewayBucket::get(eb.id).rid = id;
 			buckets.push_front(eb.id);
+
+			auto& tstore = Store::get(id);
+			auto& bstore = Store::get(eb.id);
+			uint iid = tstore.wouldRemoveAny(outputFilters);
+			if (iid) {
+				uint count = tstore.countAvailable(iid);
+				Stack excess = bstore.insert({iid,count});
+				tstore.remove({iid,count-excess.size});
+			}
 		}
 	}
 
@@ -318,6 +336,22 @@ void Ropeway::update() {
 			bucket.rid = id;
 			bucket.step = 0;
 			handover = 0;
+
+			auto& tstore = Store::get(id);
+			auto& bstore = Store::get(bucket.id);
+			uint iid = bstore.wouldRemoveAny(inputFilters);
+			if (iid) {
+				uint count = bstore.countAvailable(iid);
+				Stack excess = tstore.insert({iid,count});
+				bstore.remove({iid,count-excess.size});
+			}
+
+			iid = tstore.wouldRemoveAny(outputFilters);
+			if (iid) {
+				uint count = tstore.countAvailable(iid);
+				Stack excess = bstore.insert({iid,count});
+				tstore.remove({iid,count-excess.size});
+			}
 		}
 	}
 }

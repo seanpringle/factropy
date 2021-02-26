@@ -22,6 +22,7 @@ Recipe::Recipe(uint id, std::string name) {
 
 	mine = 0;
 	outputCurrency = 0;
+	inputCurrency = 0;
 	energyUsage = 0;
 	ZERO(image);
 	ZERO(texture);

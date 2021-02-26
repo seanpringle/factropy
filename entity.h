@@ -19,7 +19,6 @@ struct GuiFakeEntity;
 #include "conveyor.h"
 #include "unveyor.h"
 #include "ropeway.h"
-#include "lift.h"
 #include "pipe.h"
 #include "crafter.h"
 #include "projector.h"
@@ -41,6 +40,7 @@ struct Entity {
 	static const uint32_t GHOST = 1<<0;
 	static const uint32_t CONSTRUCTION = 1<<1;
 	static const uint32_t DECONSTRUCTION = 1<<2;
+	static const uint32_t ENABLED = 1<<3;
 
 	static inline std::map<Chunk::XY,std::set<uint>> grid;
 	static inline std::set<uint> removing;
@@ -52,8 +52,8 @@ struct Entity {
 	static inline Energy electricitySupply = 0;
 	static inline Energy electricityCapacity = 0;
 	static inline Energy electricityCapacityReady = 0;
-	static inline std::set<uint> electricityConsumers;
 	static inline std::set<uint> electricityGenerators;
+	static inline std::map<uint,Energy> energyConsumers;
 
 	static inline slabmap<Entity,&Entity::id> all;
 	static inline uint sequence = 0;
@@ -91,6 +91,8 @@ struct Entity {
 	Entity& setConstruction(bool state);
 	bool isDeconstruction();
 	Entity& setDeconstruction(bool state);
+	bool isEnabled();
+	Entity& setEnabled(bool state);
 
 	std::string name();
 	bool rename(std::string n);
@@ -136,7 +138,6 @@ struct Entity {
 	Unveyor& unveyor();
 	Ropeway& ropeway();
 	RopewayBucket& ropewayBucket();
-	Lift& lift();
 	Pipe& pipe();
 	Drone& drone();
 	Missile& missile();

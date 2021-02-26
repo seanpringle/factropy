@@ -25,13 +25,13 @@ Spec::Spec(std::string name) {
 	explosion = false;
 	store = false;
 	loader = false;
-	lift = false;
 	shunt = false;
 	junk = false;
 	named = false;
 	block = false;
 	rotate = false;
 	toggle = false;
+	enable = false;
 
 	health = 0;
 	explosionSpec = "";
@@ -117,6 +117,9 @@ Spec::Spec(std::string name) {
 
 	build = true;
 	select = true;
+
+	statsGroup = this;
+	energyConsumption.clear();
 }
 
 Spec::~Spec() {

@@ -231,6 +231,12 @@ Point Point::rotateHorizontal() const {
 	return p;
 }
 
+bool Point::cardinalParallel(Point p) const {
+	return
+		((*this == North || *this == South) && (p == North || p == South)) ||
+		((*this == East  || *this == West ) && (p == East  || p == West ));
+}
+
 Point Point::randomHorizontal() const {
 	float angle = Sim::random()*360.0f*DEG2RAD;
 	return transform(Mat4::rotateY(angle));

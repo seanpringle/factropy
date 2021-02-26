@@ -16,7 +16,7 @@ struct Generator {
 
 	uint id;
 	bool supplying;
-	Energy monitor;
+	Energy energy;
 
 	void destroy();
 	Energy consume(Energy e);

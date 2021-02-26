@@ -74,18 +74,53 @@ StatsPopup2::~StatsPopup2() {
 }
 
 void StatsPopup2::draw() {
-	center(1000,600);
+	center(1500,1500);
 	ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
-	ImPlot::SetNextPlotLimits(0,60,0,1.0f, ImGuiCond_Always);
-	if (ImPlot::BeginPlot("Electricity")) {
-		std::vector<float> y;
-		for (uint i = 59; i >= 1; i--) {
-			Energy e = (i*60) > Sim::tick ? 0: Sim::statsElectricityDemand.minutes[Sim::statsElectricityDemand.minute(Sim::tick-(i*60))];
-			y.push_back(e.portion(Entity::electricityCapacity));
+	double tickMax = 1.0;
+	std::list<Spec*> specs;
+	for (auto& pair: Spec::all) {
+		auto& spec = pair.second;
+		if (!spec->energyConsume || spec->statsGroup != spec) continue;
+		tickMax = std::max(tickMax, spec->energyConsumption.tickMax);
+		specs.push_back(spec);
+	}
+
+	std::map<Spec*,ImVec4> colors;
+
+	auto limit = Energy(tickMax).magnitude();
+
+	const double yticks[] = {0, limit};
+	const char* ylabels[] = {"0", limit.formatRate().c_str()};
+
+	ImPlot::SetNextPlotLimits(0,60,0,limit, ImGuiCond_Always);
+	ImPlot::SetNextPlotTicksY(yticks, 2, ylabels);
+	ImPlot::SetNextPlotTicksX(nullptr, 0, 0);
+	if (ImPlot::BeginPlot("Energy Consumption", nullptr, nullptr, ImVec2(-1,400), ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMousePos)) {
+		for (auto& spec: specs) {
+			std::vector<float> y;
+			for (uint i = 59; i >= 1; i--) {
+				Energy e = i > Sim::tick ? 0: spec->energyConsumption.ticks[spec->energyConsumption.tick(Sim::tick-i)];
+				y.push_back(e);
+			}
+			ImPlot::PlotLine(fmtc("%s", spec->name), (const float*)y.data(), (int)y.size());
+			colors[spec] = ImPlot::GetLastItemColor();
 		}
-		ImPlot::PlotLine("Demand", (const float*)y.data(), (int)y.size());
+
 		ImPlot::EndPlot();
+	}
+
+	specs.sort([&](const Spec* a, const Spec* b) {
+		auto energyA = Energy(a->energyConsumption.ticks[a->energyConsumption.tick(Sim::tick-1)]);
+		auto energyB = Energy(b->energyConsumption.ticks[b->energyConsumption.tick(Sim::tick-1)]);
+		return energyA < energyB;
+	});
+
+	specs.reverse();
+
+	for (auto& spec: specs) {
+		auto energy = Energy(spec->energyConsumption.ticks[spec->energyConsumption.tick(Sim::tick-1)]);
+		ImGui::Print(fmtc("%s %s", spec->name, energy.formatRate()));
 	}
 
 	ImGui::End();
@@ -301,6 +336,15 @@ void EntityPopup2::draw() {
 		center(1000,1000);
 		Begin(fmtc("%s###Entity", en.name()), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
+		PushID("entity");
+			if (en.spec->enable) {
+				bool enabled = en.isEnabled();
+				if (Checkbox("Enabled", &enabled)) {
+					en.setEnabled(enabled);
+				}
+			}
+		PopID();
+
 		if (en.spec->named) {
 			char name[50]; std::snprintf(name, sizeof(name), "%s", en.name().c_str());
 			if (InputText("Name", name, sizeof(name))) {
@@ -386,30 +430,6 @@ void EntityPopup2::draw() {
 			PopID();
 		}
 
-		if (en.spec->lift) {
-			Lift& lift = en.lift();
-			PushID("lift");
-
-			const char* options[] = {"raise", "lower"};
-			int selected = lift.mode == Lift::Raise ? 0: 1;
-
-			if (BeginCombo("mode", options[selected])) {
-				for (int i = 0; i < 2; i++) {
-					Selectable(options[i], selected == i);
-				}
-				EndCombo();
-			}
-
-			Print(fmtc("%s",
-				lift.stage == Lift::Lowered ? "lowered":
-					lift.stage == Lift::Lowering ? "lowering":
-						lift.stage == Lift::Raised ? "raised":
-							lift.stage == Lift::Raising ? "raising": "wtf")
-			);
-
-			PopID();
-		}
-
 		if (en.spec->store) {
 			Store& store = en.store();
 			PushID("store");
@@ -480,12 +500,12 @@ void EntityPopup2::draw() {
 				}
 
 				TableNextColumn();
-				if (Button("d", ImVec2(-1,0))) {
+				if (Button(fmtc("d##%d", id++), ImVec2(-1,0))) {
 					down = level.iid;
 				}
 
 				TableNextColumn();
-				if (Button("x", ImVec2(-1,0))) {
+				if (Button(fmtc("x##%d", id++), ImVec2(-1,0))) {
 					clear = level.iid;
 				}
 			}
@@ -571,8 +591,61 @@ void EntityPopup2::draw() {
 
 		if (en.spec->ropeway) {
 			PushID("ropeway");
+			auto& ropeway = en.ropeway();
 
-			Print(fmtc("ropeway %fm", en.ropeway().length()));
+			Print(fmtc("ropeway %fm", ropeway.length()));
+
+			PushID("ropeway-inputFilters");
+				for (uint iid: ropeway.inputFilters) {
+					Item* item = Item::get(iid);
+					if (Button(item->name.c_str())) {
+						ropeway.inputFilters.erase(iid);
+					}
+				}
+
+				std::vector<const char*> inputOptions;
+
+				for (auto& [name,item]: Item::names) {
+					if (!ropeway.inputFilters.count(item->id)) {
+						inputOptions.push_back(name.c_str());
+					}
+				}
+
+				if (BeginCombo("input filters", nullptr)) {
+					for (auto& s: inputOptions) {
+						if (Selectable(s, false)) {
+							ropeway.inputFilters.insert(Item::byName(s)->id);
+						}
+					}
+					EndCombo();
+				}
+			PopID();
+
+			PushID("ropeway-outputFilters");
+				for (uint iid: ropeway.outputFilters) {
+					Item* item = Item::get(iid);
+					if (Button(item->name.c_str())) {
+						ropeway.outputFilters.erase(iid);
+					}
+				}
+
+				std::vector<const char*> outputOptions;
+
+				for (auto& [name,item]: Item::names) {
+					if (!ropeway.outputFilters.count(item->id)) {
+						outputOptions.push_back(name.c_str());
+					}
+				}
+
+				if (BeginCombo("output filters", nullptr)) {
+					for (auto& s: outputOptions) {
+						if (Selectable(s, false)) {
+							ropeway.outputFilters.insert(Item::byName(s)->id);
+						}
+					}
+					EndCombo();
+				}
+			PopID();
 
 			PopID();
 		}

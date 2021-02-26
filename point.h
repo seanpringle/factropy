@@ -51,6 +51,7 @@ struct Point : Vector3 {
 	Point roundCardinal() const;
 	Point rotateHorizontal() const;
 	Point randomHorizontal() const;
+	bool cardinalParallel(Point) const;
 	Point transform(Mat4) const;
 	float length() const;
 	Mat4 rotation();

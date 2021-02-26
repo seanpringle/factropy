@@ -22,7 +22,7 @@ Unveyor& Unveyor::create(uint id) {
 }
 
 Unveyor& Unveyor::get(uint id) {
-	return all[id];
+	return all.refer(id);
 }
 
 void Unveyor::destroy() {

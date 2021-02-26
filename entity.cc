@@ -49,6 +49,22 @@ void Entity::preTick() {
 	electricityLoad = electricityDemand.portion(electricityCapacityReady);
 	electricitySatisfaction = electricitySupply.portion(electricityDemand);
 	electricityDemand = 0;
+
+	for (auto& pair: Spec::all) {
+		auto& spec = pair.second;
+		spec->statsGroup->energyConsumption.set(Sim::tick, 0);
+	}
+
+	for (auto [eid,consumption]: energyConsumers) {
+		Entity& en = Entity::get(eid);
+		en.spec->statsGroup->energyConsumption.add(Sim::tick, consumption);
+		energyConsumers[eid] = 0;
+	}
+
+	for (auto& pair: Spec::all) {
+		auto& spec = pair.second;
+		spec->statsGroup->energyConsumption.update(Sim::tick);
+	}
 }
 
 uint Entity::next() {
@@ -72,7 +88,7 @@ Entity& Entity::create(uint id, Spec *spec) {
 	en.state = 0;
 	en.health = spec->health;
 
-	en.flags = GHOST;
+	en.flags = GHOST | ENABLED;
 	Ghost::create(id, Entity::next());
 
 	if (spec->store) {
@@ -127,10 +143,6 @@ Entity& Entity::create(uint id, Spec *spec) {
 		RopewayBucket::create(id);
 	}
 
-	if (spec->lift) {
-		Lift::create(id);
-	}
-
 	if (spec->pipe) {
 		Pipe::create(id);
 	}
@@ -143,16 +155,16 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Computer::create(id);
 	}
 
+	if (spec->energyConsume) {
+		energyConsumers[id] = 0;
+	}
+
 	if (spec->consumeChemical) {
 		Burner::create(id, Entity::next());
 	}
 
 	if (spec->consumeThermalFluid) {
 		Generator::create(id, Entity::next());
-	}
-
-	if (spec->consumeElectricity) {
-		electricityConsumers.insert(id);
 	}
 
 	if (spec->generateElectricity) {
@@ -229,10 +241,6 @@ void Entity::destroy() {
 		ropewayBucket().destroy();
 	}
 
-	if (spec->lift) {
-		lift().destroy();
-	}
-
 	if (spec->pipe) {
 		pipe().destroy();
 	}
@@ -245,8 +253,8 @@ void Entity::destroy() {
 		computer().destroy();
 	}
 
-	if (spec->consumeElectricity) {
-		electricityConsumers.erase(id);
+	if (spec->energyConsume) {
+		energyConsumers.erase(id);
 	}
 
 	if (spec->consumeChemical) {
@@ -413,6 +421,15 @@ bool Entity::isDeconstruction() {
 
 Entity& Entity::setDeconstruction(bool state) {
 	flags = state ? (flags | DECONSTRUCTION) : (flags & ~DECONSTRUCTION);
+	return *this;
+}
+
+bool Entity::isEnabled() {
+	return (flags & ENABLED) != 0;
+}
+
+Entity& Entity::setEnabled(bool state) {
+	flags = state ? (flags | ENABLED) : (flags & ~ENABLED);
 	return *this;
 }
 
@@ -592,26 +609,30 @@ Entity& Entity::rotate() {
 Entity& Entity::toggle() {
 	if (spec->toggle) {
 		unmanage();
-		if (spec->lift) {
-			lift().toggle();
-		}
+		//if (spec->lift) {
+		//	lift().toggle();
+		//}
 		manage();
 	}
 	return *this;
 }
 
 Energy Entity::consume(Energy e) {
+	Energy c = 0;
+	if (!isEnabled()) return c;
+
 	if (spec->consumeElectricity) {
 		electricityDemand += e;
-		return e * electricitySatisfaction;
+		c = e * electricitySatisfaction;
 	}
 	if (spec->consumeChemical) {
-		return burner().consume(e);
+		c = burner().consume(e);
 	}
 	if (spec->consumeThermalFluid) {
-		return generator().consume(e);
+		c = generator().consume(e);
 	}
-	return 0;
+	energyConsumers[id] += c;
+	return c;
 }
 
 float Entity::consumeRate(Energy e) {
@@ -619,6 +640,8 @@ float Entity::consumeRate(Energy e) {
 }
 
 void Entity::generate() {
+	if (!isEnabled()) return;
+
 	if (spec->generateElectricity && spec->consumeChemical) {
 
 		electricitySupply += burner().consume(spec->energyGenerate * electricityLoad);
@@ -709,10 +732,6 @@ Ropeway& Entity::ropeway() {
 
 RopewayBucket& Entity::ropewayBucket() {
 	return RopewayBucket::get(id);
-}
-
-Lift& Entity::lift() {
-	return Lift::get(id);
 }
 
 Pipe& Entity::pipe() {

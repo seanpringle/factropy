@@ -242,7 +242,7 @@ int main(int argc, char const *argv[]) {
 	fluid->color = BLUE;
 
 	fluid = new Fluid(Fluid::next(), "steam");
-	fluid->thermal = Energy::kJ(1);
+	fluid->thermal = Energy::kJ(20);
 	fluid->color = GRAY;
 
 	Tech* tech;
@@ -436,11 +436,11 @@ int main(int argc, char const *argv[]) {
 	spec->loadPriority = true;
 	spec->rotate = true;
 	spec->crafter = true;
+	spec->enable = true;
 	spec->crafterProgress = false;
 	spec->recipeTags = {"crafting"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(300);
-	spec->energyDrain = Energy::kW(30);
 	spec->collision = Volume(6, 3, 6);
 	spec->setCornerSupports();
 	spec->health = 10;
@@ -534,7 +534,6 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"smelting"};
 	spec->consumeChemical = true;
 	spec->energyConsume = Energy::kW(60);
-	spec->energyDrain = Energy::kW(6);
 	spec->materials = {
 		{ Item::byName("copper-ingot")->id, 3 },
 		{ Item::byName("brick")->id, 3 },
@@ -576,10 +575,10 @@ int main(int argc, char const *argv[]) {
 	spec->place = Spec::Hill;
 	spec->crafter = true;
 	spec->crafterProgress = false;
+	spec->enable = true;
 	spec->recipeTags = {"mining"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
-	spec->energyDrain = Energy::kW(10);
 	spec->collision = Volume(5, 5, 10);
 	spec->setCornerSupports();
 	spec->health = 10;
@@ -612,9 +611,9 @@ int main(int argc, char const *argv[]) {
 	};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
-	spec->energyDrain = Energy::kW(10);
 	spec->collision = Volume(3, 3, 3);
 	spec->crafter = true;
+	spec->enable = true;
 	spec->recipeTags = {"offshore-pumping"};
 	spec->health = 10;
 	spec->parts = {
@@ -668,6 +667,10 @@ int main(int argc, char const *argv[]) {
 		};
 	}
 
+	spec->materials = {
+		{ Item::byName("gear-wheel")->id, 1 },
+	};
+
 	spec = new Spec("conveyor-right");
 	spec->build = false;
 	spec->collision = Volume(1, 2, 1);
@@ -701,6 +704,10 @@ int main(int argc, char const *argv[]) {
 		};
 	}
 
+	spec->materials = {
+		{ Item::byName("gear-wheel")->id, 1 },
+	};
+
 	spec = new Spec("conveyor-left");
 	spec->build = false;
 	spec->collision = Volume(1, 2, 1);
@@ -733,6 +740,10 @@ int main(int argc, char const *argv[]) {
 		};
 	}
 
+	spec->materials = {
+		{ Item::byName("gear-wheel")->id, 1 },
+	};
+
 	// conveyors are modelled for output==direction, but it seems easier to visualise in-game
 	// as input==direction. So the cycle order is reversed for a clockwise rotation
 	Spec::byName("conveyor")->cycle = Spec::byName("conveyor-left");
@@ -741,6 +752,9 @@ int main(int argc, char const *argv[]) {
 
 	Spec::byName("conveyor-right")->pipette = Spec::byName("conveyor");
 	Spec::byName("conveyor-left")->pipette = Spec::byName("conveyor");
+
+	Spec::byName("conveyor-left")->statsGroup = Spec::byName("conveyor");
+	Spec::byName("conveyor-right")->statsGroup = Spec::byName("conveyor");
 
 	spec = new Spec("unveyor-entry");
 	spec->collision = Volume(1, 2, 2);
@@ -775,6 +789,11 @@ int main(int argc, char const *argv[]) {
 		};
 	}
 
+	spec->materials = {
+		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("gear-wheel")->id, 2 },
+	};
+
 	spec = new Spec("unveyor-exit");
 	spec->collision = Volume(1, 2, 2);
 	spec->rotate = true;
@@ -808,8 +827,15 @@ int main(int argc, char const *argv[]) {
 		};
 	}
 
+	spec->materials = {
+		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("gear-wheel")->id, 2 },
+	};
+
 	Spec::byName("unveyor-entry")->cycle = Spec::byName("unveyor-exit");
 	Spec::byName("unveyor-exit")->cycle = Spec::byName("unveyor-entry");
+
+	Spec::byName("unveyor-exit")->statsGroup = Spec::byName("unveyor-entry");
 
 	spec = new Spec("ropeway-terminus");
 	spec->collision = Volume(5, 10, 5);
@@ -892,6 +918,10 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/fluid-tank-base-hd.stl", "models/fluid-tank-base-ld.stl")))->paint(0xff6600ff)->translate(0,-1.5,0),
 	};
 
+	spec->materials = {
+		{ Item::byName("steel-ingot")->id, 3 },
+	};
+
 	spec = new Spec("pipe-straight");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
@@ -902,6 +932,10 @@ int main(int argc, char const *argv[]) {
 
 	spec->parts = {
 		(new Part(Thing("models/pipe-straight-hd.stl", "models/pipe-straight-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+	};
+
+	spec->materials = {
+		{ Item::byName("iron-ingot")->id, 1 },
 	};
 
 	spec = new Spec("pipe-cross");
@@ -916,6 +950,10 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/pipe-cross-hd.stl", "models/pipe-cross-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
 	};
 
+	spec->materials = {
+		{ Item::byName("iron-ingot")->id, 1 },
+	};
+
 	spec = new Spec("pipe-tee");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
@@ -928,6 +966,10 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/pipe-tee-hd.stl", "models/pipe-tee-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
 	};
 
+	spec->materials = {
+		{ Item::byName("iron-ingot")->id, 1 },
+	};
+
 	spec = new Spec("pipe-elbow");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
@@ -938,6 +980,10 @@ int main(int argc, char const *argv[]) {
 
 	spec->parts = {
 		(new Part(Thing("models/pipe-elbow-hd.stl", "models/pipe-elbow-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+	};
+
+	spec->materials = {
+		{ Item::byName("iron-ingot")->id, 1 },
 	};
 
 	std::vector<Spec*> rocks;
@@ -1147,6 +1193,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = Volume(1, 2, 1);
 	spec->setCornerSupports();
 	spec->arm = true;
+	spec->enable = true;
 	spec->armOffset = 1.0f;
 	spec->armSpeed = 1.0f/60.0f;
 	spec->rotate = true;
@@ -1239,6 +1286,7 @@ int main(int argc, char const *argv[]) {
 	spec->collision = Volume(1, 2, 1);
 	spec->setCornerSupports();
 	spec->arm = true;
+	spec->enable = true;
 	spec->armOffset = 2.0f;
 	spec->armSpeed =1.0f/60.0f;
 	spec->rotate = true;
@@ -1342,60 +1390,6 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 
-	spec = new Spec("lift");
-	spec->collision = Volume(1, 2, 1);
-	spec->setCornerSupports();
-	spec->lift = true;
-	spec->rotate = true;
-	spec->toggle = true;
-	spec->health = 10;
-	spec->parts = {
-		(new Part(Thing("models/lift-base-hd.stl", "models/lift-base-ld.stl")))->translate(0,-1,0)->paint(0xcccc00ff),
-		(new Part(Thing("models/lift-telescope1-hd.stl", "models/lift-telescope1-ld.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/lift-telescope2-hd.stl", "models/lift-telescope2-ld.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/lift-telescope3-hd.stl", "models/lift-telescope3-ld.stl")))->translate(0,-1,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/lift-platform-hd.stl", "models/lift-platform-ld.stl")))->translate(0,-1,0)->paint(0xcccc00ff),
-		(new Part(Thing("models/lift-surface-hd.stl", "models/lift-surface-ld.stl")))->translate(0,-1,0)->paint(0x000000ff),
-	};
-	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(1);
-	spec->materials = {
-		{ Item::byName("steel-ingot")->id, 1 },
-		{ Item::byName("circuit-board")->id, 1 },
-	};
-
-	{
-		Mat4 state0 = Mat4::identity;
-		int steps = 10;
-
-		for (int i = steps; i >= 0; i--) {
-			//Mat4 stateT2 = Mat4::translate(0.0f, -1.0f/(float)i/2.0f, 0.0f);
-			//Mat4 stateT3 = Mat4::translate(0.0f, -1.0f/(float)i, 0.0f);
-			Mat4 stateT2 = Mat4::translate(0.0f, -1.0f/(float)steps * (float)i / 2.0f, 0.0f);
-			Mat4 stateT3 = Mat4::translate(0.0f, -1.0f/(float)steps * (float)i, 0.0f);
-			Mat4 stateP = Mat4::translate(0.0f, -1.0f/(float)steps * (float)i, 0.0f);
-
-			spec->states.push_back({
-				state0,
-				state0,
-				stateT2,
-				stateT3,
-				stateP,
-				stateP,
-			});
-		}
-	}
-
-	spec = new Spec("utility-pole");
-	spec->collision = Volume(1, 6, 1);
-	spec->setCornerSupports();
-	spec->electrical = { .area = Area(7.1, 7.1), .rate = Energy::kW(-10) };
-	spec->rotate = true;
-	spec->health = 10;
-	spec->parts = {
-		(new Part(Thing("models/utility-pole-hd.stl")))->translate(0,-3,0)->paint(0x5c2414ff),
-	};
-
 	auto steamEnginewheel = Thing("models/steam-engine-wheel-hd.stl", "models/steam-engine-wheel-ld.stl");
 
 	spec = new Spec("boiler");
@@ -1418,7 +1412,7 @@ int main(int argc, char const *argv[]) {
 	spec->align = true;
 	spec->rotate = true;
 	spec->consumeChemical = true;
-	spec->energyConsume = Energy::kW(100);
+	spec->energyConsume = Energy::MW(2);
 	spec->crafter = true;
 	spec->recipeTags = {"boiling"};
 	spec->materials = {
@@ -1427,7 +1421,7 @@ int main(int argc, char const *argv[]) {
 	};
 
 	recipe = new Recipe(Recipe::next(), "boiling");
-	recipe->energyUsage = Energy::MW(1);
+	recipe->energyUsage = Energy::MJ(2);
 	recipe->tags = {"boiling"};
 	recipe->inputFluids = {
 		{ Fluid::byName("water")->id, 100 },
@@ -1459,6 +1453,7 @@ int main(int argc, char const *argv[]) {
 	spec->health = 10;
 	spec->align = true;
 	spec->rotate = true;
+	spec->enable = true;
 	spec->consumeThermalFluid = true;
 	spec->generateElectricity = true;
 	spec->energyGenerate = Energy::MW(1);
@@ -1549,10 +1544,10 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = true;
 	spec->crafter = true;
 	spec->crafterProgress = false;
+	spec->enable = true;
 	spec->recipeTags = {"teleporting"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::MW(10);
-	spec->energyDrain = Energy::kW(100);
 	spec->collision = Volume(8, 8, 8);
 	spec->setCornerSupports();
 	spec->parts = {
@@ -1588,7 +1583,6 @@ int main(int argc, char const *argv[]) {
 	spec->computer = true;
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(1);
-	spec->energyDrain = Energy::kW(1);
 	spec->collision = Volume(1, 2, 1);
 	spec->setCornerSupports();
 	spec->parts = {
@@ -1604,6 +1598,15 @@ int main(int argc, char const *argv[]) {
 	recipe->energyUsage = Energy::MJ(100);
 	recipe->tags = {"teleporting"};
 	recipe->inputItems = {
+		{ Item::byName("iron-ingot")->id, 1000 },
+	};
+	recipe->outputCurrency = 1000;
+	recipe->parts = Item::byName("iron-ingot")->parts;
+
+	recipe = new Recipe(Recipe::next(), "buy-iron-ingots1");
+	recipe->energyUsage = Energy::MJ(100);
+	recipe->tags = {"teleporting"};
+	recipe->outputItems = {
 		{ Item::byName("iron-ingot")->id, 1000 },
 	};
 	recipe->outputCurrency = 1000;
@@ -2006,6 +2009,19 @@ int main(int argc, char const *argv[]) {
 				}
 			}
 
+			if (IsKeyReleased(KEY_O)) {
+				if (camera->selecting) {
+					Sim::locked([&]() {
+						for (auto se: camera->selected) {
+							if (Entity::exists(se->id)) {
+								auto& en = Entity::get(se->id);
+								en.setEnabled(!en.isEnabled());
+							}
+						}
+					});
+				}
+			}
+
 			if (IsKeyReleased(KEY_PAGE_UP)) {
 				camera->buildLevel = std::min(5.0f, std::round(camera->buildLevel+1.0f));
 			}
@@ -2248,6 +2264,10 @@ int main(int argc, char const *argv[]) {
 				if (ge->spec->consumeChemical) {
 					ImGui::Print("Fuel");
 					ImGui::LevelBar(ge->burner.energy.portion(ge->burner.buffer));
+				}
+
+				if (ge->spec->consumeElectricity) {
+					ImGui::Print(fmtc("Electricity: %s", ge->spec->energyConsume.formatRate()));
 				}
 
 				if (ge->spec->crafter) {

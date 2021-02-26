@@ -19,6 +19,7 @@ typedef int Health;
 #include "volume.h"
 #include "mass.h"
 #include "energy.h"
+#include "time-series.h"
 
 struct Spec {
 
@@ -50,11 +51,11 @@ struct Spec {
 	bool align;
 	bool pivot;
 	bool loader;
-	bool lift;
 	bool shunt;
 	bool drone;
 	bool rotate;
 	bool toggle;
+	bool enable;
 	bool junk;
 	bool named;
 	bool block;
@@ -117,7 +118,6 @@ struct Spec {
 	bool consumeElectricity;
 	bool consumeThermalFluid;
 	Energy energyConsume;
-	Energy energyDrain;
 	bool generateElectricity;
 	Energy energyGenerate;
 
@@ -168,6 +168,9 @@ struct Spec {
 
 	bool build;
 	bool select;
+
+	Spec* statsGroup;
+	TimeSeries energyConsumption;
 
 	Spec(std::string name);
 	~Spec();

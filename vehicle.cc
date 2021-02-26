@@ -40,6 +40,7 @@ void Vehicle::destroy() {
 void Vehicle::update() {
 	Entity& en = Entity::get(id);
 	if (en.isGhost()) return;
+	if (!en.isEnabled()) return;
 	if (handbrake || pause > Sim::tick) return;
 
 	if (path.empty() && waypoint) {

@@ -206,17 +206,6 @@ bool Arm::updateReady() {
 			}
 		}
 
-		if (ei.spec->lift) {
-			uint liid = ei.lift().wouldRemoveAny(input().y);
-			if (liid) {
-				for (Store* so: eo.stores()) {
-					if (so->isAccepting(liid)) {
-						return true;
-					}
-				}
-			}
-		}
-
 		if (ei.spec->conveyor && eo.spec->conveyor) {
 			uint ciid = ei.conveyor().itemAt();
 			if (ciid) {
@@ -282,23 +271,6 @@ bool Arm::updateInput() {
 			}
 		}
 
-		if (ei.spec->lift) {
-			uint liid = ei.lift().wouldRemoveAny(input().y);
-			if (liid) {
-				for (Store* so: eo.stores()) {
-					if (so->isAccepting(liid)) {
-						outputStoreId = so->sid;
-						so->promise({liid,1});
-						so->arms.insert(id);
-						ei.lift().removeAny(input().y);
-						iid = liid;
-						stage = ToOutput;
-						return true;
-					}
-				}
-			}
-		}
-
 		if (ei.spec->conveyor && eo.spec->conveyor) {
 			uint ciid = ei.conveyor().itemAt();
 			if (ciid) {
@@ -353,6 +325,7 @@ void Arm::updateOutput() {
 void Arm::update() {
 	Entity& en = Entity::get(id);
 	if (en.isGhost()) return;
+	if (!en.isEnabled()) return;
 	if (pause > Sim::tick) return;
 
 	uint maxState = en.spec->states.size()-1;

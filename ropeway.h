@@ -27,6 +27,9 @@ struct Ropeway {
 	std::list<uint> buckets;
 	uint handover;
 
+	std::set<uint> inputFilters;
+	std::set<uint> outputFilters;
+
 	void destroy();
 
 	bool first();

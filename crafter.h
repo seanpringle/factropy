@@ -36,6 +36,20 @@ struct Crafter {
 	std::vector<Point> pipeInputConnections();
 	std::vector<Point> pipeOutputConnections();
 
+	bool exporting();
+	std::vector<Stack> exportItems;
+	std::vector<Amount> exportFluids;
+
+	std::vector<uint> inputPipes;
+	std::vector<uint> outputPipes;
+	void updatePipes();
+
+	bool inputItemsReady();
+	bool inputFluidsReady();
+	bool inputMiningReady();
+	bool inputCurrencyReady();
+
+	bool outputItemsReady();
 };
 
 #endif

@@ -25,7 +25,6 @@ namespace Sim {
 	TimeSeries statsProjector;
 	TimeSeries statsPath;
 	TimeSeries statsVehicle;
-	TimeSeries statsLift;
 	TimeSeries statsPipe;
 	TimeSeries statsShunt;
 	TimeSeries statsDepot;
@@ -49,7 +48,6 @@ namespace Sim {
 		statsProjector.clear();
 		statsPath.clear();
 		statsVehicle.clear();
-		statsLift.clear();
 		statsPipe.clear();
 		statsShunt.clear();
 		statsDepot.clear();
@@ -119,9 +117,9 @@ namespace Sim {
 
 
 	void update() {
-		statsElectricityDemand.set(tick, Entity::electricityDemand.value);
+		statsElectricityDemand.set(tick, Entity::electricityDemand);
 		statsElectricityDemand.update(tick);
-		statsElectricitySupply.set(tick, Entity::electricitySupply.value);
+		statsElectricitySupply.set(tick, Entity::electricitySupply);
 		statsElectricitySupply.update(tick);
 
 		tick++;
@@ -139,7 +137,6 @@ namespace Sim {
 		statsUnveyor.track(tick, Unveyor::tick);
 		statsRopeway.track(tick, Ropeway::tick);
 		statsRopewayBucket.track(tick, RopewayBucket::tick);
-		statsLift.track(tick, Lift::tick);
 		statsDepot.track(tick, Depot::tick);
 		statsDrone.track(tick, Drone::tick);
 		statsMissile.track(tick, Missile::tick);

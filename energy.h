@@ -30,11 +30,16 @@ struct Energy {
 
 	operator bool() const;
 
+	operator double() const;
+	operator float() const;
+	operator int() const;
+
 	Energy();
 	Energy(int);
 	std::string format() const;
 	std::string formatRate() const;
 	float portion(Energy o);
+	Energy magnitude();
 };
 
 #endif

@@ -185,7 +185,7 @@ void MainCamera::updateCamera() {
 		position += left.normalize();
 	}
 
-	if (IsKeyReleased(KEY_O)) {
+	if (IsKeyReleased(KEY_SPACE)) {
 		Point target = groundTarget(buildLevel);
 		float radius = (position - target).length();
 
@@ -497,7 +497,7 @@ void MainCamera::draw() {
 					}
 				}
 
-				if (!ge->ghost && ge->spec->conveyor && ge->conveyor.iid && hd) {
+				if (!ge->ghost && ge->spec->conveyor && ge->conveyor.iid) {
 					Item* item = Item::get(ge->conveyor.iid);
 					Point p = ge->pos;
 					Mat4 move = Mat4::translate(ge->pos - ((Point::Up*0.5f) + item->beltV));
@@ -506,21 +506,6 @@ void MainCamera::draw() {
 					for (uint i = 0; i < item->parts.size(); i++) {
 						Part* part = item->parts[i];
 						(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(m));
-					}
-				}
-
-				if (!ge->ghost && ge->spec->lift) {
-					Lift& lift = en.lift();
-
-					if (lift.iid && hd) {
-						Entity& en = Entity::get(lift.id);
-						Point p = en.pos;
-						Mat4 m = Mat4::translate(p.x, p.y+1.0f, p.z);
-						Item* item = Item::get(lift.iid);
-						for (uint i = 0; i < item->parts.size(); i++) {
-							Part* part = item->parts[i];
-							(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(en.spec->states[en.state][4] * m));
-						}
 					}
 				}
 
@@ -682,6 +667,11 @@ void MainCamera::draw() {
 						if (en.conveyor().next) {
 							Entity& sib = Entity::get(en.conveyor().next);
 							drawBox(sib.spec->southBox(sib.pos), sib.dir, RED);
+						}
+
+						if (en.conveyor().side) {
+							Entity& sib = Entity::get(en.conveyor().side);
+							drawBox(sib.spec->southBox(sib.pos), sib.dir, ORANGE);
 						}
 					});
 				}

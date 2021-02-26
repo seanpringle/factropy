@@ -26,8 +26,7 @@ Crafter& Crafter::create(uint id) {
 }
 
 Crafter& Crafter::get(uint id) {
-	ensuref(all.has(id) > 0, "invalid crafter access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Crafter::destroy() {
@@ -67,6 +66,95 @@ std::vector<Point> Crafter::pipeOutputConnections() {
 	return en.spec->relativePoints(en.spec->pipeOutputConnections, en.dir.rotation(), en.pos);
 }
 
+void Crafter::updatePipes() {
+	for (auto point: pipeConnections()) {
+		for (auto pid: Pipe::servicing(point.box())) {
+			inputPipes.push_back(pid);
+		}
+	}
+
+	for (auto point: pipeInputConnections()) {
+		for (auto pid: Pipe::servicing(point.box())) {
+			inputPipes.push_back(pid);
+		}
+	}
+
+	deduplicate(inputPipes);
+
+	for (auto point: pipeOutputConnections()) {
+		for (auto pid: Pipe::servicing(point.box())) {
+			outputPipes.push_back(pid);
+		}
+	}
+
+	deduplicate(outputPipes);
+}
+
+bool Crafter::exporting() {
+	return exportItems.size() > 0 || exportFluids.size() > 0;
+}
+
+bool Crafter::inputItemsReady() {
+	Entity& en = Entity::get(id);
+	bool itemsReady = true;
+
+	if (recipe->inputItems.size()) {
+		itemsReady = !en.store().isEmpty();
+
+		for (auto [iid,count]: recipe->inputItems) {
+			itemsReady = itemsReady && en.store().count(iid) >= count;
+		}
+	}
+
+	return itemsReady;
+}
+
+bool Crafter::inputFluidsReady() {
+	bool fluidsReady = true;
+	inputPipes.clear();
+	outputPipes.clear();
+
+	if (recipe->inputFluids.size()) {
+		fluidsReady = false;
+		updatePipes();
+
+		for (auto [fid,count]: recipe->inputFluids) {
+			for (uint pid: inputPipes) {
+				Entity& pe = Entity::get(pid);
+				if (pe.isGhost()) continue;
+				Pipe& pipe = Pipe::get(pid);
+				if (!pipe.network) continue;
+				if (pipe.network->count(fid) >= count) {
+					fluidsReady = true;
+				}
+			}
+		}
+	}
+
+	return fluidsReady;
+}
+
+bool Crafter::inputMiningReady() {
+	Entity& en = Entity::get(id);
+	return !recipe->mine || Chunk::canMine(en.miningBox(), recipe->mine);
+}
+
+bool Crafter::inputCurrencyReady() {
+	return !recipe->inputCurrency || Ledger::balance >= recipe->inputCurrency;
+}
+
+bool Crafter::outputItemsReady() {
+	bool outputReady = true;
+
+	if (recipe->outputItems.size()) {
+		Entity& en = Entity::get(id);
+		for (auto& [iid,count]: recipe->outputItems) {
+			outputReady = outputReady && en.store().count(iid) < count;
+		}
+	}
+	return outputReady;
+}
+
 void Crafter::update() {
 	Entity& en = Entity::get(id);
 	if (en.isGhost()) return;
@@ -74,7 +162,7 @@ void Crafter::update() {
 	if (en.spec->crafterProgress) {
 		en.state = (uint)std::floor(progress * (float)en.spec->states.size());
 	} else {
-		if (working) {
+		if (en.isEnabled() && working) {
 			en.state = en.state + (efficiency > 0.5 ? 2: 1);
 			if (en.state >= en.spec->states.size()) en.state = 0;
 		}
@@ -87,6 +175,9 @@ void Crafter::update() {
 			nextRecipe = NULL;
 
 			ensure(recipe->energyUsage > Energy(0));
+
+			exportItems.clear();
+			exportFluids.clear();
 
 			if (en.spec->store) {
 				en.store().levels.clear();
@@ -112,93 +203,40 @@ void Crafter::update() {
 		}
 	}
 
-	if (!working && recipe) {
+	if (exporting()) {
 
-		bool itemsReady = true;
-
-		if (recipe->inputItems.size()) {
-			itemsReady = !en.store().isEmpty();
-
-			for (auto [iid,count]: recipe->inputItems) {
-				itemsReady = itemsReady && en.store().count(iid) >= count;
-			}
+		while (exportItems.size()) {
+			uint i = exportItems.size()-1;
+			exportItems[i] = en.store().insert(exportItems[i]);
+			if (exportItems[i].size) break;
+			exportItems.pop_back();
 		}
 
-		bool fluidsReady = true;
-		std::vector<uint> inputPipes;
-		std::vector<uint> outputPipes;
+		if (exportFluids.size()) {
+			updatePipes();
 
-		if (recipe->inputFluids.size()) {
-			fluidsReady = false;
+			while (exportFluids.size()) {
+				uint i = exportFluids.size()-1;
 
-			for (auto point: pipeConnections()) {
-				for (auto pid: Pipe::servicing(point.box())) {
-					inputPipes.push_back(pid);
-				}
-			}
-
-			for (auto point: pipeInputConnections()) {
-				for (auto pid: Pipe::servicing(point.box())) {
-					inputPipes.push_back(pid);
-				}
-			}
-
-			deduplicate(inputPipes);
-
-			for (auto [fid,count]: recipe->inputFluids) {
-				for (uint pid: inputPipes) {
-					Entity& pe = Entity::get(pid);
-					if (pe.isGhost()) continue;
-					Pipe& pipe = Pipe::get(pid);
-					if (!pipe.network) continue;
-					if (pipe.network->count(fid) >= count) {
-						fluidsReady = true;
-					}
-				}
-			}
-		}
-
-		bool outputReady = true;
-
-		if (outputReady && recipe->outputItems.size()) {
-			outputReady = !en.store().isFull();
-
-			for (auto [iid,count]: recipe->outputItems) {
-				outputReady = outputReady && en.store().count(iid) <= count;
-			}
-		}
-
-		if (outputReady && recipe->outputFluids.size()) {
-			outputReady = false;
-
-			for (auto point: pipeOutputConnections()) {
-				for (auto pid: Pipe::servicing(point.box())) {
-					outputPipes.push_back(pid);
-				}
-			}
-
-			deduplicate(outputPipes);
-
-			for (auto [fid,count]: recipe->outputFluids) {
 				for (uint pid: outputPipes) {
 					Entity& pe = Entity::get(pid);
 					if (pe.isGhost()) continue;
 					Pipe& pipe = Pipe::get(pid);
 					if (!pipe.network) continue;
-					if (pipe.network->space(fid) > 0) {
-						outputReady = true;
-					}
+
+					exportFluids[i] = pipe.network->inject(exportFluids[i]);
+					if (!exportFluids[i].size) break;
 				}
+
+				if (exportFluids[i].size) break;
+				exportFluids.pop_back();
 			}
 		}
+	}
 
-		if (outputReady && recipe->mine) {
-			outputReady = !en.store().isFull();
-		}
+	if (en.isEnabled() && !working && !exporting() && recipe) {
 
-		bool miningReady = !recipe->mine || Chunk::canMine(en.miningBox(), recipe->mine);
-
-		if (itemsReady && fluidsReady && miningReady && outputReady) {
+		if (inputItemsReady() && inputFluidsReady() && inputMiningReady() && inputCurrencyReady() && outputItemsReady()) {
 
 			for (auto [iid,count]: recipe->inputItems) {
 				en.store().remove({iid,count});
@@ -216,6 +254,10 @@ void Crafter::update() {
 				}
 			}
 
+			if (recipe->inputCurrency) {
+				Ledger::transact(-recipe->inputCurrency, recipe->name);
+			}
+
 			working = true;
 			energyUsed = 0;
 			progress = 0.0f;
@@ -223,47 +265,25 @@ void Crafter::update() {
 		}
 	}
 
-	if (working) {
+	if (en.isEnabled() && working) {
 		energyUsed += en.consume(en.spec->energyConsume * recipe->rate(en.spec));
 		efficiency = energyUsed.portion(en.spec->energyConsume);
 		progress = energyUsed.portion(recipe->energyUsage);
 	}
 
-	if (!working && en.spec->energyDrain) {
-		en.consume(en.spec->energyDrain);
-	}
-
-	if (working && progress > 0.999) {
+	if (en.isEnabled() && working && progress > 0.999) {
 
 		for (auto [iid,count]: recipe->outputItems) {
-			en.store().insert({iid,count});
+			exportItems.push_back({iid, count});
 		}
 
-		if (recipe->outputFluids.size()) {
-
-			std::vector<uint> outputPipes;
-			for (auto point: pipeOutputConnections()) {
-				for (auto pid: Pipe::servicing(point.box())) {
-					outputPipes.push_back(pid);
-				}
-			}
-
-			deduplicate(outputPipes);
-
-			for (auto [fid,count]: recipe->outputFluids) {
-				for (uint pid: outputPipes) {
-					Entity& pe = Entity::get(pid);
-					if (pe.isGhost()) continue;
-					Pipe& pipe = Pipe::get(pid);
-					if (!pipe.network) continue;
-					pipe.network->inject({fid,count});
-				}
-			}
+		for (auto [fid,count]: recipe->outputFluids) {
+			exportFluids.push_back({fid, count});
 		}
 
 		if (recipe->mine) {
 			Stack stack = Chunk::mine(en.miningBox(), recipe->mine);
-			if (stack.iid) en.store().insert(stack);
+			if (stack.size) exportItems.push_back(stack);
 		}
 
 		if (recipe->outputCurrency) {
