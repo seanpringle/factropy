@@ -39,7 +39,8 @@ Chunk* Chunk::get(int x, int y) {
 		for (int ty = 0; ty < Chunk::size; ty++) {
 			for (int tx = 0; tx < Chunk::size; tx++) {
 
-				float elevation = (float)Sim::noise2D(x*Chunk::size+tx, y*Chunk::size+ty, 8, 0.5, 0.007) - 0.5f; // -0.5->0.5
+				//float elevation = (float)Sim::noise2D(x*Chunk::size+tx, y*Chunk::size+ty, 8, 0.5, 0.007) - 0.5f; // -0.5->0.5
+				float elevation = (float)Sim::noise2D(x*Chunk::size+tx, y*Chunk::size+ty, 8, 0.5, 0.008) - 0.5f; // -0.5->0.5
 
 				elevation += 0.1;
 
@@ -61,7 +62,8 @@ Chunk* Chunk::get(int x, int y) {
 				offset += 1000000;
 
 				for (auto iid: Item::mining) {
-					float density = (float)Sim::noise2D(x*Chunk::size+tx+offset, y*Chunk::size+ty+offset, 8, 0.5, 0.007);
+					//float density = (float)Sim::noise2D(x*Chunk::size+tx+offset, y*Chunk::size+ty+offset, 8, 0.5, 0.007);
+					float density = (float)Sim::noise2D(x*Chunk::size+tx+offset, y*Chunk::size+ty+offset, 8, 0.4, 0.005);
 					if (density > resource) {
 						mineral = iid;
 						resource = density;

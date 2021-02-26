@@ -332,7 +332,7 @@ bool Entity::fits(Spec *spec, Point pos, Point dir) {
 
 std::vector<uint> Entity::intersecting(Box box) {
 	std::vector<uint> hits;
-	for (auto xy: Chunk::walk(box)) {
+	for (auto xy: Chunk::walk(box.grow(1.0f))) {
 		for (uint id: grid[xy]) {
 			if (get(id).box().intersects(box)) {
 				hits.push_back(id);
@@ -356,7 +356,7 @@ std::vector<uint> Entity::intersecting(Point pos, float radius) {
 
 uint Entity::at(Point p) {
 	Box box = p.box();
-	for (auto xy: Chunk::walk(box)) {
+	for (auto xy: Chunk::walk(box.grow(1.0f))) {
 		for (uint id: grid[xy]) {
 			if (get(id).box().intersects(box)) {
 				return id;
@@ -475,14 +475,14 @@ bool Entity::lookAtPivot(Point o) {
 
 Entity& Entity::index() {
 	//unindex();
-	for (auto xy: Chunk::walk(box())) {
+	for (auto xy: Chunk::walk(box().grow(1.0f))) {
 		grid[xy].insert(id);
 	}
 	return *this;
 }
 
 Entity& Entity::unindex() {
-	for (auto xy: Chunk::walk(box())) {
+	for (auto xy: Chunk::walk(box().grow(1.0f))) {
 		grid[xy].erase(id);
 	}
 	return *this;

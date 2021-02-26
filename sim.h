@@ -43,8 +43,8 @@ namespace Sim {
 	float random();
 	int choose(uint range);
 
-	// increase frequency to make lakes smaller
 	// decrease persistence to make coastline smoother
+	// increase frequency to make lakes smaller
 	double noise2D(double x, double y, int layers, double persistence, double frequency);
 
 	bool rayCast(Point a, Point b, float clearance, std::function<bool(uint)> collide);

@@ -131,6 +131,8 @@ struct Spec {
 	std::vector<Point> pipeInputConnections;
 	std::vector<Point> pipeOutputConnections;
 	Liquid pipeCapacity;
+	bool pipeUnderground;
+	float pipeUndergroundRange;
 
 	bool turret;
 	float turretRange;

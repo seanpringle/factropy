@@ -231,6 +231,10 @@ Point Point::rotateHorizontal() const {
 	return p;
 }
 
+Point Point::oppositeCardinal() const {
+	return rotateHorizontal().rotateHorizontal();
+}
+
 bool Point::cardinalParallel(Point p) const {
 	return
 		((*this == North || *this == South) && (p == North || p == South)) ||

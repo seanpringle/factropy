@@ -16,6 +16,10 @@ struct Box {
 	Box(Point a, Point b);
 	Box(std::initializer_list<float>);
 
+	operator const std::string() const {
+		return fmt("{x:%0.2f,y:%0.2f,z:%0.2f,w:%0.2f,h:%0.2f,d:%0.2f}", x, y, z, w, h, d);
+	};
+
 	Point centroid() const;
 	BoundingBox bounds() const;
 	Box translate(const Point p) const;

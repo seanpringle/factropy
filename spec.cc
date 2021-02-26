@@ -86,6 +86,8 @@ Spec::Spec(std::string name) {
 
 	pipe = false;
 	pipeCapacity = 0;
+	pipeUnderground = false;
+	pipeUndergroundRange = 0.0f;
 
 	turret = false;
 	turretRange = 0;

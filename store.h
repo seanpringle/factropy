@@ -64,6 +64,7 @@ struct Store {
 	uint countNet(uint iid);
 	uint countAvailable(uint iid);
 	uint countExpected(uint iid);
+	uint countAcceptable(uint iid);
 	bool isRequesterSatisfied();
 	bool isRequesting(uint iid);
 	bool isProviding(uint iid);

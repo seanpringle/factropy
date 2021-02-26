@@ -89,7 +89,7 @@ Stack Arm::transferStoreToStore(Store& dst, Store& src) {
 			stack = dst.supplyFrom(src, filter);
 		}
 		if (!stack.iid) {
-			if (de.spec->loadPriority && !se.spec->loadPriority) {
+			if ((de.spec->loadPriority || dst.fuel) && !se.spec->loadPriority) {
 				stack = dst.forceSupplyFrom(src, filter);
 			}
 		}
@@ -112,7 +112,7 @@ Stack Arm::transferStoreToStore(Store& dst, Store& src) {
 		stack = dst.supplyFrom(src);
 	}
 	if (!stack.iid) {
-		if (de.spec->loadPriority && !se.spec->loadPriority) {
+		if ((de.spec->loadPriority || dst.fuel) && !se.spec->loadPriority) {
 			stack = dst.forceSupplyFrom(src);
 		}
 	}
@@ -167,6 +167,24 @@ Stack Arm::transferStoreToBelt(Store& src) {
 		}
 	}
 	return stack;
+}
+
+Stack Arm::transferBeltToStore(Store& dst, Stack stack) {
+	Entity& de = Entity::get(dst.id);
+
+	if (de.isGhost()) {
+		return {0,0};
+	}
+
+	if (filter.size() && filter.count(stack.iid) && dst.isAccepting(stack.iid)) {
+		return {stack.iid, std::min(stack.size, dst.countAcceptable(stack.iid))};
+	}
+
+	if (dst.isAccepting(stack.iid)) {
+		return {stack.iid, std::min(stack.size, dst.countAcceptable(stack.iid))};
+	}
+
+	return {0,0};
 }
 
 bool Arm::updateReady() {
@@ -258,7 +276,8 @@ bool Arm::updateInput() {
 			uint ciid = ei.conveyor().itemAt();
 			if (ciid) {
 				for (Store* so: eo.stores()) {
-					if (so->isAccepting(ciid)) {
+					Stack stack = transferBeltToStore(*so, {ciid,1});
+					if (stack.iid && stack.size) {
 						outputStoreId = so->sid;
 						so->promise({ciid,1});
 						so->arms.insert(id);

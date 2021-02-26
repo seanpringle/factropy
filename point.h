@@ -31,6 +31,10 @@ struct Point : Vector3 {
 	void operator+=(const Point& o);
 	void operator-=(const Point& o);
 
+	operator const std::string() const {
+		return fmt("{x:%0.2f,y:%0.2f,z:%0.2f}", x, y, z);
+	};
+
 	Point();
 	Point(std::initializer_list<float>);
 	Point(Vector3);
@@ -49,6 +53,7 @@ struct Point : Vector3 {
 	Point scale(float) const;
 	Point pivot(Point target, float speed) const;
 	Point roundCardinal() const;
+	Point oppositeCardinal() const;
 	Point rotateHorizontal() const;
 	Point randomHorizontal() const;
 	bool cardinalParallel(Point) const;

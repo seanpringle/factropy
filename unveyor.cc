@@ -57,11 +57,10 @@ void Unveyor::manage() {
 
 		if (partner) {
 			get(partner).partner = id;
+			auto& send = get(entry ? id: partner);
+			send.items.clear();
+			send.items.resize((uint)dist);
 		}
-
-		auto& send = get(entry ? id: partner);
-		send.items.clear();
-		send.items.resize((uint)dist);
 	}
 }
 

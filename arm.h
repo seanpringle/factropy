@@ -50,4 +50,5 @@ struct Arm {
 	uint target();
 	Stack transferStoreToStore(Store& dst, Store& src);
 	Stack transferStoreToBelt(Store& src);
+	Stack transferBeltToStore(Store& dst, Stack stack);
 };

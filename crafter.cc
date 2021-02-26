@@ -149,7 +149,8 @@ bool Crafter::outputItemsReady() {
 	if (recipe->outputItems.size()) {
 		Entity& en = Entity::get(id);
 		for (auto& [iid,count]: recipe->outputItems) {
-			outputReady = outputReady && en.store().count(iid) < count;
+			uint have = en.store().count(iid);
+			outputReady = outputReady && (have < count || have == 1);
 		}
 	}
 	return outputReady;

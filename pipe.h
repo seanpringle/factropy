@@ -25,12 +25,15 @@ struct Pipe {
 	PipeNetwork* network;
 	uint cacheFid;
 	int cacheTally;
+	uint partner;
+	bool underground;
 
 	void destroy();
 	void manage();
 	void unmanage();
 	std::vector<Point> pipeConnections();
 	Amount contents();
+	Box undergroundRange();
 };
 
 struct PipeNetwork {

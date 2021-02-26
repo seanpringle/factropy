@@ -333,6 +333,14 @@ uint Store::countExpected(uint iid) {
 	return lvl ? n + lvl->promised: n;
 }
 
+uint Store::countAcceptable(uint iid) {
+	uint net = countNet(iid);
+	Level* lvl = level(iid);
+	if (lvl && net >= lvl->upper) return 0;
+	uint max = (limit()-usage()).items(iid);
+	return std::min(max, lvl ? lvl->upper - net: max);
+}
+
 //                lower                upper
 // |----------------|--------------------|-------------------------
 //     requester           provider            active provider

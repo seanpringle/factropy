@@ -986,6 +986,30 @@ int main(int argc, char const *argv[]) {
 		{ Item::byName("iron-ingot")->id, 1 },
 	};
 
+	spec = new Spec("pipe-ground");
+	spec->pipe = true;
+	spec->pipeCapacity = Liquid::l(500);
+	spec->pipeUnderground = true;
+	spec->pipeUndergroundRange = 10.0f;
+	spec->collision = Volume(1, 1, 1);
+	spec->rotate = true;
+	spec->pipeConnections = {Point::North*0.5f};
+	spec->health = 10;
+
+	spec->parts = {
+		(new Part(Thing("models/pipe-ground-hd.stl", "models/pipe-ground-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+	};
+
+	spec->materials = {
+		{ Item::byName("iron-ingot")->id, 1 },
+	};
+
+	Spec::byName("pipe-straight")->cycle = Spec::byName("pipe-ground");
+	Spec::byName("pipe-ground")->cycle = Spec::byName("pipe-elbow");
+	Spec::byName("pipe-elbow")->cycle = Spec::byName("pipe-tee");
+	Spec::byName("pipe-tee")->cycle = Spec::byName("pipe-cross");
+	Spec::byName("pipe-cross")->cycle = Spec::byName("pipe-straight");
+
 	std::vector<Spec*> rocks;
 
 	for (int i = 1; i < 4; i++) {
@@ -2112,10 +2136,10 @@ int main(int argc, char const *argv[]) {
 				if (camera->selected.size()) {
 					Sim::locked([&]() {
 						for (auto te: camera->selected) {
-							int id = te->id;
-							if (Entity::exists(id)) {
-								Entity::get(id).deconstruct();
-							}
+							uint id = te->id;
+							if (!Entity::exists(id)) continue;
+							if (camera->directing && camera->directing->id == id) continue;
+							Entity::get(id).deconstruct();
 						}
 					});
 				}

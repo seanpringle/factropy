@@ -10,11 +10,14 @@ void Pipe::tick() {
 }
 
 Pipe& Pipe::create(uint id) {
+	Entity& en = Entity::get(id);
 	Pipe& pipe = all[id];
 	pipe.id = id;
 	pipe.network = NULL;
 	pipe.cacheFid = 0;
 	pipe.cacheTally = 0;
+	pipe.partner = 0;
+	pipe.underground = en.spec->pipeUnderground;
 	return pipe;
 }
 
@@ -69,6 +72,43 @@ void PipeNetwork::tick() {
 			delete *(all.begin());
 		}
 
+		for (auto& pipe: Pipe::all) {
+			ensure(!pipe.network);
+		}
+
+		for (auto& pipe: Pipe::all) {
+			if (!pipe.underground) continue;
+			pipe.partner = 0;
+		}
+
+		for (auto& pipe: Pipe::all) {
+			if (!pipe.underground) continue;
+			Entity& en = Entity::get(pipe.id);
+			if (en.isGhost()) continue;
+
+			float dist = 0.0f;
+
+			for (uint pid: Entity::intersecting(pipe.undergroundRange())) {
+				if (pipe.id == pid) continue;
+				if (!Pipe::all.has(pid)) continue;
+				Entity& eo = Entity::get(pid);
+				if (eo.isGhost()) continue;
+				Pipe& other = Pipe::get(pid);
+				if (!other.underground) continue;
+				if (other.partner) continue;
+				if (en.dir != eo.dir.oppositeCardinal()) continue;
+				float d = en.pos.distance(eo.pos);
+				if (!pipe.partner || d < dist) {
+					pipe.partner = pid;
+					dist = d;
+				}
+			}
+
+			if (pipe.partner) {
+				Pipe::get(pipe.partner).partner = pipe.id;
+			}
+		}
+
 		std::function<void(uint)> flood = [&](uint pid) {
 			Entity& en = Entity::get(pid);
 			if (en.isGhost()) return;
@@ -76,17 +116,16 @@ void PipeNetwork::tick() {
 			Pipe& pipe = Pipe::get(pid);
 
 			for (Point p: pipe.pipeConnections()) {
-				for (uint sid: Entity::intersecting(p.box().grow(0.1))) {
-					if (sid == pipe.id) continue;
+				Box box = p.box().grow(0.1f);
+				for (uint oid: Entity::intersecting(box)) {
+					if (oid == pipe.id) continue;
 
-					Entity& sen = Entity::get(sid);
+					Entity& sen = Entity::get(oid);
 					if (sen.isGhost()) continue;
 					if (!sen.spec->pipe) continue;
 
-					Pipe& other = Pipe::get(sid);
-
+					Pipe& other = Pipe::get(oid);
 					bool join = false;
-					Box box = p.box().grow(0.1f);
 
 					for (Point op: other.pipeConnections()) {
 						if (box.intersects(op.box().grow(0.1f))) {
@@ -95,11 +134,24 @@ void PipeNetwork::tick() {
 						}
 					}
 
-					if (join && !other.network) {
-						other.network = pipe.network;
-						other.network->pipes.insert(other.id);
-						flood(sid);
+					if (join) {
+						//ensure(!other.network || other.network == pipe.network);
+						if (!other.network) {
+							other.network = pipe.network;
+							pipe.network->pipes.insert(other.id);
+							flood(other.id);
+						}
 					}
+				}
+			}
+
+			if (pipe.partner) {
+				Pipe& other = Pipe::get(pipe.partner);
+				//ensure(!other.network || other.network == pipe.network);
+				if (!other.network) {
+					other.network = pipe.network;
+					other.network->pipes.insert(other.id);
+					flood(pipe.partner);
 				}
 			}
 		};
@@ -169,6 +221,12 @@ Amount Pipe::contents() {
 		return {fid, n};
 	}
 	return {0,0};
+}
+
+Box Pipe::undergroundRange() {
+	Entity& en = Entity::get(id);
+	Point far = (en.dir * en.spec->pipeUndergroundRange) + en.pos;
+	return Box(en.pos, far).grow(0.1f);
 }
 
 PipeNetwork::PipeNetwork() {
