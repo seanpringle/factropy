@@ -12,11 +12,10 @@ struct PartCycle2;  // mesh moving through a list of transformation states
 struct PartSmoke;   // particle emitter
 struct Thing;
 
+#include "raylib-ex.h"
 #include <string>
 #include <vector>
 #include <map>
-#include "raylib.h"
-#include "raymath.h"
 #include "mat4.h"
 #include "spec.h"
 

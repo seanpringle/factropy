@@ -1,7 +1,6 @@
 #include "common.h"
 #include "sim.h"
 #include "part.h"
-#include "rlgl.h"
 #include <vector>
 #include <array>
 #include <fstream>
@@ -207,7 +206,7 @@ void Thing::drawBatch(Color color, float specular, bool hd, int count, Mat4 *trx
 	uint specShine  = GetShaderLocation(Part::shader, "specShine");
 
 	SetShaderValue(Part::shader, specShine, &specular, UNIFORM_FLOAT);
-	rlDrawMeshInstanced(hd ? meshHD: meshLD, Part::material, count, trx);
+	rlDrawMeshInstanced2(hd ? meshHD: meshLD, Part::material, count, trx);
 
 	specular = 0.0f;
 	SetShaderValue(Part::shader, specShine, &specular, UNIFORM_FLOAT);

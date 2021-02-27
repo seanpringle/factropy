@@ -1,9 +1,7 @@
-#ifndef _H_box
-#define _H_box
-
-#include "raymath.h"
+#pragma once
 
 struct Box;
+#include "raylib-ex.h"
 #include "point.h"
 #include "volume.h"
 #include <initializer_list>
@@ -34,5 +32,3 @@ struct Box {
 	bool contains(Point p) const;
 	float volume() const;
 };
-
-#endif

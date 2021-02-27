@@ -73,7 +73,7 @@ void SiteCamera::draw(RenderTexture canvas) {
 			}
 
 			rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());
-			rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
+			rlDrawMeshInstanced2(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
 			std::map<Part*,std::vector<Mat4>> batches;
 

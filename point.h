@@ -2,10 +2,9 @@
 
 // Extend Raylib's Vector3 to C++ land.
 
-#include "raymath.h"
-
 struct Point;
 
+#include "raylib-ex.h"
 #include "box.h"
 #include "mat4.h"
 #include "volume.h"

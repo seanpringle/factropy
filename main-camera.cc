@@ -1,3 +1,5 @@
+
+#include "raylib-ex.h"
 #include "common.h"
 #include "sim.h"
 #include "view.h"
@@ -106,7 +108,7 @@ void MainCamera::updateMouseState() {
 		.y = (int)pos.y,
 		.dx = (int)pos.x - last.x,
 		.dy = (int)pos.y - last.y,
-		.wheel = GetMouseWheelMove(),
+		.wheel = (int)GetMouseWheelMove(),
 		.rH = last.rH,
 		.rV = last.rV,
 		.zW = last.zW,
@@ -452,7 +454,7 @@ void MainCamera::draw() {
 			}
 
 			rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());
-			rlDrawMeshInstanced(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
+			rlDrawMeshInstanced2(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
 			for (auto [iid,transforms]: resource_transforms) {
 				Item* item = Item::get(iid);
@@ -790,10 +792,10 @@ void MainCamera::draw() {
 				}
 
 				if (reds.size() > 0)
-					rlDrawMeshInstanced(redCube.meshes[0], redCube.materials[0], reds.size(), reds.data());
+					rlDrawMeshInstanced2(redCube.meshes[0], redCube.materials[0], reds.size(), reds.data());
 
 				if (greens.size() > 0)
-					rlDrawMeshInstanced(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
+					rlDrawMeshInstanced2(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
 			}
 
 			if (selecting) {

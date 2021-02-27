@@ -1,9 +1,9 @@
-#ifndef _H_mat4
-#define _H_mat4
+#pragma once
+
 
 struct Mat4;
 
-#include "raymath.h"
+#include "raylib-ex.h"
 #include "point.h"
 #include <initializer_list>
 
@@ -27,5 +27,3 @@ struct Mat4 : Matrix {
 	static Mat4 translate(float x, float y, float z);
 	static Mat4 translate(Point p);
 };
-
-#endif

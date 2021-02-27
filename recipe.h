@@ -5,7 +5,7 @@
 
 struct Recipe;
 
-#include "raylib.h"
+#include "raylib-ex.h"
 #include "item.h"
 #include "spec.h"
 #include "currency.h"

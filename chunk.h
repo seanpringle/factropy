@@ -6,8 +6,7 @@
 
 struct Chunk;
 
-#include "raylib.h"
-#include "raymath.h"
+#include "raylib-ex.h"
 #include "item.h"
 #include "gridwalk.h"
 #include <map>

@@ -2,13 +2,10 @@
 // This is a bit spaghetti-ish and eventually needs to be refactored.
 // Probably scripted in Wren.
 
-#define GRAPHICS_API_OPENGL_33
-#define GLSL_VERSION 330
-#include "raylib.h"
-#include "raymath.h"
+#include "raylib-ex.h"
 
 #define RLIGHTS_IMPLEMENTATION
-#include "rlights.h"
+#include "raylib/examples/shaders/rlights.h"
 
 #define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #include "imgui/imgui.h"
@@ -100,7 +97,7 @@ int main(int argc, char const *argv[]) {
 	);
 
 	pshader.locs[LOC_MATRIX_MVP] = GetShaderLocation(pshader, "mvp");
-	pshader.locs[LOC_MATRIX_MODEL] = GetShaderAttribLocation(pshader, "instance");
+	pshader.locs[LOC_MATRIX_MODEL] = GetShaderLocationAttrib(pshader, "instance");
 	pshader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(pshader, "viewPos");
 
   SetShaderValue(pshader, GetShaderLocation(pshader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
@@ -116,7 +113,7 @@ int main(int argc, char const *argv[]) {
 	);
 
 	particleShader.locs[LOC_MATRIX_MVP] = GetShaderLocation(particleShader, "mvp");
-	particleShader.locs[LOC_MATRIX_MODEL] = GetShaderAttribLocation(particleShader, "particle");
+	particleShader.locs[LOC_MATRIX_MODEL] = GetShaderLocationAttrib(particleShader, "particle");
 	particleShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(particleShader, "viewPos");
 
   SetShaderValue(particleShader, GetShaderLocation(particleShader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
@@ -1708,7 +1705,7 @@ int main(int argc, char const *argv[]) {
 
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)GetWindowHandle(), true);
+	ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)rlWindowHandle(), true);
 	ImGui_ImplOpenGL3_Init(nullptr);
 
 	ImPlot::CreateContext();

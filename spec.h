@@ -6,13 +6,11 @@
 struct Spec;
 typedef int Health;
 
+#include "raylib-ex.h"
 #include <string>
 #include <vector>
 #include <map>
 #include <set>
-#include "raylib.h"
-#include "raymath.h"
-#include "rlgl.h"
 #include "point.h"
 #include "mat4.h"
 #include "item.h"

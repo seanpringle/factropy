@@ -6,7 +6,7 @@ struct Item;
 struct Fuel;
 struct Stack;
 
-#include "raylib.h"
+#include "raylib-ex.h"
 #include "part.h"
 #include "mass.h"
 #include "energy.h"
