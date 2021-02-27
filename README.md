@@ -6,6 +6,8 @@ The only thing more fun than playing a base-building simulation game is making y
 
 Yes, there were eight earlier versions made while messing with ideas.
 
+[![C/C++ CI](https://github.com/seanpringle/test9/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/seanpringle/test9/actions/workflows/c-cpp.yml)
+
 # tech stack
 
 * [raylib](https://github.com/raysan5/raylib)
