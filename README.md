@@ -19,7 +19,7 @@ The only thing more fun than playing a base-building simulation game is making y
 
 **De-emphasize robots, and call them drones**. Make construction and logistic ~~robots~~ drones only operate within range of their own ~~roboport~~ depot. No massive networks covering the map so one waits for ages for a distant construction robot to arrive. More use of construction vehicles and supply chains.
 
-**Inserters are cool, but they're arms!** So, keep ~~inserters~~ arms. They lead to such interesting emergent gameplay. Satisfactory's belts and entities are kind of boring connect-the-dots in comparison.
+**Inserters are cool, but those are "arms"!** So, definitely keep ~~inserters~~ arms. They lead to such interesting emergent gameplay. Satisfactory's belts and entities are kind of boring connect-the-dots puzzles in comparison.
 
 **Single-lane conveyor belts**. But with relatively larger other entities. Wonder if part of the reason Factorio has slightly absurd dual-lane belts is to allow enough resources to get close to an Assembler so inserters can reach and recipes can be complex. Try making the asssmblers larger instead for more adjacent space, and see if it works out.
 
