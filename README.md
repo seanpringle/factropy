@@ -13,14 +13,14 @@ The only thing more fun than playing a base-building simulation game is making y
 
 # design aims
 
-*No player character*. Free 3D camera view with construction vehicles and drones, RTS style.
+**No player character**. Free 3D camera view with construction vehicles and drones, RTS style.
 
-*Emphasize vehicles*. Make AAI-style vehicles and Logistic Carts first class citizens of the engine and see if it works. Satisfactory trucks are cool but could be smarter.
+**Emphasize vehicles**. Make AAI-style vehicles and Logistic Carts first class citizens of the engine and see if it works. Satisfactory trucks are cool but could be smarter.
 
-*De-emphasize robots, and call them drones*. Make construction and logistic ~~robots~~ drones only operate within range of their own ~~roboport~~ possibly-mobile depot. No massive networks covering the map so one waits for ages for a distant construction robot to arrive.
+**De-emphasize robots, and call them drones**. Make construction and logistic ~~robots~~ drones only operate within range of their own ~~roboport~~ depot. No massive networks covering the map so one waits for ages for a distant construction robot to arrive. More use of construction vehicles and supply chains.
 
-*Inserters are cool, but they're arms!* So, have ~~inserters~~ arms, but otherwise the same idea.
+**Inserters are cool, but they're arms!** So, keep ~~inserters~~ arms. They lead to such interesting emergent gameplay. Satisfactory's belts and entities are kind of boring connect-the-dots in comparison.
 
-*Single-lane conveyor belts*. But reltively larger other entities. Wonder if part of the reason Factorio has dual-lane belts is to allow enough resources to get close to an Assembler so inserters can reach. Make the asssmblers larger instead for more adjacent space.
+**Single-lane conveyor belts**. But with relatively larger other entities. Wonder if part of the reason Factorio has slightly absurd dual-lane belts is to allow enough resources to get close to an Assembler so inserters can reach and recipes can be complex. Try making the asssmblers larger instead for more adjacent space, and see if it works out.
 
-*Use an entity-component system*. There was discussion in the Factorio forums about the game not using an ECS. Curious what it would look like with an ECS.
+**Use an entity-component system**. There was discussion in the Factorio forums about the game not using an ECS. Curious what it would look like with an ECS under the hood, and whether modding could be more flexible (or possibly more broken -- who knows).
