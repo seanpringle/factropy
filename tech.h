@@ -1,5 +1,6 @@
-#ifndef _H_tech
-#define _H_tech
+#pragma once
+
+// Tech(nologies) are purchasable base and entity upgrades.
 
 struct Tech;
 
@@ -42,5 +43,3 @@ struct Tech {
 
 	void buy();
 };
-
-#endif

@@ -1,5 +1,8 @@
-#ifndef _H_crafter
-#define _H_crafter
+#pragma once
+
+// Crafter components take input materials, do some work and output different
+// materials. Almost everything that assembles or mines or pumps or teleports
+// is at heart a Crafter. Recipes it what to do. Specs tell it how to behave.
 
 struct Crafter;
 
@@ -51,5 +54,3 @@ struct Crafter {
 
 	bool outputItemsReady();
 };
-
-#endif

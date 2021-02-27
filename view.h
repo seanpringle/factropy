@@ -1,5 +1,12 @@
 #pragma once
 
+// A 3D perspective View of the map, from a position, looking in a direction.
+// The rendering thread is mostly driven by a MainCamera but multiple cameras
+// can exist that render in different ways.
+
+// Plan is to add the option of camera drones or security cameras that can
+// display their view in the player's HUD or peripheral vision.
+
 struct View;
 struct SiteCamera;
 struct MainCamera;

@@ -1,5 +1,8 @@
 #pragma once
 
+// Conveyor components move items around, automatically linking together
+// to form belts.
+
 struct Conveyor;
 
 #include "entity.h"

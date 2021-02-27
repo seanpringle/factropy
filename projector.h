@@ -1,5 +1,9 @@
-#ifndef _H_projector
-#define _H_projector
+#pragma once
+
+// Projector components display an item as a bobbing rotating hologram, like Quake3 ammo.
+// They connect to an adjacent Crafter or Pipe to identify the item to display.
+
+// These may go away in favour of something better -- just a quick experiment.
 
 struct Projector;
 
@@ -27,5 +31,3 @@ struct Projector {
 	void destroy();
 	void update();
 };
-
-#endif

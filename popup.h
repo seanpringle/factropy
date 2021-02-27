@@ -1,5 +1,7 @@
 #pragma once
 
+// ImGUI popup windows.
+
 #include "view.h"
 
 struct Popup {

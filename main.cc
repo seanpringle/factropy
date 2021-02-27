@@ -1,4 +1,7 @@
 
+// This is a bit spaghetti-ish and eventually needs to be refactored.
+// Probably scripted in Wren.
+
 #define GRAPHICS_API_OPENGL_33
 #define GLSL_VERSION 330
 #include "raylib.h"
@@ -441,6 +444,7 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"crafting"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(300);
+	spec->energyDrain = Energy::kW(9);
 	spec->collision = Volume(6, 3, 6);
 	spec->setCornerSupports();
 	spec->health = 10;
@@ -534,6 +538,7 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"smelting"};
 	spec->consumeChemical = true;
 	spec->energyConsume = Energy::kW(60);
+	spec->energyDrain = Energy::kW(2);
 	spec->materials = {
 		{ Item::byName("copper-ingot")->id, 3 },
 		{ Item::byName("brick")->id, 3 },
@@ -579,6 +584,7 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"mining"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
+	spec->energyDrain = Energy::kW(3);
 	spec->collision = Volume(5, 5, 10);
 	spec->setCornerSupports();
 	spec->health = 10;
@@ -611,6 +617,7 @@ int main(int argc, char const *argv[]) {
 	};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
+	spec->energyDrain = Energy::kW(3);
 	spec->collision = Volume(3, 3, 3);
 	spec->crafter = true;
 	spec->enable = true;
@@ -646,7 +653,7 @@ int main(int argc, char const *argv[]) {
 	spec->conveyorInput = Point::North;
 	spec->conveyorOutput = Point::South;
 	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(1);
+	spec->energyDrain = Energy::kW(1);
 	spec->health = 10;
 
 	{
@@ -679,7 +686,7 @@ int main(int argc, char const *argv[]) {
 	spec->conveyorInput = Point::East;
 	spec->conveyorOutput = Point::South;
 	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(1);
+	spec->energyDrain = Energy::kW(1);
 	spec->health = 10;
 
 	{
@@ -716,7 +723,7 @@ int main(int argc, char const *argv[]) {
 	spec->conveyorInput = Point::West;
 	spec->conveyorOutput = Point::South;
 	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(1);
+	spec->energyDrain = Energy::kW(1);
 	spec->health = 10;
 
 	{
@@ -766,7 +773,7 @@ int main(int argc, char const *argv[]) {
 	spec->conveyorInput = Point::North*1.5f;
 	spec->conveyorOutput = Point::Zero;
 	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(1);
+	spec->energyDrain = Energy::kW(1);
 	spec->health = 10;
 
 	{
@@ -804,7 +811,7 @@ int main(int argc, char const *argv[]) {
 	spec->conveyorInput = Point::Zero;
 	spec->conveyorOutput = Point::South*1.5f;
 	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(1);
+	spec->energyDrain = Energy::kW(1);
 	spec->health = 10;
 
 	{
@@ -848,7 +855,8 @@ int main(int argc, char const *argv[]) {
 	spec->capacity = Mass::kg(1000);
 	spec->enableSetUpper = true;
 	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(10);
+	spec->energyConsume = Energy::MW(1);
+	spec->energyDrain = Energy::kW(33);
 	spec->health = 10;
 
 	spec->parts = {
@@ -864,7 +872,8 @@ int main(int argc, char const *argv[]) {
 	spec->ropewayTower = true;
 	spec->ropewayCableEast = (Point::East*1.5f) + (Point::Up*5.0f);
 	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(10);
+	spec->energyConsume = Energy::kW(100);
+	spec->energyDrain = Energy::kW(3);
 	spec->health = 10;
 
 	spec->parts = {
@@ -891,20 +900,20 @@ int main(int argc, char const *argv[]) {
 
 	Spec::byName("ropeway-terminus")->ropewayBucketSpec = Spec::byName("ropeway-bucket");
 
-	spec = new Spec("loader");
-	spec->collision = Volume(1, 2, 1);
-	spec->setCornerSupports();
-	spec->rotate = true;
-	spec->loader = true;
-	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(10);
-	spec->health = 10;
-
-	spec->parts = {
-		(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1,0),
-		(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1,0),
-		//(new PartCycle(beltRidge, BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-1,0)->ld(false),
-	};
+//	spec = new Spec("loader");
+//	spec->collision = Volume(1, 2, 1);
+//	spec->setCornerSupports();
+//	spec->rotate = true;
+//	spec->loader = true;
+//	spec->consumeElectricity = true;
+//	spec->energyConsume = Energy::kW(10);
+//	spec->health = 10;
+//
+//	spec->parts = {
+//		(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1,0),
+//		(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1,0),
+//		//(new PartCycle(beltRidge, BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-1,0)->ld(false),
+//	};
 
 	spec = new Spec("fluid-tank");
 	spec->pipe = true;
@@ -1231,6 +1240,7 @@ int main(int argc, char const *argv[]) {
 	};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(10);
+	spec->energyDrain = Energy::W(100);
 	spec->materials = {
 		{ Item::byName("iron-ingot")->id, 1 },
 		{ Item::byName("circuit-board")->id, 1 },
@@ -1327,6 +1337,7 @@ int main(int argc, char const *argv[]) {
 	};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(10);
+	spec->energyDrain = Energy::W(300);
 	spec->materials = {
 		{ Item::byName("iron-ingot")->id, 1 },
 		{ Item::byName("circuit-board")->id, 1 },
@@ -1437,6 +1448,7 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = true;
 	spec->consumeChemical = true;
 	spec->energyConsume = Energy::MW(2);
+	spec->energyDrain = Energy::kW(60);
 	spec->crafter = true;
 	spec->recipeTags = {"boiling"};
 	spec->materials = {
@@ -1572,6 +1584,7 @@ int main(int argc, char const *argv[]) {
 	spec->recipeTags = {"teleporting"};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::MW(10);
+	spec->energyDrain = Energy::kW(300);
 	spec->collision = Volume(8, 8, 8);
 	spec->setCornerSupports();
 	spec->parts = {
@@ -1606,7 +1619,7 @@ int main(int argc, char const *argv[]) {
 	spec->rotate = true;
 	spec->computer = true;
 	spec->consumeElectricity = true;
-	spec->energyConsume = Energy::kW(1);
+	spec->energyDrain = Energy::W(100);
 	spec->collision = Volume(1, 2, 1);
 	spec->setCornerSupports();
 	spec->parts = {
@@ -2167,9 +2180,14 @@ int main(int argc, char const *argv[]) {
 		}
 
 		if (IsKeyReleased(KEY_F1)) {
-			if (popup) popup->show(false);
-			popup = statsPopup;
-			popup->show(true);
+			if (popup == statsPopup) {
+				popup->show(false);
+				popup = nullptr;
+			} else {
+				if (popup) popup->show(false);
+				popup = statsPopup;
+				popup->show(true);
+			}
 		}
 
 		if (IsKeyReleased(KEY_F2) && camera->hovering) {
@@ -2291,7 +2309,24 @@ int main(int argc, char const *argv[]) {
 				}
 
 				if (ge->spec->consumeElectricity) {
-					ImGui::Print(fmtc("Electricity: %s", ge->spec->energyConsume.formatRate()));
+					if (ge->spec->energyConsume && ge->spec->energyDrain) {
+						ImGui::Print(fmtc("Electricity: %s (%s)",
+							ge->spec->energyConsume.formatRate(),
+							ge->spec->energyDrain.formatRate())
+						);
+					}
+					else
+					if (ge->spec->energyConsume) {
+						ImGui::Print(fmtc("Electricity: %s",
+							ge->spec->energyConsume.formatRate())
+						);
+					}
+					else
+					if (ge->spec->energyDrain) {
+						ImGui::Print(fmtc("Electricity: %s",
+							ge->spec->energyDrain.formatRate())
+						);
+					}
 				}
 
 				if (ge->spec->crafter) {

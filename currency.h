@@ -1,5 +1,4 @@
-#ifndef _H_currency
-#define _H_currency
+#pragma once
 
 #include <string>
 
@@ -31,5 +30,3 @@ struct Currency {
 
 	float portion(Currency o);
 };
-
-#endif

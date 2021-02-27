@@ -67,22 +67,29 @@ std::vector<Point> Crafter::pipeOutputConnections() {
 }
 
 void Crafter::updatePipes() {
+	inputPipes.clear();
+
 	for (auto point: pipeConnections()) {
 		for (auto pid: Pipe::servicing(point.box())) {
+			if (Entity::get(pid).isGhost()) continue;
 			inputPipes.push_back(pid);
 		}
 	}
 
 	for (auto point: pipeInputConnections()) {
 		for (auto pid: Pipe::servicing(point.box())) {
+			if (Entity::get(pid).isGhost()) continue;
 			inputPipes.push_back(pid);
 		}
 	}
 
 	deduplicate(inputPipes);
 
+	outputPipes.clear();
+
 	for (auto point: pipeOutputConnections()) {
 		for (auto pid: Pipe::servicing(point.box())) {
+			if (Entity::get(pid).isGhost()) continue;
 			outputPipes.push_back(pid);
 		}
 	}

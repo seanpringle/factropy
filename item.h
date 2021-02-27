@@ -1,5 +1,6 @@
-#ifndef _H_item
-#define _H_item
+#pragma once
+
+// Items are materials used in construction, minable resources and/or burnable fuel.
 
 struct Item;
 struct Fuel;
@@ -55,5 +56,3 @@ struct Item {
 	Item(uint id, std::string name);
 	~Item();
 };
-
-#endif

@@ -1,5 +1,7 @@
-#ifndef _H_ghost
-#define _H_ghost
+#pragma once
+
+// Ghost components turn an Entity into a construction or deconstruction site.
+// They won't interact with most other entities until they materialize.
 
 struct Ghost;
 
@@ -24,5 +26,3 @@ struct Ghost {
 	bool isConstruction();
 	bool isDeconstruction();
 };
-
-#endif

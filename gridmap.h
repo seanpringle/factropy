@@ -1,5 +1,9 @@
 #pragma once
 
+// A gridmap is a simple spatial index that breaks an unbounded 2D plane
+// up into chunks/tiles of a predefined size. They can store anything that
+// has an axis-aligned bounding box.
+
 #include "common.h"
 #include "gridwalk.h"
 #include <map>

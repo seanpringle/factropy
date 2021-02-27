@@ -1,5 +1,4 @@
-#ifndef _H_energy
-#define _H_energy
+#pragma once
 
 struct Energy;
 
@@ -7,8 +6,10 @@ struct Energy;
 #include <set>
 
 struct Energy {
+	static Energy J(int j);
 	static Energy kJ(int j);
 	static Energy MJ(int j);
+	static Energy W(int j); // joules/tick
 	static Energy kW(int j); // joules/tick
 	static Energy MW(int j); // joules/tick
 
@@ -41,5 +42,3 @@ struct Energy {
 	float portion(Energy o);
 	Energy magnitude();
 };
-
-#endif

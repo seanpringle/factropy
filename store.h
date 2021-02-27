@@ -1,5 +1,15 @@
-#ifndef _H_store
-#define _H_store
+#pragma once
+
+// Store components are general-purpose configurable item inventories. They
+// allow setting lower and upper limits per item and can function as dumb
+// containers, logistic requester/suppliers, burner fuel tanks, crafter
+// input/output buffers etc. Arms and Drones work together with Stores to
+// move items around co-operatively.
+
+//                lower                upper                    capacity
+// |----------------|--------------------|-------------------------|
+//     requester           provider            active provider
+//     overflow            overflow              no overflow
 
 struct Store;
 
@@ -80,5 +90,3 @@ struct Store {
 	Stack overflowTo(Store& dst, std::set<uint>& filter);
 	Stack overflowDefaultTo(Store& dst);
 };
-
-#endif

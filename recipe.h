@@ -1,5 +1,7 @@
-#ifndef _H_recipe
-#define _H_recipe
+#pragma once
+
+// Recipes tell Crafters how to make something, which resources to consume, how much energy
+// to consume and how fast to do it.
 
 struct Recipe;
 
@@ -51,5 +53,3 @@ struct Recipe {
 
 	float rate(Spec* spec);
 };
-
-#endif

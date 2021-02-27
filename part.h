@@ -1,7 +1,15 @@
-#ifndef _H_part
-#define _H_part
+#pragma once
 
-struct Part;
+// Parts wrap a Mesh that can be efficiently rendered in an instance batch.
+// For performance the rendering thread only renders entities with instanced
+// meshes using predefined transformation patterns. Game entities consist
+// of one or more parts with various types of pre-defined behaviour:
+
+struct Part;        // static mesh
+struct PartSpinner; // simple rotating mesh
+struct PartCycle;   // mesh moving through a list of transformation states
+struct PartCycle2;  // mesh moving through a list of transformation states
+struct PartSmoke;   // particle emitter
 struct Thing;
 
 #include <string>
@@ -132,5 +140,3 @@ struct PartSmoke : Part {
 	virtual void update();
 	virtual void drawInstanced(bool hd, int count, Mat4* trx);
 };
-
-#endif

@@ -1,5 +1,8 @@
-#ifndef _H_vehicle
-#define _H_vehicle
+#pragma once
+
+// Vehicle components are ground cars that path-find and drive around the map.
+// They can be manualy told to move, or to follow a series of waypoints in patrol
+// mode.
 
 struct Vehicle;
 
@@ -81,5 +84,3 @@ struct Vehicle {
 	Waypoint* addWaypoint(Point p);
 	Waypoint* addWaypoint(uint eid);
 };
-
-#endif

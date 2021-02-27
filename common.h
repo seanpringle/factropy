@@ -1,5 +1,4 @@
-#ifndef _H_common
-#define _H_common
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,5 +72,3 @@ template <typename C, typename F>
 void discard_if(C& c, F fn) {
   c.erase(std::remove_if(c.begin(), c.end(), fn), c.end());
 }
-
-#endif

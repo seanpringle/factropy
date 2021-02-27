@@ -1,5 +1,9 @@
 #pragma once
 
+// A gridwalk(er) is an iterator for an unbounded 2D plane broken up
+// into chunks/tiles of a predefined size. They can iterate from anything
+// that has an axis-aligned bounding box.
+
 #include "common.h"
 #include "box.h"
 #include "point.h"

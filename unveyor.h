@@ -1,5 +1,8 @@
 #pragma once
 
+// Unveyor (underground conveyor) components link up with Conveyors to allow
+// short distance underground belts.
+
 struct Unveyor;
 
 #include "entity.h"

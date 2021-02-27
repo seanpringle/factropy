@@ -1,5 +1,11 @@
-#ifndef _H_pipe
-#define _H_pipe
+#pragma once
+
+// Pipe components transport fluid. They automatically link together with adjacent
+// pipes to form a network holding a single fluid type.
+
+// Fluid modelling is fairly simplistic so far; the network tracks the fluid level
+// as a percentage of $totalNetworkCapacity and each Pipe just assumes it has
+// ($localCapacity * $levelPercentage) fluid available.
 
 struct Pipe;
 struct PipeNetwork;
@@ -57,5 +63,3 @@ struct PipeNetwork {
 	uint space(uint fid);
 	float level();
 };
-
-#endif

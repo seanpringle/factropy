@@ -1,10 +1,21 @@
-#ifndef _H_entity
-#define _H_entity
+#pragma once
+
+// The core of the Entity Component System. All entities have an Entity struct
+// with a unique uint ID. Component structs store the ID to associate with an
+// entity.
 
 struct Entity;
+
+// Entities visible on screen are not exposed directly to the rendering thread,
+// but loaded into a GuiEntity when a frame starts. This allows the rendering
+// thread to mostly proceed without locking the Sim, decoupling UPS and FPS.
+
 struct GuiEntity;
 struct GuiFakeEntity;
 
+#include <set>
+#include <map>
+#include <vector>
 #include "slabmap.h"
 #include "gridmap.h"
 #include "spec.h"
@@ -15,6 +26,9 @@ struct GuiFakeEntity;
 #include "point.h"
 #include "box.h"
 #include "ghost.h"
+
+// Components
+
 #include "store.h"
 #include "arm.h"
 #include "conveyor.h"
@@ -32,11 +46,15 @@ struct GuiFakeEntity;
 #include "generator.h"
 #include "turret.h"
 #include "computer.h"
-#include <set>
-#include <vector>
 
 struct Entity {
 	uint id;
+	uint32_t flags;
+	Spec* spec;
+	Point pos;
+	Point dir;
+	uint state;
+	Health health;
 
 	static const uint32_t GHOST = 1<<0;
 	static const uint32_t CONSTRUCTION = 1<<1;
@@ -78,13 +96,6 @@ struct Entity {
 	static uint at(Point p);
 
 	static std::vector<uint> enemiesInRange(Point pos, float radius);
-
-	uint32_t flags;
-	Spec* spec;
-	Point pos;
-	Point dir;
-	uint state;
-	Health health;
 
 	bool isGhost();
 	Entity& setGhost(bool state);
@@ -218,5 +229,3 @@ struct GuiFakeEntity : GuiEntity {
 	GuiFakeEntity* floor(float level);
 	GuiFakeEntity* rotate();
 };
-
-#endif

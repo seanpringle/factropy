@@ -1,5 +1,6 @@
-#ifndef _H_missile
-#define _H_missile
+#pragma once
+
+// Missile components move between points and trigger an Explosion.
 
 struct Missile;
 
@@ -24,5 +25,3 @@ struct Missile {
 	void update();
 	void attack(uint tid);
 };
-
-#endif

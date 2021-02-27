@@ -1,5 +1,6 @@
-#ifndef _H_path
-#define _H_path
+#pragma once
+
+// A* (like) path-finder.
 
 #include "point.h"
 #include <map>
@@ -45,5 +46,3 @@ struct Path {
 	virtual double calcHeuristic(Point) = 0;
 	virtual bool rayCast(Point,Point) = 0;
 };
-
-#endif

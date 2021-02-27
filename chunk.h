@@ -1,5 +1,8 @@
-#ifndef _H_chunk
-#define _H_chunk
+#pragma once
+
+// Chunks are large square map areas that work mostly independently. They
+// terrain and resource layers using a deterministic noise function, and
+// are rendered as separate meshes.
 
 struct Chunk;
 
@@ -82,6 +85,3 @@ struct Chunk {
 	void dropHeightMap();
 	void findHills();
 };
-
-
-#endif

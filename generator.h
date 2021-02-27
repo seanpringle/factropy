@@ -1,5 +1,7 @@
-#ifndef _H_generator
-#define _H_generator
+#pragma once
+
+// Generator components convert fluids into energy. They link to adjacent Pipe
+// networks for fuel.
 
 struct Generator;
 
@@ -21,5 +23,3 @@ struct Generator {
 	void destroy();
 	Energy consume(Energy e);
 };
-
-#endif

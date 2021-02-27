@@ -66,6 +66,7 @@ Spec::Spec(std::string name) {
 	consumeElectricity = false;
 	consumeThermalFluid = false;
 	energyConsume = 0;
+	energyDrain = 0;
 	generateElectricity = false;
 	energyGenerate = 0;
 

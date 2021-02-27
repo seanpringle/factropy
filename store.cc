@@ -341,11 +341,6 @@ uint Store::countAcceptable(uint iid) {
 	return std::min(max, lvl ? lvl->upper - net: max);
 }
 
-//                lower                upper
-// |----------------|--------------------|-------------------------
-//     requester           provider            active provider
-//     overflow            overflow              no overflow
-
 // store has all lower limits met
 bool Store::isRequesterSatisfied() {
 	for (Level& lvl: levels) {

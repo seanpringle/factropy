@@ -1,5 +1,6 @@
-#ifndef _H_turret
-#define _H_turret
+#pragma once
+
+// Turret components scan for enemies and fire Missiles at them.
 
 struct Turret;
 
@@ -26,5 +27,3 @@ struct Turret {
 
 	bool aimAt(Point o);
 };
-
-#endif

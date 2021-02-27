@@ -1,5 +1,7 @@
 #pragma once
 
+// Arm components move items between Stores and Conveyors.
+
 struct Arm;
 
 #include "slabmap.h"

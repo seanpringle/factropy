@@ -1,5 +1,6 @@
-#ifndef _H_drone
-#define _H_drone
+#pragma once
+
+// Drone components are deployed by Depots to move items between Stores.
 
 struct Drone;
 
@@ -37,5 +38,3 @@ struct Drone {
 	void update();
 	bool travel(uint eid);
 };
-
-#endif

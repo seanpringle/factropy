@@ -1,5 +1,4 @@
-#ifndef _H_opensimplex
-#define _H_opensimplex
+#pragma once
 
 // OpenSimplex (Simplectic) Noise in C.
 // Ported from Kurt Spencer's java implementation
@@ -21,5 +20,3 @@ OpenSimplex* OpenSimplexNew(int64_t seed);
 void OpenSimplexFree(OpenSimplex *os);
 
 double OpenSimplexNoise(OpenSimplex *os, double x, double y);
-
-#endif

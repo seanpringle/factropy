@@ -1,5 +1,7 @@
-#ifndef _H_plan
-#define _H_plan
+#pragma once
+
+// A plan is a collection of entities including layout and configuration.
+// A temporary base blueprint.
 
 #include "entity.h"
 
@@ -20,5 +22,3 @@ struct Plan {
 	bool fits();
 	bool entityFits(Spec *spec, Point pos, Point dir);
 };
-
-#endif

@@ -1,5 +1,10 @@
-
 #pragma once
+
+// Ropeway components are long-range two-way aerial "conveyors" for transporting raw
+// materials over long distances including over water and moutainous terrain. They
+// are a line of towers linked by cables that move buckets of items at a fixed rate.
+
+// https://duckduckgo.com/?q=ropeway+mining&iax=images&ia=images
 
 struct Ropeway;
 struct RopewayBucket;

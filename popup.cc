@@ -81,7 +81,7 @@ void StatsPopup2::draw() {
 	std::list<Spec*> specs;
 	for (auto& pair: Spec::all) {
 		auto& spec = pair.second;
-		if (!spec->energyConsume || spec->statsGroup != spec) continue;
+		if (!(spec->energyConsume || spec->energyDrain) || spec->statsGroup != spec) continue;
 		tickMax = std::max(tickMax, spec->energyConsumption.tickMax);
 		specs.push_back(spec);
 	}

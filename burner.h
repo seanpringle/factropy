@@ -1,5 +1,7 @@
-#ifndef _H_burner
-#define _H_burner
+#pragma once
+
+// Burner components convert fuel items into energy. They include a Store as
+// a sub-component to hold the fuel.
 
 struct Burner;
 
@@ -23,5 +25,3 @@ struct Burner {
 	void destroy();
 	Energy consume(Energy e);
 };
-
-#endif

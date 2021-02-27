@@ -1,5 +1,9 @@
-#ifndef _H_depot
-#define _H_depot
+#pragma once
+
+// Depot components deploy Drones to construct and deconstruct Ghosts, and supply
+// Stores within their vicinity. Depots don't form networks or send drones over
+// long distances, but they do co-operate within shared areas to load-balance
+// drone activity.
 
 struct Depot;
 
@@ -24,5 +28,3 @@ struct Depot {
 	void update();
 	void dispatch(uint dep, uint src, uint dst, Stack stack);
 };
-
-#endif

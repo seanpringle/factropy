@@ -1,9 +1,11 @@
-#ifndef _H_point
-#define _H_point
+#pragma once
+
+// Extend Raylib's Vector3 to C++ land.
 
 #include "raymath.h"
 
 struct Point;
+
 #include "box.h"
 #include "mat4.h"
 #include "volume.h"
@@ -64,5 +66,3 @@ struct Point : Vector3 {
 	Point nearestPointOnLine(Point l0, Point l1) const;
 	static bool linesCrossOnGround(Point a0, Point a1, Point b0, Point b1);
 };
-
-#endif

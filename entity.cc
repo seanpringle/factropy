@@ -57,6 +57,10 @@ void Entity::preTick() {
 
 	for (auto [eid,consumption]: energyConsumers) {
 		Entity& en = Entity::get(eid);
+		if (!consumption && en.isEnabled() && en.spec->energyDrain) {
+			en.consume(en.spec->energyDrain);
+			consumption = energyConsumers[eid];
+		}
 		en.spec->statsGroup->energyConsumption.add(Sim::tick, consumption);
 		energyConsumers[eid] = 0;
 	}
@@ -155,7 +159,7 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Computer::create(id);
 	}
 
-	if (spec->energyConsume) {
+	if (spec->energyConsume || spec->energyDrain) {
 		energyConsumers[id] = 0;
 	}
 
@@ -253,7 +257,7 @@ void Entity::destroy() {
 		computer().destroy();
 	}
 
-	if (spec->energyConsume) {
+	if (spec->energyConsume || spec->energyDrain) {
 		energyConsumers.erase(id);
 	}
 

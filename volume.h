@@ -1,5 +1,4 @@
-#ifndef _H_volume
-#define _H_volume
+#pragma once
 
 #include <initializer_list>
 
@@ -14,5 +13,3 @@ struct Volume {
 
 	operator bool() const;
 };
-
-#endif

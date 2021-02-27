@@ -1,12 +1,20 @@
 #include "common.h"
 #include "energy.h"
 
+Energy Energy::J(int j) {
+	return Energy(j);
+}
+
 Energy Energy::kJ(int j) {
 	return Energy(j*1000);
 }
 
 Energy Energy::MJ(int j) {
 	return Energy(j*1000000);
+}
+
+Energy Energy::W(int j) {
+	return Energy((int)std::ceil((float)j/60.0f));
 }
 
 Energy Energy::kW(int j) {

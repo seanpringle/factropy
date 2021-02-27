@@ -1,5 +1,7 @@
-#ifndef _H_spec
-#define _H_spec
+#pragma once
+
+// Spec(ifications) describe everything about a type of entity. They are
+// complex and huge so that entity components can be simple and small.
 
 struct Spec;
 typedef int Health;
@@ -118,6 +120,7 @@ struct Spec {
 	bool consumeElectricity;
 	bool consumeThermalFluid;
 	Energy energyConsume;
+	Energy energyDrain;
 	bool generateElectricity;
 	Energy energyGenerate;
 
@@ -185,4 +188,3 @@ struct Spec {
 	static std::vector<Point> relativePoints(const std::vector<Point> points, const Matrix rotation, const Point position);
 };
 
-#endif
