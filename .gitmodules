@@ -1,3 +1,6 @@
 [submodule "raylib"]
 	path = raylib
 	url = https://github.com/raysan5/raylib.git
+[submodule "wren"]
+	path = wren
+	url = https://github.com/wren-lang/wren.git
