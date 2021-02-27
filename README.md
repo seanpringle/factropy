@@ -4,6 +4,8 @@ A hobby gamedev project heavily influenced by Factorio.
 
 The only thing more fun than playing a base-building simulation game is making your own!
 
+Yes, there were eight earlier versions made while messing with ideas.
+
 # tech stack
 
 * [raylib](https://github.com/raysan5/raylib)
