@@ -17,6 +17,8 @@ jobs:
       with:
         submodules: recursive
     - name: deps
-      run: sudo apt install build-essential libasound2-dev mesa-common-dev libx11-dev libxrandr-dev libxi-dev xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+      run: sudo apt install build-essential sudo apt install gcc-9 g++-9 libasound2-dev mesa-common-dev libx11-dev libxrandr-dev libxi-dev xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+    - name: gcc
+      run: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
     - name: make
-      run: make dev
+      run: make -j 4 dev
