@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wren/src/include/wren.hpp"
+#include "../wren/src/include/wren.hpp"
 #include <string>
 
 class Mod {

@@ -6,28 +6,28 @@
 #define GLSL_VERSION 330
 #define PLATFORM_DESKTOP
 
-#include "raylib/src/config.h"
+#include "../raylib/src/config.h"
 
 #undef RL_CULL_DISTANCE_NEAR
 #define RL_CULL_DISTANCE_NEAR 1.0
 
 #define EXTERNAL_CONFIG_FLAGS
 
-#include "raylib/src/rlgl.h"
-#include "raylib/src/raylib.h"
-#include "raylib/src/raymath.h"
+#include "../raylib/src/rlgl.h"
+#include "../raylib/src/raylib.h"
+#include "../raylib/src/raymath.h"
 
-#include "raylib/src/core.c"
+#include "../raylib/src/core.c"
 #undef RLGL_IMPLEMENTATION
 
-#include "raylib/src/shapes.c"
-#include "raylib/src/models.c"
-#include "raylib/src/textures.c"
-#include "raylib/src/text.c"
-#include "raylib/src/utils.c"
+#include "../raylib/src/shapes.c"
+#include "../raylib/src/models.c"
+#include "../raylib/src/textures.c"
+#include "../raylib/src/text.c"
+#include "../raylib/src/utils.c"
 
 #define RLIGHTS_IMPLEMENTATION
-#include "raylib/examples/shaders/rlights.h"
+#include "../raylib/examples/shaders/rlights.h"
 
 void* rlWindowHandle() {
 	return CORE.Window.handle;

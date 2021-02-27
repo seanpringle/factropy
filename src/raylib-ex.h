@@ -4,15 +4,15 @@
 #define GLSL_VERSION 330
 #define PLATFORM_DESKTOP
 
-#include "raylib/src/config.h"
+#include "../raylib/src/config.h"
 
 #undef RL_CULL_DISTANCE_NEAR
 #define RL_CULL_DISTANCE_NEAR 1.0
 
-#include "raylib/src/rlgl.h"
-#include "raylib/src/raylib.h"
-#include "raylib/src/raymath.h"
-#include "raylib/examples/shaders/rlights.h"
+#include "../raylib/src/rlgl.h"
+#include "../raylib/src/raylib.h"
+#include "../raylib/src/raymath.h"
+#include "../raylib/examples/shaders/rlights.h"
 
 extern "C" {
 	void* rlWindowHandle();

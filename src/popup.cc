@@ -7,8 +7,8 @@
 #include "energy.h"
 
 #include "raylib-ex.h"
-#include "imgui/imgui.h"
-#include "imgui/implot.h"
+#include "../imgui/imgui.h"
+#include "../imgui/implot.h"
 
 #include <vector>
 
