@@ -1,7 +1,6 @@
-#ifndef _H_mod
-#define _H_mod
+#pragma once
 
-#include "wren/wren.hpp"
+#include "wren/src/include/wren.hpp"
 #include <string>
 
 class Mod {
@@ -20,5 +19,3 @@ public:
 	void load();
 	void update();
 };
-
-#endif

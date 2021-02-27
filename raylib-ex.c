@@ -26,6 +26,9 @@
 #include "raylib/src/text.c"
 #include "raylib/src/utils.c"
 
+#define RLIGHTS_IMPLEMENTATION
+#include "raylib/examples/shaders/rlights.h"
+
 void* rlWindowHandle() {
 	return CORE.Window.handle;
 }

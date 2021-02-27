@@ -6,7 +6,7 @@
 #include "vehicle.h"
 #include "energy.h"
 
-#include "raylib.h"
+#include "raylib-ex.h"
 #include "imgui/imgui.h"
 #include "imgui/implot.h"
 

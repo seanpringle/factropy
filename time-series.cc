@@ -1,6 +1,6 @@
 #include "common.h"
 #include "time-series.h"
-#include "raylib.h"
+#include "raylib-ex.h"
 
 void TimeSeries::clear() {
 	tickMax = 0.0f;

@@ -1,5 +1,4 @@
-#ifndef _H_time_series
-#define _H_time_series
+#pragma once
 
 #include <vector>
 #include <functional>
@@ -26,4 +25,3 @@ struct TimeSeries {
 	void track(uint64_t t, std::function<void(void)> fn);
 };
 
-#endif

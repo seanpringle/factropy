@@ -12,6 +12,7 @@
 #include "raylib/src/rlgl.h"
 #include "raylib/src/raylib.h"
 #include "raylib/src/raymath.h"
+#include "raylib/examples/shaders/rlights.h"
 
 extern "C" {
 	void* rlWindowHandle();
