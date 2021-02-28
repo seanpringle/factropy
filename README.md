@@ -4,7 +4,7 @@ A hobby gamedev project heavily influenced by Factorio.
 
 The only thing more fun than playing a base-building simulation game is making your own!
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![C/C++ CI](https://github.com/seanpringle/factropy/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/seanpringle/factropy/actions/workflows/c-cpp.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/seanpringle/factropy/blob/master/LICENSE) [![C/C++ CI](https://github.com/seanpringle/factropy/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/seanpringle/factropy/actions/workflows/c-cpp.yml)
 
 # tech stack
 
