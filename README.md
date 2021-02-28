@@ -13,3 +13,5 @@ The only thing more fun than playing a base-building simulation game is making y
 * [wren](https://github.com/wren-lang/wren)
 * [c++17](https://en.wikipedia.org/wiki/C%2B%2B17)
 * [openscad](http://www.openscad.org/)
+
+![screenshot](https://github.com/seanpringle/factropy/wiki/images/factropy.png)
