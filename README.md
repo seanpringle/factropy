@@ -4,7 +4,7 @@ A hobby gamedev project heavily influenced by Factorio.
 
 The only thing more fun than playing a base-building simulation game is making your own!
 
-[![C/C++ CI](https://github.com/seanpringle/test9/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/seanpringle/test9/actions/workflows/c-cpp.yml)
+[![C/C++ CI](https://github.com/seanpringle/factropy/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/seanpringle/factropy/actions/workflows/c-cpp.yml)
 
 # tech stack
 
