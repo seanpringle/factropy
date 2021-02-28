@@ -63,3 +63,7 @@ thread apply all bt
 ```
 
 Exit gdb with CTRL-D.
+
+# antialiasing
+
+Nothing in-game yet. Consider enabling FSAA or similar at the video driver level, such as via the Nvidia settings app.
