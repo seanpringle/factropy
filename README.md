@@ -31,7 +31,7 @@ sudo apt install libasound2-dev mesa-common-dev libx11-dev libxrandr-dev libxi-d
 Build factropy (requires GCC 9.x):
 
 ```bash
-make [-j N] rel
+make
 ```
 
 # running
