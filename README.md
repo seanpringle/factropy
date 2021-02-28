@@ -67,3 +67,28 @@ Exit gdb with CTRL-D.
 # antialiasing
 
 Nothing in-game yet. Consider enabling FSAA or similar at the video driver level, such as via the Nvidia settings app.
+
+# controls
+
+| control | behaviour |
+|---|---|
+| W A S D | Normal camera movement |
+| Right Click + Drag | Rotate camera |
+| O | Orientate camera top-down |
+| E | Toggle build menu popup |
+| Q | Copy entity under mouse pointer or selection as a ghost (pipette) |
+| R | Rotate ghost or constructed entity if possible |
+| C | Cycle through similar ghost types (belt orienations, pipe configurations etc)
+| G | Toggle the build grid |
+| Escape | Stop selecting / stop pipetting / close popup window |
+| Delete | Deconstruct entity under mouse or selected entities |
+| Left Click on entity | Open entity popup window | 
+| Left Click on ground with ghost(s) | place ghost(s) for construction | 
+| Left Click + Drag on ground | Select multiple entities |
+| Control + Left Click on vehicle | Select vehicle for movement |
+| Control + Right Click | Direct vehicle to drive to waypoint |
+| Shift + Left Click | Force ghost(s) to be placed despite collisions |
+| F1 | Energy consumption stats popup |
+| F2 | Vehicle waypoints and patrol popup |
+| F3 | Technology licensing popup |
+| F5 | Quick save game |
