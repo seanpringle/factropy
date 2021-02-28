@@ -25,6 +25,7 @@
 #include "ledger.h"
 #include "popup.h"
 #include <ctime>
+#include <filesystem>
 
 const char* quotes[] = {
 	"Yeah, but she's our witch. So cut her the hell down!",
@@ -38,91 +39,8 @@ const char* quotes[] = {
 	"Though a candle burns in my house... there's nobody home.",
 };
 
-int main(int argc, char const *argv[]) {
-	//nvidia-settings --query=fsaa --verbose
-	//putenv((char*)"__GL_FSAA_MODE=9");
 
-	bool loadSave = true;
-
-	for (int i = 1; i < argc; i++) {
-		auto arg = std::string(argv[i]);
-
-		if (arg == "--new") {
-			loadSave = false;
-			continue;
-		}
-
-		fatalf("unexpected argument: %s", arg.c_str());
-	}
-
-	SetTraceLogLevel(LOG_WARNING);
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT);
-	InitWindow(1920,1080,"factropy");
-	SetTargetFPS(60);
-	SetExitKey(0);
-
-	SiteCamera *camSec = new SiteCamera(
-		{50,50,50},
-		{-1,-1,-1}
-	);
-
-	MainCamera *camera = new MainCamera(
-		{-50,50,-50},
-		{1,-1,1}
-	);
-
-  float fogDensity = 0.004f;
-	Vector4 fogColor = ColorNormalize(SKYBLUE);
-	Vector4 ambient = { 0.2f, 0.2f, 0.1f, 1.0f };
-
-	Shader shader = LoadShader(
-		FormatText("shaders/glsl%i/base_lighting.vs", GLSL_VERSION),
-		FormatText("shaders/glsl%i/fog.fs", GLSL_VERSION)
-	);
-
-	shader.locs[LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
-	shader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
-	shader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-
-  SetShaderValue(shader, GetShaderLocation(shader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
-  SetShaderValue(shader, GetShaderLocation(shader, "fogColor"), &fogColor, UNIFORM_VEC4);
-	SetShaderValue(shader, GetShaderLocation(shader, "ambient"), &ambient, UNIFORM_VEC4);
-
-	Shader pshader = LoadShader(
-		FormatText("shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
-		FormatText("shaders/glsl%i/fog.fs", GLSL_VERSION)
-	);
-
-	pshader.locs[LOC_MATRIX_MVP] = GetShaderLocation(pshader, "mvp");
-	pshader.locs[LOC_MATRIX_MODEL] = GetShaderLocationAttrib(pshader, "instance");
-	pshader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(pshader, "viewPos");
-
-  SetShaderValue(pshader, GetShaderLocation(pshader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
-  SetShaderValue(pshader, GetShaderLocation(pshader, "fogColor"), &fogColor, UNIFORM_VEC4);
-	SetShaderValue(pshader, GetShaderLocation(pshader, "ambient"), &ambient, UNIFORM_VEC4);
-
-	Part::shader = pshader;
-	Part::material = LoadMaterialDefault();
-
-	Shader particleShader = LoadShader(
-		FormatText("shaders/glsl%i/base_lighting_particles.vs", GLSL_VERSION),
-		FormatText("shaders/glsl%i/fog.fs", GLSL_VERSION)
-	);
-
-	particleShader.locs[LOC_MATRIX_MVP] = GetShaderLocation(particleShader, "mvp");
-	particleShader.locs[LOC_MATRIX_MODEL] = GetShaderLocationAttrib(particleShader, "particle");
-	particleShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(particleShader, "viewPos");
-
-  SetShaderValue(particleShader, GetShaderLocation(particleShader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
-  SetShaderValue(particleShader, GetShaderLocation(particleShader, "fogColor"), &fogColor, UNIFORM_VEC4);
-	SetShaderValue(particleShader, GetShaderLocation(particleShader, "ambient"), &ambient, UNIFORM_VEC4);
-
-	Part::particleShader = particleShader;
-
-	/*Light lightA =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, shader);
-	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, pshader);
-	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, particleShader);
-
+void scenario() {
 	Sim::reset();
 	Sim::reseed(879600773);
 	//Sim::seed(4);
@@ -1036,7 +954,7 @@ int main(int argc, char const *argv[]) {
 		rocks.push_back(spec);
 	}
 
-	Chunk::generator([&](Chunk *chunk) {
+	Chunk::generator([=](Chunk *chunk) {
 		for (int y = 0; y < Chunk::size; y++) {
 			for (int x = 0; x < Chunk::size; x++) {
 				Box bounds = {(float)chunk->x*Chunk::size+x, 0.0f, (float)chunk->y*Chunk::size+y, 2.0f, 1.0f, 2.0f};
@@ -1093,7 +1011,7 @@ int main(int argc, char const *argv[]) {
 
 	trees.push_back(spec);
 
-	Chunk::generator([&](Chunk *chunk) {
+	Chunk::generator([=](Chunk *chunk) {
 		for (int y = 0; y < Chunk::size; y++) {
 			for (int x = 0; x < Chunk::size; x++) {
 				float e = chunk->tiles[y][x].elevation;
@@ -1670,6 +1588,93 @@ int main(int argc, char const *argv[]) {
 		(new Part(Thing("models/projector.stl")))->paint(0x666666ff),
 		(new PartSmoke(1000, 100, 0.0025, 0.25f, 0.05f, 0.005f, 0.1f, 0.99f, 5, 10))->paint(0xeeeeeeff),
 	};
+}
+
+int main(int argc, char const *argv[]) {
+	//nvidia-settings --query=fsaa --verbose
+	//putenv((char*)"__GL_FSAA_MODE=9");
+
+	bool loadSave = true;
+
+	for (int i = 1; i < argc; i++) {
+		auto arg = std::string(argv[i]);
+
+		if (arg == "--new") {
+			loadSave = false;
+			continue;
+		}
+
+		fatalf("unexpected argument: %s", arg.c_str());
+	}
+
+	SetTraceLogLevel(LOG_WARNING);
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT);
+	InitWindow(1920,1080,"factropy");
+	SetTargetFPS(60);
+	SetExitKey(0);
+
+	SiteCamera *camSec = new SiteCamera(
+		{50,50,50},
+		{-1,-1,-1}
+	);
+
+	MainCamera *camera = new MainCamera(
+		{-50,50,-50},
+		{1,-1,1}
+	);
+
+  float fogDensity = 0.004f;
+	Vector4 fogColor = ColorNormalize(SKYBLUE);
+	Vector4 ambient = { 0.2f, 0.2f, 0.1f, 1.0f };
+
+	Shader shader = LoadShader(
+		FormatText("shaders/glsl%i/base_lighting.vs", GLSL_VERSION),
+		FormatText("shaders/glsl%i/fog.fs", GLSL_VERSION)
+	);
+
+	shader.locs[LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+	shader.locs[LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
+	shader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+
+  SetShaderValue(shader, GetShaderLocation(shader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
+  SetShaderValue(shader, GetShaderLocation(shader, "fogColor"), &fogColor, UNIFORM_VEC4);
+	SetShaderValue(shader, GetShaderLocation(shader, "ambient"), &ambient, UNIFORM_VEC4);
+
+	Shader pshader = LoadShader(
+		FormatText("shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
+		FormatText("shaders/glsl%i/fog.fs", GLSL_VERSION)
+	);
+
+	pshader.locs[LOC_MATRIX_MVP] = GetShaderLocation(pshader, "mvp");
+	pshader.locs[LOC_MATRIX_MODEL] = GetShaderLocationAttrib(pshader, "instance");
+	pshader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(pshader, "viewPos");
+
+  SetShaderValue(pshader, GetShaderLocation(pshader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
+  SetShaderValue(pshader, GetShaderLocation(pshader, "fogColor"), &fogColor, UNIFORM_VEC4);
+	SetShaderValue(pshader, GetShaderLocation(pshader, "ambient"), &ambient, UNIFORM_VEC4);
+
+	Part::shader = pshader;
+	Part::material = LoadMaterialDefault();
+
+	Shader particleShader = LoadShader(
+		FormatText("shaders/glsl%i/base_lighting_particles.vs", GLSL_VERSION),
+		FormatText("shaders/glsl%i/fog.fs", GLSL_VERSION)
+	);
+
+	particleShader.locs[LOC_MATRIX_MVP] = GetShaderLocation(particleShader, "mvp");
+	particleShader.locs[LOC_MATRIX_MODEL] = GetShaderLocationAttrib(particleShader, "particle");
+	particleShader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(particleShader, "viewPos");
+
+  SetShaderValue(particleShader, GetShaderLocation(particleShader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
+  SetShaderValue(particleShader, GetShaderLocation(particleShader, "fogColor"), &fogColor, UNIFORM_VEC4);
+	SetShaderValue(particleShader, GetShaderLocation(particleShader, "ambient"), &ambient, UNIFORM_VEC4);
+
+	Part::particleShader = particleShader;
+
+	/*Light lightA =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, shader);
+	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, pshader);
+	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, particleShader);
+
 
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;
@@ -1696,6 +1701,8 @@ int main(int argc, char const *argv[]) {
 	TechPopup* techPopup = new TechPopup(camera);
 	BuildPopup2* buildPopup = new BuildPopup2(camera);
 	EntityPopup2* entityPopup = new EntityPopup2(camera);
+
+	scenario();
 
 	Mod* mod = new Mod("base");
 	mod->load();
@@ -1821,6 +1828,8 @@ int main(int argc, char const *argv[]) {
 
 	loadingScreen();
 
+	auto droplet = Thing("models/fluid.stl");
+
 	for (auto [name,fluid]: Fluid::names) {
 
 		fluid->texture = LoadRenderTexture(128, 128);
@@ -1912,7 +1921,8 @@ int main(int argc, char const *argv[]) {
 
 	loadingScreen();
 
-	if (loadSave) {
+	if (loadSave && std::filesystem::exists("autosave")) {
+
 		Sim::load("autosave");
 		for (auto pair: Chunk::all) {
 			loadingScreen();
@@ -1920,9 +1930,9 @@ int main(int argc, char const *argv[]) {
 			chunk->findHills();
 			chunk->genHeightMap();
 		}
-	}
 
-	if (!loadSave) {
+	}	else {
+
 		int horizon = 4;
 		for (int cy = -horizon; cy < horizon; cy++) {
 			for (int cx = -horizon; cx < horizon; cx++) {

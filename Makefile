@@ -4,14 +4,14 @@ CPP=g++
 OBJECTS=$(shell ls -1 src/*.cc | sed 's/cc$$/o/g')
 WRENOBJECTS=$(shell ls -1 wren/src/vm/*.c wren/src/optional/*.c | sed 's/c$$/o/g')
 
-dev: CFLAGS=-O1 -std=c++17 -g -Wall -Werror
-dev: LFLAGS=-lm -lGL -lpthread -ldl -lrt -lX11
-dev: imgui/imgui.o src/raylib-ex.o src/raylib-glfw.o $(OBJECTS) $(WRENOBJECTS)
-	$(CPP) $(CFLAGS) -o factropy src/*.o imgui/imgui.o $(WRENOBJECTS) $(LFLAGS)
-
 rel: CFLAGS=-O3 -flto -std=c++17 -g -Wall
 rel: LFLAGS=-lm -lGL -lpthread -ldl -lrt -lX11
 rel: imgui/imgui.o src/raylib-ex.o src/raylib-glfw.o $(OBJECTS) $(WRENOBJECTS)
+	$(CPP) $(CFLAGS) -o factropy src/*.o imgui/imgui.o $(WRENOBJECTS) $(LFLAGS)
+
+dev: CFLAGS=-O1 -std=c++17 -g -Wall -Werror
+dev: LFLAGS=-lm -lGL -lpthread -ldl -lrt -lX11
+dev: imgui/imgui.o src/raylib-ex.o src/raylib-glfw.o $(OBJECTS) $(WRENOBJECTS)
 	$(CPP) $(CFLAGS) -o factropy src/*.o imgui/imgui.o $(WRENOBJECTS) $(LFLAGS)
 
 src/main.o: src/main.cc

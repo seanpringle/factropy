@@ -15,3 +15,51 @@ The only thing more fun than playing a base-building simulation game is making y
 * [openscad](http://www.openscad.org/)
 
 ![screenshot](https://github.com/seanpringle/factropy/wiki/images/factropy.png)
+
+# building
+
+Make sure to clone recursively for the raylib and wren submodules.
+
+## Ubuntu 20.04
+
+Install the [raylib dependencies](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux) but don't build it separately.
+
+```bash
+sudo apt install libasound2-dev mesa-common-dev libx11-dev libxrandr-dev libxi-dev xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+```
+
+Build factropy (requires GCC 9.x):
+
+```bash
+make
+```
+
+# running
+
+```bash
+./factropy
+```
+
+# saving
+
+Press `F5`. Save data will be placed in `autosave` in the current directory and automatically loaded on restart. To force a new game either remove `autosave` or:
+
+```bash
+./factropy --new
+```
+
+# crashing
+
+Probably going to happen sooner or later. A stack trace would be useful. Easy way is to run it in `gdb`:
+
+```bash
+gdb -ex run -args ./factropy
+```
+
+If it crashes collect a stack trace and drop it into a ticket:
+
+```bash
+thread apply all bt
+```
+
+Exit gdb with CTRL-D.
