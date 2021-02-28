@@ -57,7 +57,7 @@ int main(int argc, char const *argv[]) {
 
 	SetTraceLogLevel(LOG_WARNING);
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT);
-	InitWindow(1920,1080,"test9");
+	InitWindow(1920,1080,"factropy");
 	SetTargetFPS(60);
 	SetExitKey(0);
 
