@@ -74,7 +74,7 @@ Nothing in-game yet. Consider enabling FSAA or similar at the video driver level
 |---|---|
 | W A S D | Normal camera movement |
 | Right Click + Drag | Rotate camera |
-| O | Orientate camera top-down |
+| Scroll wheel | Zoom camera |
 | E | Toggle build menu popup |
 | Q | Copy entity under mouse pointer or selection as a ghost (pipette) |
 | R | Rotate ghost or constructed entity if possible |
@@ -83,7 +83,7 @@ Nothing in-game yet. Consider enabling FSAA or similar at the video driver level
 | Escape | Stop selecting / stop pipetting / close popup window |
 | Delete | Deconstruct entity under mouse or selected entities |
 | Left Click on entity | Open entity popup window | 
-| Left Click on ground with ghost(s) | place ghost(s) for construction | 
+| Left Click on ground with ghost(s) | Place ghost(s) for construction | 
 | Left Click + Drag on ground | Select multiple entities |
 | Control + Left Click on vehicle | Select vehicle for movement |
 | Control + Right Click | Direct vehicle to drive to waypoint |
@@ -92,3 +92,4 @@ Nothing in-game yet. Consider enabling FSAA or similar at the video driver level
 | F2 | Vehicle waypoints and patrol popup |
 | F3 | Technology licensing popup |
 | F5 | Quick save game |
+| F9 | Move the secondary camera to the main camera's current view |
