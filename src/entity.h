@@ -208,6 +208,7 @@ struct GuiEntity {
 	~GuiEntity();
 
 	Box box();
+	Box selectionBox();
 	Box southBox();
 	Box miningBox();
 	Box supportBox();

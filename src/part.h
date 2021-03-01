@@ -47,6 +47,7 @@ struct Part: Thing {
 	static void terrainNormals(Mesh *mesh);
 
 	static inline Shader shader;
+	static inline Shader ghostShader;
 	static inline Shader particleShader;
 	static inline Material material;
 

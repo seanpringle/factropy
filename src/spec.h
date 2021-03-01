@@ -60,7 +60,8 @@ struct Spec {
 	bool named;
 	bool block;
 
-	Volume collision;
+	Box collision;
+	Box selection;
 	EnergyUser electrical;
 
 	enum Place place;
@@ -178,7 +179,7 @@ struct Spec {
 	Spec(std::string name);
 	~Spec();
 	Point aligned(Point p, Point dir);
-	Box box(Point pos, Point dir);
+	Box box(Point pos, Point dir, Box vol);
 	Box southBox(Point pos);
 	bool hasStore();
 	void setCornerSupports();

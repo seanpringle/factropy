@@ -43,6 +43,10 @@ Point Box::centroid() const {
 	return (Point){x, y, z};
 }
 
+Point Box::dimensions() const {
+	return (Point){w, h, d};
+}
+
 BoundingBox Box::bounds() const {
 	return (BoundingBox){
 		(Vector3){x - w/2, y - h/2, z - d/2},

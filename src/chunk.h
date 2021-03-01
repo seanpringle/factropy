@@ -36,6 +36,9 @@ struct Chunk {
 		Stack mineral;
 
 		Chunk* chunk();
+		bool isLand();
+		bool isWater();
+		bool isHill();
 	};
 
 	static XY tileXYtoChunkXY(int x, int y);

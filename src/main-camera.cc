@@ -10,35 +10,6 @@ namespace {
 	const float speedH = 0.0025f;
 	const float speedV = 0.0025f;
 	const float speedW = 0.25f;
-
-	void drawGrid(Vector3 p, int slices, float spacing) {
-		int halfSlices = slices/2;
-
-		if (rlCheckBufferLimit(slices*4)) rlglDraw();
-
-		rlBegin(RL_LINES);
-			for (int i = -halfSlices; i <= halfSlices; i++) {
-				//if (i == 0) {
-				//	rlColor3f(0.5f, 0.5f, 0.5f);
-				//	rlColor3f(0.5f, 0.5f, 0.5f);
-				//	rlColor3f(0.5f, 0.5f, 0.5f);
-				//	rlColor3f(0.5f, 0.5f, 0.5f);
-				//}
-				//else {
-					rlColor3f(0.75f, 0.75f, 0.75f);
-					rlColor3f(0.75f, 0.75f, 0.75f);
-					rlColor3f(0.75f, 0.75f, 0.75f);
-					rlColor3f(0.75f, 0.75f, 0.75f);
-				//}
-
-				rlVertex3f(p.x+(float)i*spacing, p.y, p.z+(float)-halfSlices*spacing);
-				rlVertex3f(p.x+(float)i*spacing, p.y, p.z+(float)halfSlices*spacing);
-
-				rlVertex3f(p.x+(float)-halfSlices*spacing, p.y, p.z+(float)i*spacing);
-				rlVertex3f(p.x+(float)halfSlices*spacing, p.y, p.z+(float)i*spacing);
-			}
-		rlEnd();
-	}
 }
 
 MainCamera::MainCamera(Point pos, Point dir) {
@@ -359,7 +330,7 @@ void MainCamera::update(bool worldFocused) {
 
 		for (auto ge: entities) {
 			if (!ge->spec->select) continue;
-			if (CheckCollisionRayBox(mouse.ray, ge->box().bounds())) {
+			if (CheckCollisionRayBox(mouse.ray, ge->selectionBox().bounds())) {
 				hovered.push_back(ge);
 			}
 		}
@@ -379,7 +350,7 @@ void MainCamera::update(bool worldFocused) {
 			Box box = Box(selection.a, selection.b + (Point::Up*1000.0f));
 			for (auto ge: entities) {
 				if (!ge->spec->select) continue;
-				if (ge->box().intersects(box)) {
+				if (ge->selectionBox().intersects(box)) {
 					selected.push_back(ge);
 				}
 			}
@@ -412,12 +383,6 @@ void MainCamera::draw() {
 
 		BeginMode3D(camera);
 			Point groundZero = groundTarget(buildLevel);
-
-			if (showGrid) {
-				groundZero.x = std::floor(groundZero.x);
-				groundZero.z = std::floor(groundZero.z);
-				drawGrid(groundZero, 64, 1);
-			}
 
 			std::vector<Mat4> water;
 			std::vector<Mesh> chunk_meshes;
@@ -456,7 +421,7 @@ void MainCamera::draw() {
 			rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());
 			rlDrawMeshInstanced2(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
-			for (auto [iid,transforms]: resource_transforms) {
+			for (auto& [iid,transforms]: resource_transforms) {
 				Item* item = Item::get(iid);
 				for (uint i = 0; i < item->parts.size(); i++) {
 					item->parts[i]->drawInstanced(true, transforms.size(), transforms.data());
@@ -472,7 +437,29 @@ void MainCamera::draw() {
 			std::map<Part*,std::vector<Mat4>> items_hd;
 			std::map<Part*,std::vector<Mat4>> items_ld;
 
-			for (auto ge: entities) {
+			std::map<Part*,std::vector<Mat4>> gridSquares;
+
+			if (showGrid && groundZero.distance(position) < 100) {
+				Point zero = {std::floor(groundZero.x),0,std::floor(groundZero.z)};
+
+				for (int x = -33; x <= 32; x++) {
+					for (int z = -33; z <= 32; z++) {
+						Point corner = zero + Point(x,0,z);
+						Point center = corner + Point(0.5,0,0.5);
+
+						auto tile = Chunk::tileTryGet(corner.x, corner.z);
+						if (!tile) continue;
+						if (!tile->isLand()) continue;
+
+						auto part = gridSquareLand;
+
+						Mat4 instance = part->instance(center.translation());
+						gridSquares[part].push_back(instance);
+					}
+				}
+			}
+
+			for (auto& ge: entities) {
 				bool hd = ge->pos.distance(position) < 100;
 
 				for (uint i = 0; i < ge->spec->parts.size(); i++) {
@@ -582,35 +569,35 @@ void MainCamera::draw() {
 				}
 			}
 
-			for (auto [part,batch]: extant_ld) {
+			for (auto& [part,batch]: extant_ld) {
 				part->drawInstanced(false, batch.size(), batch.data());
 			}
 
-			for (auto [part,batch]: extant_hd) {
+			for (auto& [part,batch]: extant_hd) {
 				part->drawInstanced(true, batch.size(), batch.data());
 			}
 
-			if (belt_pillars.size() > 0) {
-				View::beltPillar1->drawInstanced(false, belt_pillars.size(), belt_pillars.data());
-			}
-
-			for (auto [part,batch]: items_hd) {
+			for (auto& [part,batch]: items_hd) {
 				part->drawInstanced(true, batch.size(), batch.data());
 			}
 
-			for (auto [part,batch]: items_ld) {
+			for (auto& [part,batch]: items_ld) {
 				part->drawInstanced(false, batch.size(), batch.data());
 			}
 
-			for (auto [part,batch]: ghosts_ld) {
+			for (auto& [part,batch]: ghosts_ld) {
 				part->drawGhostInstanced(false, batch.size(), batch.data());
 			}
 
-			for (auto [part,batch]: ghosts_hd) {
+			for (auto& [part,batch]: ghosts_hd) {
 				part->drawGhostInstanced(true, batch.size(), batch.data());
 			}
 
-			for (auto ge: entities) {
+			for (auto& [part,batch]: gridSquares) {
+				part->drawGhostInstanced(true, batch.size(), batch.data());
+			}
+
+			for (auto& ge: entities) {
 				if (ge->spec->explosion) {
 					DrawSphere(ge->pos, ge->explosion.radius, RED);
 				}
