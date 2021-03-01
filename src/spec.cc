@@ -138,8 +138,7 @@ Spec* Spec::byName(std::string name) {
 Point Spec::aligned(Point p, Point dir) {
 	p += collision.centroid();
 	if (align) {
-
-		float ww = collision.w;
+ 		float ww = collision.w;
 		//float hh = h;
 		float dd = collision.d;
 

@@ -37,13 +37,21 @@ void Plan::rotate() {
 		ge->rotate();
 		return;
 	}
+	for (uint i = 0; i < entities.size(); i++) {
+		auto te = entities[i];
+		if (!te->spec->rotate) return;
+	}
 	Mat4 rot = Mat4::rotateY(90*DEG2RAD);
 	for (uint i = 0; i < entities.size(); i++) {
 		auto te = entities[i];
 		offsets[i] = offsets[i].transform(rot);
-		te->move(position + offsets[i]);
-		offsets[i] = te->pos - position;
-		te->rotate();
+		if (te->spec->align) {
+			offsets[i].x = std::round(offsets[i].x*2.0f)/2.0f;
+			offsets[i].z = std::round(offsets[i].z*2.0f)/2.0f;
+		}
+		te->dir = te->dir.rotateHorizontal();
+		te->pos = position + offsets[i];
+		te->updateTransform();
 	}
 }
 
