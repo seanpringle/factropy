@@ -100,55 +100,25 @@ bool Plan::entityFits(Spec *spec, Point pos, Point dir) {
 		if (es.dir != dir) return false;
 	}
 
-	switch (spec->place) {
-		case Spec::Land: {
-
-			if (spec->supportPoints.size() > 0) {
-				for (auto p: spec->relativePoints(spec->supportPoints, dir.rotation(), pos)) {
-					bool supported = p.y < 0 && p.y > -1;
-
-					if (!supported) {
-						for (auto bid: Entity::intersecting(p.box().grow(0.1))) {
-							Entity& eb = Entity::get(bid);
-							if (eb.spec->block) {
-								supported = true;
-								break;
-							}
-						}
-					}
-
-					if (!supported) {
-						for (auto eb: entities) {
-							if (eb->spec->block && eb->box().intersects(p.box().grow(0.1))) {
-								supported = true;
-								break;
-							}
-						}
-					}
-
-					if (!supported) {
-						return false;
-					}
-				}
-			}
-
-			if (!Chunk::isLand(bounds)) {
-				return false;
-			}
-			break;
+	if (spec->place != Spec::Footings) {
+		for (auto [x,y]: Chunk::walkTiles(bounds)) {
+			Chunk::Tile *tile = Chunk::tileTryGet(x, y);
+			if (!tile) return false;
+			if (spec->place == Spec::Land && !tile->isLand()) return false;
+			if (spec->place == Spec::Hill && !tile->isHill()) return false;
+			if (spec->place == Spec::Water && !tile->isWater()) return false;
 		}
-		case Spec::Water: {
-			if (!Chunk::isWater(bounds)) {
-				return false;
-			}
-			break;
-		}
-		case Spec::Hill: {
-			if (!Chunk::isHill(bounds)) {
-				return false;
-			}
-			break;
-		}
+		return true;
+	}
+
+	for (auto& footing: spec->footings) {
+		Point point = footing.point.transform(dir.rotation()) + pos;
+		Chunk::Tile *tile = Chunk::tileTryGet(std::floor(point.x), std::floor(point.z));
+
+		if (!tile) return false;
+		if (footing.place == Spec::Land && !tile->isLand()) return false;
+		if (footing.place == Spec::Hill && !tile->isHill()) return false;
+		if (footing.place == Spec::Water && !tile->isWater()) return false;
 	}
 
 	return true;

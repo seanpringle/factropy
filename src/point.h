@@ -43,6 +43,7 @@ struct Point : Vector3 {
 	Point(float xx, float yy, float zz);
 
 	Box box() const;
+	float distanceSquared(Point p) const;
 	float distance(Point p) const;
 	Point round() const;
 	Point tileCentroid() const;

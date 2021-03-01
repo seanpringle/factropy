@@ -128,7 +128,7 @@ void rlDrawMeshInstanced2(Mesh mesh, Material material, int count, Matrix *trans
     glDeleteBuffers(1, &instancesB);
     RL_FREE(instances);
 
-    // Unbind all binded texture maps
+    // Unbind all bound texture maps
     for (int i = 0; i < MAX_MATERIAL_MAPS; i++)
     {
         glActiveTexture(GL_TEXTURE0 + i);       // Set shader active texture

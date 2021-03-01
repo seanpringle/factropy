@@ -8,6 +8,7 @@ struct Popup {
 	MainCamera* camera = nullptr;
 	bool visible = false;
 	bool mouseOver = false;
+	bool inputFocused = false;
 	Popup(MainCamera* c);
 	virtual ~Popup();
 	virtual void draw();

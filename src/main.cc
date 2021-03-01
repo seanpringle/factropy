@@ -299,7 +299,6 @@ void scenario() {
 	Spec* spec = new Spec("provider-container");
 	spec->collision = {0, 0, 0, 2, 2, 5};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x990000ff)->gloss(16),
 	};
@@ -316,7 +315,6 @@ void scenario() {
 	spec = new Spec("requester-container");
 	spec->collision = {0, 0, 0, 2, 2, 5};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x0044ccff)->gloss(16),
 	};
@@ -334,7 +332,6 @@ void scenario() {
 	spec = new Spec("buffer-container");
 	spec->collision = {0, 0, 0, 2, 2, 5};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x006600ff)->gloss(16),
 	};
@@ -362,7 +359,6 @@ void scenario() {
 	spec->energyDrain = Energy::kW(9);
 	spec->collision = {0, 0, 0, 6, 3, 6};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->health = 10;
 	spec->pipeInputConnections = {
 		Point(3.0f, -1.0f, 1.5f).transform(Mat4::rotateY(DEG2RAD*0)),
@@ -438,7 +434,6 @@ void scenario() {
 	spec = new Spec("furnace");
 	spec->collision = {0, 0, 0, 4, 4, 4};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/furnace-hd.stl", "models/furnace-ld.stl")))->paint(0xcc6600ff),
 		(new Part(Thing("models/furnace-fire-hd.stl", "models/furnace-fire-ld.stl")))->paint(0x000000ff),
@@ -494,7 +489,12 @@ void scenario() {
 	spec->store = true;
 	spec->capacity = Mass::kg(10);
 	spec->rotate = true;
-	spec->place = Spec::Hill;
+	spec->place = Spec::Footings;
+	spec->footings = {
+		{.place = Spec::Hill, .point = Point(-2,-3,0)},
+		{.place = Spec::Hill, .point = Point(2,-3,0)},
+		{.place = Spec::Land, .point = Point(0,-3,4)},
+	};
 	spec->crafter = true;
 	spec->crafterProgress = false;
 	spec->enable = true;
@@ -504,7 +504,6 @@ void scenario() {
 	spec->energyDrain = Energy::kW(3);
 	spec->collision = {0, 0, 0, 5, 5, 10};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->health = 10;
 	spec->parts = {
 		(new Part(thingMiner))->paint(0xB7410Eff),
@@ -773,7 +772,6 @@ void scenario() {
 	spec = new Spec("ropeway-terminus");
 	spec->collision = {0, 0, 0, 5, 10, 5};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->rotate = false;
 	spec->ropeway = true;
 	spec->ropewayTerminus = true;
@@ -794,7 +792,7 @@ void scenario() {
 	spec = new Spec("ropeway-tower");
 	spec->collision = {0, 0, 0, 3, 10, 3};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
+	//spec->place = Spec::Land || Spec::OnHill;
 	spec->rotate = false;
 	spec->ropeway = true;
 	spec->ropewayTower = true;
@@ -832,7 +830,6 @@ void scenario() {
 //	spec = new Spec("loader");
 //	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = spec->collision;
-//	spec->setCornerSupports();
 //	spec->rotate = true;
 //	spec->loader = true;
 //	spec->consumeElectricity = true;
@@ -849,7 +846,6 @@ void scenario() {
 	spec->pipe = true;
 	spec->collision = {0, 0, 0, 5, 3, 5};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->pipeConnections = {Point::North*2.5f+Point::Down, Point::South*2.5f+Point::Down, Point::East*2.5f+Point::Down, Point::West*2.5f+Point::Down};
 	spec->pipeCapacity = Liquid::l(50000);
 	spec->health = 10;
@@ -965,7 +961,6 @@ void scenario() {
 		spec->build = false;
 		spec->collision = {0, 0, 0, 2, 1, 2};
 		spec->selection = spec->collision;
-		spec->setCornerSupports();
 		spec->health = 100;
 		spec->pivot = true;
 		spec->junk = true;
@@ -1008,7 +1003,6 @@ void scenario() {
 	spec->build = false;
 	spec->collision = {0, 0, 0, 2, 5, 2};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->pivot = true;
 	spec->junk = true;
 	spec->health = 10;
@@ -1025,7 +1019,6 @@ void scenario() {
 	spec->build = false;
 	spec->collision = {0, 0, 0, 2, 6, 2};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->pivot = true;
 	spec->junk = true;
 	spec->health = 10;
@@ -1064,7 +1057,6 @@ void scenario() {
 	spec = new Spec("truck-engineer");
 	spec->collision = {0, 0, 0, 2, 2, 3};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xff6600ff)->translate(0,0.3,0),
 		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,-1),
@@ -1104,7 +1096,6 @@ void scenario() {
 	spec = new Spec("truck-hauler");
 	spec->collision = {0, 0, 0, 2, 2, 3};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xffcc00ff)->translate(0,0.3,0),
 		Spec::byName("truck-engineer")->parts[1],
@@ -1136,7 +1127,6 @@ void scenario() {
 	spec->health = 10;
 	spec->collision = {0, 0, 0, 3, 0.1, 3};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/truck-stop.stl")))->paint(0x662222ff),
 	};
@@ -1150,6 +1140,7 @@ void scenario() {
 
 	spec = new Spec("drone");
 	spec->select = false;
+	spec->build = false;
 	spec->health = 10;
 	spec->collision = {0, 0, 0, 1, 1, 1};
 	spec->selection = spec->collision;
@@ -1168,7 +1159,6 @@ void scenario() {
 	spec->health = 10;
 	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->arm = true;
 	spec->enable = true;
 	spec->armOffset = 1.0f;
@@ -1263,7 +1253,6 @@ void scenario() {
 	spec = new Spec("long-arm");
 	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->arm = true;
 	spec->enable = true;
 	spec->armOffset = 2.0f;
@@ -1375,7 +1364,6 @@ void scenario() {
 	spec = new Spec("boiler");
 	spec->collision = {0, 0, 0, 3, 2, 2};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->pipeConnections = {
@@ -1420,7 +1408,6 @@ void scenario() {
 	spec = new Spec("steam-engine");
 	spec->collision = {0, 0, 0, 4, 4, 5};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->electrical = { .area = Area(5,6), .rate = Energy::MW(1) };
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
@@ -1466,7 +1453,6 @@ void scenario() {
 	spec->health = 100;
 	spec->collision = {0, 0, 0, 1, 1, 1};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/turret-chassis.stl")))->paint(0x51412dff)->translate(0,-0.5,0),
 		(new Part(Thing("models/turret-dome.stl")))->paint(0x0044ccff)->translate(0,-0.5,0)->pivots(),
@@ -1517,6 +1503,7 @@ void scenario() {
 
 	spec = new Spec("missile-explosion1");
 	spec->align = false;
+	spec->build = false;
 	spec->explosion = true;
 	spec->explosionDamage = 100;
 	spec->explosionRadius = 10;
@@ -1537,7 +1524,6 @@ void scenario() {
 	spec->energyDrain = Energy::kW(300);
 	spec->collision = {0, 0, 0, 8, 8, 8};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/teleporter-base-hd.stl")))->paint(0x0044ccff)->translate(0,-2.5,0),
 		(new Part(Thing("models/teleporter-ring1-hd.stl")))->paint(0xd4af37ff)->gloss(64),
@@ -1573,7 +1559,6 @@ void scenario() {
 	spec->energyDrain = Energy::W(100);
 	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/computer-rack-hd.stl", "models/computer-rack-ld.stl")))->paint(0x666666ff)->translate(0,-1,0),
 	};
@@ -1610,22 +1595,11 @@ void scenario() {
 	recipe->outputCurrency = 1000;
 	recipe->parts = Item::byName("copper-ingot")->parts;
 
-	spec = new Spec("block");
-	spec->block = true;
-	spec->health = 100;
-	spec->collision = {0, 0, 0, 1, 1, 1};
-	spec->selection = spec->collision;
-	spec->setCornerSupports();
-	spec->parts = {
-		(new Part(Thing("models/block-hd.stl", "models/block-ld.stl")))->paint(0x666666ff)->gloss(16),
-	};
-
 	spec = new Spec("projector");
 	spec->health = 10;
 	spec->projector = true;
 	spec->collision = {0, 0, 0, 1, 0.1, 1};
 	spec->selection = spec->collision;
-	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/projector.stl")))->paint(0x666666ff),
 		(new PartSmoke(1000, 100, 0.0025, 0.25f, 0.05f, 0.005f, 0.1f, 0.99f, 5, 10))->paint(0xeeeeeeff),
@@ -2264,7 +2238,7 @@ int main(int argc, char const *argv[]) {
 			popup->show(true);
 		}
 
-		if (IsKeyReleased(KEY_E)) {
+		if (IsKeyReleased(KEY_E) && (!popup || !popup->inputFocused)) {
 			bool wasBuildPopup = popup == buildPopup;
 			bool wasVisible = popup && popup->visible;
 

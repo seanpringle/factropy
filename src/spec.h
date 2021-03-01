@@ -24,9 +24,15 @@ typedef int Health;
 struct Spec {
 
 	enum Place {
+		Footings = 0,
 		Land = 1,
-		Water,
-		Hill,
+		Water = 2,
+		Hill = 3,
+	};
+
+	struct Footing {
+		Place place;
+		Point point;
 	};
 
 	struct EnergyUser {
@@ -64,7 +70,8 @@ struct Spec {
 	Box selection;
 	EnergyUser electrical;
 
-	enum Place place;
+	Place place;
+	std::vector<Footing> footings;
 
 	float costGreedy;
 	float clearance;
@@ -145,8 +152,6 @@ struct Spec {
 	bool missile;
 	float missileSpeed;
 	bool missileBallistic;
-
-	std::vector<Point> supportPoints;
 
 	bool conveyor;
 	Point conveyorInput;

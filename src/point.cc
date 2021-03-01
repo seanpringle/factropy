@@ -105,8 +105,15 @@ Box Point::box() const {
 	return (Box){x, y, z, ep, ep, ep};
 }
 
+float Point::distanceSquared(Point p) const {
+  float dx = p.x - x;
+  float dy = p.y - y;
+  float dz = p.z - z;
+  return dx*dx + dy*dy + dz*dz;
+}
+
 float Point::distance(Point p) const {
-	return Vector3Distance(*this, p);
+	return std::sqrt(distanceSquared(p));
 }
 
 Point Point::round() const {

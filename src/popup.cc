@@ -5,6 +5,7 @@
 #include "entity.h"
 #include "vehicle.h"
 #include "energy.h"
+#include "string.h"
 
 #include "raylib-ex.h"
 #include "../imgui/imgui.h"
@@ -286,30 +287,60 @@ BuildPopup2::BuildPopup2(MainCamera* c) : Popup(c) {
 BuildPopup2::~BuildPopup2() {
 }
 
+struct {
+	char build[50];
+} searches;
+
 void BuildPopup2::draw() {
 	center(1000,1000);
-	ImGui::Begin("Build", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+	inputFocused = false;
+	using namespace ImGui;
 
-	int n = 0;
-	for (auto pair: Spec::all) {
-		Spec* spec = pair.second;
-		if (!spec->build) continue;
+	Begin("Build", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
-		if (n%6) ImGui::SameLine();
-		if (ImGui::ImageButton(spec->texture.texture.id,
-			ImVec2(128, 128),
-			ImVec2(0,0)
-		)){
-			camera->build(spec);
-			show(false);
+		PushID("build");
+
+		InputText("search", searches.build, sizeof(searches.build));
+		inputFocused = IsItemActive();
+
+		BeginTable("specs", 3);
+
+		TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 128);
+		TableSetupColumn("spec", ImGuiTableColumnFlags_WidthFixed, 250);
+		TableSetupColumn("materials", ImGuiTableColumnFlags_WidthStretch);
+		TableHeadersRow();
+
+		for (auto& [name,spec]: Spec::all) {
+			if (!spec->build)
+				continue;
+
+			if (searches.build[0] && !std::strstr(name.c_str(), searches.build))
+				continue;
+
+			TableNextRow();
+
+			TableNextColumn();
+			if (ImageButton(spec->texture.texture.id, ImVec2(128, 128), ImVec2(0,0))) {
+				camera->build(spec);
+				show(false);
+			}
+
+			TableNextColumn();
+			Print(fmtc("%s", spec->name));
+
+			TableNextColumn();
+			std::vector<std::string> materials;
+			for (auto& stack: spec->materials) {
+				materials.push_back(fmt("%s (%d)", Item::get(stack.iid)->name, (int)stack.size));
+			}
+			Print(fmtc("%s", concatenate(materials)));
 		}
 
-		n++;
-	}
+		EndTable();
+		PopID();
 
-	ImGui::End();
+	End();
 }
-
 
 EntityPopup2::EntityPopup2(MainCamera* c) : Popup(c) {
 }

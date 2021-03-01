@@ -30,8 +30,19 @@ void Chunk::generator(Chunk::Generator fn) {
 }
 
 Chunk* Chunk::tryGet(int x, int y) {
+	// happens a lot when iterating individual tiles
+	if (lastChunk && lastChunk->x == x && lastChunk->y == y) {
+		return lastChunk;
+	}
+
 	XY xy = {x,y};
-	return all.count(xy) ? all[xy]: NULL;
+
+	if (all.count(xy)) {
+		lastChunk = all[xy];
+		return lastChunk;
+	}
+
+	return NULL;
 }
 
 Chunk* Chunk::get(int x, int y) {
@@ -144,11 +155,11 @@ bool Chunk::isWater(Box b) {
 bool Chunk::isHill(Box b) {
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
-		if (tile && tile->isHill()) {
-			return true;
+		if (tile && !tile->isHill()) {
+			return false;
 		}
 	}
-	return false;
+	return true;
 }
 
 Stack Chunk::mine(Box b, uint iid) {

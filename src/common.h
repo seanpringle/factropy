@@ -8,6 +8,8 @@
 #include <memory>
 #include <algorithm>
 #include <stdexcept>
+#include <iostream>
+#include <sstream>
 
 #define ZERO(s) memset(&s, 0, sizeof(s))
 
@@ -71,4 +73,18 @@ void deduplicate(C& c) {
 template <typename C, typename F>
 void discard_if(C& c, F fn) {
   c.erase(std::remove_if(c.begin(), c.end(), fn), c.end());
+}
+
+template <typename C>
+std::string concatenate(C& c, std::string sep = ", ") {
+  std::stringstream ss;
+  int i = 0;
+  int l = c.size();
+  for (auto& item: c) {
+    ss << item;
+    if (++i < l) {
+      ss << sep;
+    }
+  }
+  return ss.str();
 }

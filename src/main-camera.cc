@@ -381,6 +381,8 @@ void MainCamera::draw() {
 
 		ClearBackground(SKYBLUE);
 
+		float hdDistanceSquared = 100.0f*100.0f;
+
 		BeginMode3D(camera);
 			Point groundZero = groundTarget(buildLevel);
 
@@ -437,9 +439,9 @@ void MainCamera::draw() {
 			std::map<Part*,std::vector<Mat4>> items_hd;
 			std::map<Part*,std::vector<Mat4>> items_ld;
 
-			std::map<Part*,std::vector<Mat4>> gridSquares;
+			std::vector<Mat4> gridSquares;
 
-			if (showGrid && groundZero.distance(position) < 100) {
+			if (showGrid && groundZero.distanceSquared(position) < hdDistanceSquared) {
 				Point zero = {std::floor(groundZero.x),0,std::floor(groundZero.z)};
 
 				for (int x = -33; x <= 32; x++) {
@@ -451,16 +453,17 @@ void MainCamera::draw() {
 						if (!tile) continue;
 						if (!tile->isLand()) continue;
 
-						auto part = gridSquareLand;
-
-						Mat4 instance = part->instance(center.translation());
-						gridSquares[part].push_back(instance);
+						gridSquares.push_back(gridSquareLand->instance(center.translation()));
 					}
 				}
 			}
 
+			//std::sort(entities.begin(), entities.end(), [&](const GuiEntity* a, const GuiEntity* b) {
+			//	return a->pos.distanceSquared(position) > b->pos.distanceSquared(position);
+			//});
+
 			for (auto& ge: entities) {
-				bool hd = ge->pos.distance(position) < 100;
+				bool hd = ge->pos.distanceSquared(position) < hdDistanceSquared;
 
 				for (uint i = 0; i < ge->spec->parts.size(); i++) {
 					Part *part = ge->spec->parts[i];
@@ -494,7 +497,7 @@ void MainCamera::draw() {
 					Mat4 m = bump * ge->dir.rotation() * move;
 					for (uint i = 0; i < item->parts.size(); i++) {
 						Part* part = item->parts[i];
-						(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(m));
+						(p.distanceSquared(position) < hdDistanceSquared ? items_hd: items_ld)[part].push_back(part->instance(m));
 					}
 				}
 
@@ -509,7 +512,7 @@ void MainCamera::draw() {
 							Mat4 o = en.spec->parts[grip]->specInstance(en.spec, grip, en.state, en.dir.rotation());
 							Point p = Point::Zero.transform(o) + ge->pos + Point::Up;
 							Mat4 t = Mat4::translate(p.x, p.y + item->armV, p.z);
-							(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(t));
+							(p.distanceSquared(position) < hdDistanceSquared ? items_hd: items_ld)[part].push_back(part->instance(t));
 						}
 					}
 				}
@@ -523,7 +526,7 @@ void MainCamera::draw() {
 						Mat4 t = Mat4::translate(p.x, p.y + item->armV, p.z);
 						for (uint i = 0; i < item->parts.size(); i++) {
 							Part* part = item->parts[i];
-							(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(t));
+							(p.distanceSquared(position) < hdDistanceSquared ? items_hd: items_ld)[part].push_back(part->instance(t));
 						}
 					}
 				}
@@ -539,7 +542,7 @@ void MainCamera::draw() {
 						Mat4 t1 = Mat4::scale(0.75f) * Mat4::rotate(Point::Up, rot) * Mat4::translate(p.x, p.y+bob, p.z);
 						for (uint i = 0; i < item->parts.size(); i++) {
 							Part* part = item->parts[i];
-							(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(t1));
+							(p.distanceSquared(position) < hdDistanceSquared ? items_hd: items_ld)[part].push_back(part->instance(t1));
 						}
 					}
 					if (projector.fid && hd) {
@@ -549,7 +552,7 @@ void MainCamera::draw() {
 						float bob = std::sin(rot*4.0f)*0.1f;
 						Mat4 t1 = Mat4::scale(0.75f) * Mat4::rotate(Point::Up, rot) * Mat4::translate(p.x, p.y+bob, p.z);
 						Part* part = fluid->droplet;
-						(p.distance(position) < 100 ? items_hd: items_ld)[part].push_back(part->instance(t1));
+						(p.distanceSquared(position) < hdDistanceSquared ? items_hd: items_ld)[part].push_back(part->instance(t1));
 					}
 				}
 
@@ -585,15 +588,14 @@ void MainCamera::draw() {
 				part->drawInstanced(false, batch.size(), batch.data());
 			}
 
+			// Ghosts and the build grid are translucent so draw order matters
+			gridSquareLand->drawGhostInstanced(true, gridSquares.size(), gridSquares.data());
+
 			for (auto& [part,batch]: ghosts_ld) {
 				part->drawGhostInstanced(false, batch.size(), batch.data());
 			}
 
 			for (auto& [part,batch]: ghosts_hd) {
-				part->drawGhostInstanced(true, batch.size(), batch.data());
-			}
-
-			for (auto& [part,batch]: gridSquares) {
 				part->drawGhostInstanced(true, batch.size(), batch.data());
 			}
 
@@ -734,11 +736,11 @@ void MainCamera::draw() {
 						}
 					}
 
-					if (te->spec->supportPoints.size()) {
-						for (Point p: te->spec->relativePoints(te->spec->supportPoints, te->dir.rotation(), te->pos)) {
-							DrawCube(p, 0.25f, 0.25f, 0.25f, GOLD);
-						}
-					}
+//					if (te->spec->supportPoints.size()) {
+//						for (Point p: te->spec->relativePoints(te->spec->supportPoints, te->dir.rotation(), te->pos)) {
+//							DrawCube(p, 0.25f, 0.25f, 0.25f, GOLD);
+//						}
+//					}
 				}
 			}
 

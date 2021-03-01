@@ -41,6 +41,8 @@ struct Chunk {
 		bool isHill();
 	};
 
+	static inline Chunk* lastChunk = nullptr;
+
 	static XY tileXYtoChunkXY(int x, int y);
 	static XY tileXYtoOffsetXY(int x, int y);
 
