@@ -54,7 +54,8 @@ Spec::Spec(std::string name) {
 
 	place = Land;
 
-	collision = {0,0,0};
+	collision = {0,0,0,0,0,0};
+	selection = {0,0,0,0,0,0};
 
 	costGreedy = 1.0;
 	clearance = 1.0;
@@ -135,6 +136,7 @@ Spec* Spec::byName(std::string name) {
 }
 
 Point Spec::aligned(Point p, Point dir) {
+	p += collision.centroid();
 	if (align) {
 
 		float ww = collision.w;
@@ -164,20 +166,22 @@ Point Spec::aligned(Point p, Point dir) {
 	return p;
 }
 
-Box Spec::box(Point pos, Point dir) {
+Box Spec::box(Point pos, Point dir, Box vol) {
+	pos += vol.centroid();
 
-	float ww = collision.w;
-	float dd = collision.d;
+	float ww = vol.w;
+	float dd = vol.d;
 
 	if (dir == Point::West || dir == Point::East) {
-		ww = collision.d;
-		dd = collision.w;
+		ww = vol.d;
+		dd = vol.w;
 	}
 
-	return {pos.x, pos.y, pos.z, ww, collision.h, dd};
+	return {pos.x, pos.y, pos.z, ww, vol.h, dd};
 }
 
 Box Spec::southBox(Point pos) {
+	pos += collision.centroid();
 	return {pos.x, pos.y, pos.z, collision.w, collision.h, collision.d};
 }
 

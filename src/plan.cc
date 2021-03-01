@@ -91,7 +91,7 @@ bool Plan::fits() {
 }
 
 bool Plan::entityFits(Spec *spec, Point pos, Point dir) {
-	Box bounds = spec->box(pos, dir).shrink(0.1);
+	Box bounds = spec->box(pos, dir, spec->collision).shrink(0.1);
 
 	for (auto sid: Entity::intersecting(bounds)) {
 		Entity& es = Entity::get(sid);

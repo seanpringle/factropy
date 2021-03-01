@@ -297,7 +297,8 @@ void scenario() {
 	recipe->parts = Item::byName("electric-motor")->parts;
 
 	Spec* spec = new Spec("provider-container");
-	spec->collision = Volume(2, 2, 5);
+	spec->collision = {0, 0, 0, 2, 2, 5};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x990000ff)->gloss(16),
@@ -313,7 +314,8 @@ void scenario() {
 	};
 
 	spec = new Spec("requester-container");
-	spec->collision = Volume(2, 2, 5);
+	spec->collision = {0, 0, 0, 2, 2, 5};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x0044ccff)->gloss(16),
@@ -330,7 +332,8 @@ void scenario() {
 	};
 
 	spec = new Spec("buffer-container");
-	spec->collision = Volume(2, 2, 5);
+	spec->collision = {0, 0, 0, 2, 2, 5};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingContainer))->paint(0x006600ff)->gloss(16),
@@ -357,7 +360,8 @@ void scenario() {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(300);
 	spec->energyDrain = Energy::kW(9);
-	spec->collision = Volume(6, 3, 6);
+	spec->collision = {0, 0, 0, 6, 3, 6};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->health = 10;
 	spec->pipeInputConnections = {
@@ -432,7 +436,8 @@ void scenario() {
 	}
 
 	spec = new Spec("furnace");
-	spec->collision = Volume(4, 4, 4);
+	spec->collision = {0, 0, 0, 4, 4, 4};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/furnace-hd.stl", "models/furnace-ld.stl")))->paint(0xcc6600ff),
@@ -497,7 +502,8 @@ void scenario() {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
 	spec->energyDrain = Energy::kW(3);
-	spec->collision = Volume(5, 5, 10);
+	spec->collision = {0, 0, 0, 5, 5, 10};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->health = 10;
 	spec->parts = {
@@ -530,7 +536,8 @@ void scenario() {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(100);
 	spec->energyDrain = Energy::kW(3);
-	spec->collision = Volume(3, 3, 3);
+	spec->collision = {0, 0, 0, 3, 3, 3};
+	spec->selection = spec->collision;
 	spec->crafter = true;
 	spec->enable = true;
 	spec->recipeTags = {"offshore-pumping"};
@@ -559,7 +566,8 @@ void scenario() {
 	auto beltRidge = Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl");
 
 	spec = new Spec("conveyor");
-	spec->collision = Volume(1, 2, 1);
+	spec->collision = {0, 0, 0, 1, 2, 1};
+	spec->selection = {0, -0.75, 0, 1, 0.5, 1};
 	spec->rotate = true;
 	spec->conveyor = true;
 	spec->conveyorInput = Point::North;
@@ -592,7 +600,9 @@ void scenario() {
 
 	spec = new Spec("conveyor-right");
 	spec->build = false;
-	spec->collision = Volume(1, 2, 1);
+	spec->collision = {0, 0, 0, 1, 2, 1};
+	spec->selection = {0, -0.75, 0, 1, 0.5, 1};
+	spec->selection = spec->collision;
 	spec->rotate = true;
 	spec->conveyor = true;
 	spec->conveyorInput = Point::East;
@@ -629,7 +639,9 @@ void scenario() {
 
 	spec = new Spec("conveyor-left");
 	spec->build = false;
-	spec->collision = Volume(1, 2, 1);
+	spec->collision = {0, 0, 0, 1, 2, 1};
+	spec->selection = {0, -0.75, 0, 1, 0.5, 1};
+	spec->selection = spec->collision;
 	spec->rotate = true;
 	spec->conveyor = true;
 	spec->conveyorInput = Point::West;
@@ -676,7 +688,8 @@ void scenario() {
 	Spec::byName("conveyor-right")->statsGroup = Spec::byName("conveyor");
 
 	spec = new Spec("unveyor-entry");
-	spec->collision = Volume(1, 2, 2);
+	spec->collision = {0, 0, 0, 1, 2, 2};
+	spec->selection = spec->collision;
 	spec->rotate = true;
 	spec->unveyor = true;
 	spec->unveyorEntry = true;
@@ -714,7 +727,8 @@ void scenario() {
 	};
 
 	spec = new Spec("unveyor-exit");
-	spec->collision = Volume(1, 2, 2);
+	spec->collision = {0, 0, 0, 1, 2, 2};
+	spec->selection = spec->collision;
 	spec->rotate = true;
 	spec->unveyor = true;
 	spec->unveyorEntry = false;
@@ -757,7 +771,8 @@ void scenario() {
 	Spec::byName("unveyor-exit")->statsGroup = Spec::byName("unveyor-entry");
 
 	spec = new Spec("ropeway-terminus");
-	spec->collision = Volume(5, 10, 5);
+	spec->collision = {0, 0, 0, 5, 10, 5};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->rotate = false;
 	spec->ropeway = true;
@@ -777,7 +792,8 @@ void scenario() {
 	};
 
 	spec = new Spec("ropeway-tower");
-	spec->collision = Volume(3, 10, 3);
+	spec->collision = {0, 0, 0, 3, 10, 3};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->rotate = false;
 	spec->ropeway = true;
@@ -795,7 +811,8 @@ void scenario() {
 
 	spec = new Spec("ropeway-bucket");
 	spec->build = false;
-	spec->collision = Volume(2, 4, 2);
+	spec->collision = {0, 0, 0, 2, 4, 2};
+	spec->selection = spec->collision;
 	spec->rotate = false;
 	spec->ropewayBucket = true;
 	spec->align = false;
@@ -813,7 +830,8 @@ void scenario() {
 	Spec::byName("ropeway-terminus")->ropewayBucketSpec = Spec::byName("ropeway-bucket");
 
 //	spec = new Spec("loader");
-//	spec->collision = Volume(1, 2, 1);
+//	spec->collision = {0, 0, 0, 1, 2, 1};
+	spec->selection = spec->collision;
 //	spec->setCornerSupports();
 //	spec->rotate = true;
 //	spec->loader = true;
@@ -829,7 +847,8 @@ void scenario() {
 
 	spec = new Spec("fluid-tank");
 	spec->pipe = true;
-	spec->collision = Volume(5, 3, 5);
+	spec->collision = {0, 0, 0, 5, 3, 5};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->pipeConnections = {Point::North*2.5f+Point::Down, Point::South*2.5f+Point::Down, Point::East*2.5f+Point::Down, Point::West*2.5f+Point::Down};
 	spec->pipeCapacity = Liquid::l(50000);
@@ -846,7 +865,8 @@ void scenario() {
 	spec = new Spec("pipe-straight");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
-	spec->collision = Volume(1, 1, 1);
+	spec->collision = {0, 0, 0, 1, 1, 1};
+	spec->selection = spec->collision;
 	spec->rotate = true;
 	spec->pipeConnections = {Point::North*0.5f, Point::South*0.5f};
 	spec->health = 10;
@@ -862,7 +882,8 @@ void scenario() {
 	spec = new Spec("pipe-cross");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
-	spec->collision = Volume(1, 1, 1);
+	spec->collision = {0, 0, 0, 1, 1, 1};
+	spec->selection = spec->collision;
 	spec->rotate = true;
 	spec->pipeConnections = {Point::North*0.5f, Point::South*0.5f, Point::East*0.5f, Point::West*0.5f};
 	spec->health = 10;
@@ -878,7 +899,8 @@ void scenario() {
 	spec = new Spec("pipe-tee");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
-	spec->collision = Volume(1, 1, 1);
+	spec->collision = {0, 0, 0, 1, 1, 1};
+	spec->selection = spec->collision;
 	spec->rotate = true;
 	spec->pipeConnections = {Point::South*0.5f, Point::East*0.5f, Point::West*0.5f};
 	spec->health = 10;
@@ -894,7 +916,8 @@ void scenario() {
 	spec = new Spec("pipe-elbow");
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
-	spec->collision = Volume(1, 1, 1);
+	spec->collision = {0, 0, 0, 1, 1, 1};
+	spec->selection = spec->collision;
 	spec->rotate = true;
 	spec->pipeConnections = {Point::South*0.5f, Point::East*0.5f};
 	spec->health = 10;
@@ -912,7 +935,8 @@ void scenario() {
 	spec->pipeCapacity = Liquid::l(500);
 	spec->pipeUnderground = true;
 	spec->pipeUndergroundRange = 10.0f;
-	spec->collision = Volume(1, 1, 1);
+	spec->collision = {0, 0, 0, 1, 1, 1};
+	spec->selection = spec->collision;
 	spec->rotate = true;
 	spec->pipeConnections = {Point::North*0.5f};
 	spec->health = 10;
@@ -939,7 +963,8 @@ void scenario() {
 
 		spec = new Spec(name);
 		spec->build = false;
-		spec->collision = Volume(2, 1, 2);
+		spec->collision = {0, 0, 0, 2, 1, 2};
+		spec->selection = spec->collision;
 		spec->setCornerSupports();
 		spec->health = 100;
 		spec->pivot = true;
@@ -981,7 +1006,8 @@ void scenario() {
 
 	spec = new Spec("tree1");
 	spec->build = false;
-	spec->collision = Volume(2, 5, 2);
+	spec->collision = {0, 0, 0, 2, 5, 2};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->pivot = true;
 	spec->junk = true;
@@ -997,7 +1023,8 @@ void scenario() {
 
 	spec = new Spec("tree2");
 	spec->build = false;
-	spec->collision = Volume(2, 6, 2);
+	spec->collision = {0, 0, 0, 2, 6, 2};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->pivot = true;
 	spec->junk = true;
@@ -1035,7 +1062,8 @@ void scenario() {
 	});
 
 	spec = new Spec("truck-engineer");
-	spec->collision = Volume(2, 2, 3);
+	spec->collision = {0, 0, 0, 2, 2, 3};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xff6600ff)->translate(0,0.3,0),
@@ -1074,7 +1102,8 @@ void scenario() {
 	};
 
 	spec = new Spec("truck-hauler");
-	spec->collision = Volume(2, 2, 3);
+	spec->collision = {0, 0, 0, 2, 2, 3};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(thingTruckChassisEngineer))->paint(0xffcc00ff)->translate(0,0.3,0),
@@ -1105,7 +1134,8 @@ void scenario() {
 
 	spec = new Spec("truck-stop");
 	spec->health = 10;
-	spec->collision = Volume(3, 0.1, 3);
+	spec->collision = {0, 0, 0, 3, 0.1, 3};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/truck-stop.stl")))->paint(0x662222ff),
@@ -1121,7 +1151,8 @@ void scenario() {
 	spec = new Spec("drone");
 	spec->select = false;
 	spec->health = 10;
-	spec->collision = Volume(1, 1, 1);
+	spec->collision = {0, 0, 0, 1, 1, 1};
+	spec->selection = spec->collision;
 	spec->parts = {
 		(new Part(thingDroneChassis))->paint(0x660000ff),
 		(new Part(thingDroneSpars))->paint(0x444444ff)->rotate(Point::Up, 45),
@@ -1135,7 +1166,8 @@ void scenario() {
 
 	spec = new Spec("arm");
 	spec->health = 10;
-	spec->collision = Volume(1, 2, 1);
+	spec->collision = {0, 0, 0, 1, 2, 1};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->arm = true;
 	spec->enable = true;
@@ -1229,7 +1261,8 @@ void scenario() {
 	}
 
 	spec = new Spec("long-arm");
-	spec->collision = Volume(1, 2, 1);
+	spec->collision = {0, 0, 0, 1, 2, 1};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->arm = true;
 	spec->enable = true;
@@ -1340,7 +1373,8 @@ void scenario() {
 	auto steamEnginewheel = Thing("models/steam-engine-wheel-hd.stl", "models/steam-engine-wheel-ld.stl");
 
 	spec = new Spec("boiler");
-	spec->collision = Volume(3, 2, 2);
+	spec->collision = {0, 0, 0, 3, 2, 2};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
@@ -1384,7 +1418,8 @@ void scenario() {
 	recipe->parts = {steamDroplet};
 
 	spec = new Spec("steam-engine");
-	spec->collision = Volume(4, 4, 5);
+	spec->collision = {0, 0, 0, 4, 4, 5};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->electrical = { .area = Area(5,6), .rate = Energy::MW(1) };
 	spec->pipe = true;
@@ -1429,7 +1464,8 @@ void scenario() {
 
 	spec = new Spec("turret");
 	spec->health = 100;
-	spec->collision = Volume(1, 1, 1);
+	spec->collision = {0, 0, 0, 1, 1, 1};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/turret-chassis.stl")))->paint(0x51412dff)->translate(0,-0.5,0),
@@ -1449,7 +1485,8 @@ void scenario() {
 	spec->explodes = true;
 	spec->explosionSpec = "bullet-impact1";
 	spec->health = 0;
-	spec->collision = Volume(0.1, 0.1, 0.1);
+	spec->collision = {0, 0, 0, 0.1, 0.1, 0.1};
+	spec->selection = spec->collision;
 	spec->parts = {
 		(new Part(Thing("models/bullet.stl")))->paint(0x660000ff),
 	};
@@ -1470,7 +1507,8 @@ void scenario() {
 	spec->explodes = true;
 	spec->explosionSpec = "missile-explosion1";
 	spec->health = 100;
-	spec->collision = Volume(1, 1, 2);
+	spec->collision = {0, 0, 0, 1, 1, 2};
+	spec->selection = spec->collision;
 	spec->parts = {
 		(new Part(Thing("models/missile-chassis.stl")))->paint(0x660000ff),
 	};
@@ -1497,7 +1535,8 @@ void scenario() {
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::MW(10);
 	spec->energyDrain = Energy::kW(300);
-	spec->collision = Volume(8, 8, 8);
+	spec->collision = {0, 0, 0, 8, 8, 8};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/teleporter-base-hd.stl")))->paint(0x0044ccff)->translate(0,-2.5,0),
@@ -1532,7 +1571,8 @@ void scenario() {
 	spec->computer = true;
 	spec->consumeElectricity = true;
 	spec->energyDrain = Energy::W(100);
-	spec->collision = Volume(1, 2, 1);
+	spec->collision = {0, 0, 0, 1, 2, 1};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/computer-rack-hd.stl", "models/computer-rack-ld.stl")))->paint(0x666666ff)->translate(0,-1,0),
@@ -1573,7 +1613,8 @@ void scenario() {
 	spec = new Spec("block");
 	spec->block = true;
 	spec->health = 100;
-	spec->collision = Volume(1, 1, 1);
+	spec->collision = {0, 0, 0, 1, 1, 1};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/block-hd.stl", "models/block-ld.stl")))->paint(0x666666ff)->gloss(16),
@@ -1582,7 +1623,8 @@ void scenario() {
 	spec = new Spec("projector");
 	spec->health = 10;
 	spec->projector = true;
-	spec->collision = Volume(1, 0.1, 1);
+	spec->collision = {0, 0, 0, 1, 0.1, 1};
+	spec->selection = spec->collision;
 	spec->setCornerSupports();
 	spec->parts = {
 		(new Part(Thing("models/projector.stl")))->paint(0x666666ff),
@@ -1653,7 +1695,21 @@ int main(int argc, char const *argv[]) {
   SetShaderValue(pshader, GetShaderLocation(pshader, "fogColor"), &fogColor, UNIFORM_VEC4);
 	SetShaderValue(pshader, GetShaderLocation(pshader, "ambient"), &ambient, UNIFORM_VEC4);
 
+	Shader gshader = LoadShader(
+		FormatText("shaders/glsl%i/base_lighting_instanced.vs", GLSL_VERSION),
+		FormatText("shaders/glsl%i/fog_ghosts.fs", GLSL_VERSION)
+	);
+
+	gshader.locs[LOC_MATRIX_MVP] = GetShaderLocation(gshader, "mvp");
+	gshader.locs[LOC_MATRIX_MODEL] = GetShaderLocationAttrib(gshader, "instance");
+	gshader.locs[LOC_VECTOR_VIEW] = GetShaderLocation(gshader, "viewPos");
+
+  SetShaderValue(gshader, GetShaderLocation(gshader, "fogDensity"), &fogDensity, UNIFORM_FLOAT);
+  SetShaderValue(gshader, GetShaderLocation(gshader, "fogColor"), &fogColor, UNIFORM_VEC4);
+	SetShaderValue(gshader, GetShaderLocation(gshader, "ambient"), &ambient, UNIFORM_VEC4);
+
 	Part::shader = pshader;
+	Part::ghostShader = gshader;
 	Part::material = LoadMaterialDefault();
 
 	Shader particleShader = LoadShader(
@@ -1675,7 +1731,6 @@ int main(int argc, char const *argv[]) {
 	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, pshader);
 	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, particleShader);
 
-
 	Model cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	cube.materials[0].shader = shader;
 
@@ -1690,6 +1745,8 @@ int main(int argc, char const *argv[]) {
 	View::greenCube = LoadModelFromMesh(GenMeshCube(0.5f,0.5f,0.5f));
 	View::greenCube.materials[0].shader = pshader;
 	View::greenCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x00ff00FF);
+
+	View::gridSquareLand = (new Part(Thing("models/grid-square.stl")))->scale(0.001, 0.001, 0.001)->paint(0x888888FF);
 
 	Chunk::material = LoadMaterialDefault();
 	Chunk::material.shader = shader;
@@ -1900,7 +1957,7 @@ int main(int argc, char const *argv[]) {
 			ClearBackground(GetColor(0x0));
 
 			BeginMode3D((Camera3D){
-				.position = Point(1.0f, 1.0f, 1.0f) * Point(spec->collision).length(),
+				.position = Point(1.0f, 1.0f, 1.0f) * spec->collision.dimensions().length(),
 				.target =   Point(0.0f, spec->collision.h/4.0f, 0.0f),
 				.up =       -Point::Up,
 				.fovy =     45.0f,
@@ -2194,8 +2251,8 @@ int main(int argc, char const *argv[]) {
 			}
 		}
 
-		if (IsKeyReleased(KEY_F2) && camera->hovering) {
-			waypointsPopup->useEntity(camera->hovering->id);
+		if (IsKeyReleased(KEY_F2) && camera->directing) {
+			waypointsPopup->useEntity(camera->directing->id);
 			if (popup) popup->show(false);
 			popup = waypointsPopup;
 			popup->show(true);
@@ -2255,6 +2312,7 @@ int main(int argc, char const *argv[]) {
 			Point cameraTarget = camSec->pos;
 			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 			SetShaderValue(pshader, pshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
+			SetShaderValue(gshader, gshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 			SetShaderValue(particleShader, particleShader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 
 			camSec->draw(secondary);
@@ -2262,6 +2320,7 @@ int main(int argc, char const *argv[]) {
 			cameraTarget = camera->position;
 			SetShaderValue(shader, shader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 			SetShaderValue(pshader, pshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
+			SetShaderValue(gshader, gshader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 			SetShaderValue(particleShader, particleShader.locs[LOC_VECTOR_VIEW], &cameraTarget.x, UNIFORM_VEC3);
 
 			camera->draw();

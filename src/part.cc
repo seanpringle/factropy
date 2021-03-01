@@ -225,16 +225,9 @@ void Thing::drawParticleBatch(Color color, float specular, bool hd, int count, V
 }
 
 void Thing::drawGhostBatch(Color color, bool hd, int count, Mat4 *trx) {
-	Part::material.shader = GetShaderDefault();
-	Part::material.maps[MAP_DIFFUSE].color = (Color){
-		color.r,
-		color.g,
-		color.b,
-		(unsigned char)((float)color.a*0.5),
-	};
-	for (int i = 0; i < count; i++) {
-		rlDrawMesh(hd ? meshHD: meshLD, Part::material, trx[i]);
-	}
+	Part::material.shader = Part::ghostShader;
+	Part::material.maps[MAP_DIFFUSE].color = color;
+	rlDrawMeshInstanced2(hd ? meshHD: meshLD, Part::material, count, trx);
 }
 
 void Part::reset() {

@@ -19,6 +19,7 @@ struct Box {
 	};
 
 	Point centroid() const;
+	Point dimensions() const;
 	BoundingBox bounds() const;
 	Box translate(const Point p) const;
 	Box translate(float x, float y, float z) const;

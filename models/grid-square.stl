@@ -1,0 +1,226 @@
+solid OpenSCAD_Model
+  facet normal 1 -0 0
+    outer loop
+      vertex 500 -500 0.5
+      vertex 500 500 -0.5
+      vertex 500 500 0.5
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 500 500 -0.5
+      vertex 500 -500 0.5
+      vertex 500 -500 -0.5
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 500 500 0.5
+      vertex 480 480 0.5
+      vertex 500 -500 0.5
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 500 500 0.5
+      vertex -480 480 0.5
+      vertex 480 480 0.5
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex -480 480 0.5
+      vertex -500 500 0.5
+      vertex -480 -480 0.5
+    endloop
+  endfacet
+  facet normal -0 0 1
+    outer loop
+      vertex -500 500 0.5
+      vertex -480 480 0.5
+      vertex 500 500 0.5
+    endloop
+  endfacet
+  facet normal -0 0 1
+    outer loop
+      vertex 480 -480 0.5
+      vertex 500 -500 0.5
+      vertex 480 480 0.5
+    endloop
+  endfacet
+  facet normal -0 0 1
+    outer loop
+      vertex -480 -480 0.5
+      vertex 500 -500 0.5
+      vertex 480 -480 0.5
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex -480 -480 0.5
+      vertex -500 -500 0.5
+      vertex 500 -500 0.5
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex -500 -500 0.5
+      vertex -480 -480 0.5
+      vertex -500 500 0.5
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 500 -500 -0.5
+      vertex 480 -480 -0.5
+      vertex 500 500 -0.5
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 500 -500 -0.5
+      vertex -480 -480 -0.5
+      vertex 480 -480 -0.5
+    endloop
+  endfacet
+  facet normal -0 0 -1
+    outer loop
+      vertex -480 -480 -0.5
+      vertex -500 -500 -0.5
+      vertex -480 480 -0.5
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex -500 -500 -0.5
+      vertex -480 -480 -0.5
+      vertex 500 -500 -0.5
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 480 480 -0.5
+      vertex 500 500 -0.5
+      vertex 480 -480 -0.5
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex -480 480 -0.5
+      vertex 500 500 -0.5
+      vertex 480 480 -0.5
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex -480 480 -0.5
+      vertex -500 500 -0.5
+      vertex 500 500 -0.5
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex -500 500 -0.5
+      vertex -480 480 -0.5
+      vertex -500 -500 -0.5
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex -500 -500 -0.5
+      vertex -500 500 0.5
+      vertex -500 500 -0.5
+    endloop
+  endfacet
+  facet normal -1 -0 0
+    outer loop
+      vertex -500 500 0.5
+      vertex -500 -500 -0.5
+      vertex -500 -500 0.5
+    endloop
+  endfacet
+  facet normal 0 1 -0
+    outer loop
+      vertex 500 500 -0.5
+      vertex -500 500 0.5
+      vertex 500 500 0.5
+    endloop
+  endfacet
+  facet normal 0 1 0
+    outer loop
+      vertex -500 500 0.5
+      vertex 500 500 -0.5
+      vertex -500 500 -0.5
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex -500 -500 -0.5
+      vertex 500 -500 0.5
+      vertex -500 -500 0.5
+    endloop
+  endfacet
+  facet normal 0 -1 -0
+    outer loop
+      vertex 500 -500 0.5
+      vertex -500 -500 -0.5
+      vertex 500 -500 -0.5
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 480 -480 -0.5
+      vertex 480 480 0.5
+      vertex 480 480 -0.5
+    endloop
+  endfacet
+  facet normal -1 -0 0
+    outer loop
+      vertex 480 480 0.5
+      vertex 480 -480 -0.5
+      vertex 480 -480 0.5
+    endloop
+  endfacet
+  facet normal 1 -0 0
+    outer loop
+      vertex -480 -480 0.5
+      vertex -480 480 -0.5
+      vertex -480 480 0.5
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex -480 480 -0.5
+      vertex -480 -480 0.5
+      vertex -480 -480 -0.5
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex -480 480 -0.5
+      vertex 480 480 0.5
+      vertex -480 480 0.5
+    endloop
+  endfacet
+  facet normal 0 -1 -0
+    outer loop
+      vertex 480 480 0.5
+      vertex -480 480 -0.5
+      vertex 480 480 -0.5
+    endloop
+  endfacet
+  facet normal 0 1 -0
+    outer loop
+      vertex 480 -480 -0.5
+      vertex -480 -480 0.5
+      vertex 480 -480 0.5
+    endloop
+  endfacet
+  facet normal 0 1 0
+    outer loop
+      vertex -480 -480 0.5
+      vertex 480 -480 -0.5
+      vertex -480 -480 -0.5
+    endloop
+  endfacet
+endsolid OpenSCAD_Model

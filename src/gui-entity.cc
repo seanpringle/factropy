@@ -84,7 +84,11 @@ GuiEntity::~GuiEntity() {
 }
 
 Box GuiEntity::box() {
-	return spec->box(pos, dir);
+	return spec->box(pos, dir, spec->collision);
+}
+
+Box GuiEntity::selectionBox() {
+	return spec->box(pos, dir, spec->selection);
 }
 
 Box GuiEntity::southBox() {

@@ -286,7 +286,7 @@ Entity& Entity::get(uint id) {
 }
 
 bool Entity::fits(Spec *spec, Point pos, Point dir) {
-	Box bounds = spec->box(pos, dir).shrink(0.1);
+	Box bounds = spec->box(pos, dir, spec->collision).shrink(0.1);
 	if (intersecting(bounds).size()) return false;
 
 	switch (spec->place) {
@@ -431,7 +431,7 @@ bool Entity::rename(std::string name) {
 }
 
 Box Entity::box() {
-	return spec->box(pos, dir);
+	return spec->box(pos, dir, spec->collision);
 }
 
 Box Entity::miningBox() {
