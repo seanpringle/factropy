@@ -48,8 +48,27 @@ bool Drone::travel(uint eid) {
 		return false;
 	}
 
-	Point dir = tp - en.pos;
-	en.move(en.pos + dir.normalize()*0.1);
+	float speed = 0.1f;
+
+	Point dir = (tp - en.pos).normalize();
+	Point step = en.pos + (dir*speed);
+
+	auto hits = Entity::intersecting(Box(en.pos, te.pos));
+
+	for (int i = 0, l = (int)std::ceil(en.pos.distance(tp)/speed); i < l; i++) {
+		Point p = en.pos + (dir*(speed*(float)i));
+		for (auto cid: hits) {
+			if (cid == id || cid == src || cid == dst || cid == dep) continue;
+			if (all.has(cid)) continue; // drone
+			if (Entity::get(cid).box().intersects((p+Point::Down).box().grow(0.5f))) {
+				step = en.pos + en.dir*speed + Point::Up*speed;
+				i = l;
+				break;
+			}
+		}
+	}
+
+	en.move(step);
 	return true;
 }
 

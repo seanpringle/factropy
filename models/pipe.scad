@@ -28,7 +28,11 @@ module tee() {
 }
 
 module flange() {
-	cyl(0.475, 0.475, 0.1);
+	difference() {
+		cyl(0.475, 0.475, 0.1);
+		for (i = [0:45:360])
+			#rotate([0,0,i]) translate([0.425,0,0]) cyl(0.025, 0.025, 0.11);
+	}
 }
 
 module ground() {
@@ -39,6 +43,17 @@ module ground() {
 		}
 		translate([-0.45,0,0]) rotate([0,90,0]) flange();
 		translate([0,0,-0.45]) flange();
+	}
+}
+
+module item() {
+	rotate([0,90,0]) difference() {
+		union() {
+			rotate([180/$fn,0,0]) rotate([0,90,0]) cyl(0.375, 0.375, 0.9);
+			translate([0.4,0,0]) rotate([0,90,0]) flange();
+			translate([-0.4,0,0]) rotate([0,90,0]) flange();
+		}
+		rotate([180/$fn,0,0]) rotate([0,90,0]) cyl(0.3, 0.3, 1.1);
 	}
 }
 
@@ -53,5 +68,7 @@ ld=8;
 //elbow($fn=ld);
 //tee($fn=hd);
 //tee($fn=ld);
-ground($fn=hd);
+//ground($fn=hd);
 //ground($fn=ld);
+item($fn=hd);
+//item($fn=ld);

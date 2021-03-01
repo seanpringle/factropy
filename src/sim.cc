@@ -102,9 +102,6 @@ namespace Sim {
 		Point n = (b-a).normalize();
 
 		for (Point c = a; c.distance(b) > 1.0f; c += n) {
-			if (!Chunk::isLand(c.box().grow(clearance))) {
-				return false;
-			}
 			for (int eid: Entity::intersecting(c.box().grow(clearance))) {
 				if (collide(eid)) {
 					return false;

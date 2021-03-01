@@ -111,7 +111,8 @@ void scenario() {
 
 	item = new Item(Item::next(), "copper-wire");
 	item->parts = {
-		(new Part(Thing("models/copper-wire-roll-hd.stl", "models/copper-wire-roll-ld.stl")))->paint(0xDC7F64ff)->translate(0,0.25,0),
+		(new Part(Thing("models/copper-wire-roll-hd.stl", "models/copper-wire-roll-ld.stl")))
+			->paint(0xDC7F64ff)->translate(0,0.25,0),
 		(new Part(copperWireEnd))->paint(0x444444ff)->translate(0,0.5,0),
 		(new Part(copperWireEnd))->paint(0x444444ff)->translate(0,0.0,0),
 	};
@@ -121,6 +122,13 @@ void scenario() {
 		(new Part(Thing("models/circuit-board.stl")))->paint(0x228800ff),
 	};
 	item->armV = 0.45f;
+
+	item = new Item(Item::next(), "pipe");
+	item->parts = {
+		(new Part(Thing("models/pipe-item-hd.stl", "models/pipe-item-ld.stl")))
+		->paint(0xff6600ff)->scale(0.7, 0.7, 0.7)->translate(0,0.34,0),
+	};
+	item->armV = -0.2f;
 
 	auto thingContainer = Thing("models/container-hd.stl", "models/container-ld.stl");
 	auto thingFan = Thing("models/fan-hd.stl", "models/fan-ld.stl");
@@ -267,9 +275,20 @@ void scenario() {
 		{ Item::byName("iron-ingot")->id, 1 },
 	};
 	recipe->outputItems = {
-		{ Item::byName("gear-wheel")->id, 1 },
+		{ Item::byName("gear-wheel")->id, 2 },
 	};
 	recipe->parts = Item::byName("gear-wheel")->parts;
+
+	recipe = new Recipe(Recipe::next(), "pipe");
+	recipe->energyUsage = Energy::kJ(600);
+	recipe->tags = {"crafting"};
+	recipe->inputItems = {
+		{ Item::byName("copper-ingot")->id, 1 },
+	};
+	recipe->outputItems = {
+		{ Item::byName("pipe")->id, 1 },
+	};
+	recipe->parts = Item::byName("pipe")->parts;
 
 	recipe = new Recipe(Recipe::next(), "battery");
 	recipe->energyUsage = Energy::kJ(900);
@@ -872,7 +891,7 @@ void scenario() {
 	};
 
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 1 },
+		{ Item::byName("pipe")->id, 1 },
 	};
 
 	spec = new Spec("pipe-cross");
@@ -889,7 +908,7 @@ void scenario() {
 	};
 
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 1 },
+		{ Item::byName("pipe")->id, 1 },
 	};
 
 	spec = new Spec("pipe-tee");
@@ -906,7 +925,7 @@ void scenario() {
 	};
 
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 1 },
+		{ Item::byName("pipe")->id, 1 },
 	};
 
 	spec = new Spec("pipe-elbow");
@@ -923,7 +942,7 @@ void scenario() {
 	};
 
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 1 },
+		{ Item::byName("pipe")->id, 1 },
 	};
 
 	spec = new Spec("pipe-ground");
@@ -942,7 +961,7 @@ void scenario() {
 	};
 
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 1 },
+		{ Item::byName("pipe")->id, 5 },
 	};
 
 	Spec::byName("pipe-straight")->cycle = Spec::byName("pipe-ground");
