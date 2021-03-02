@@ -52,8 +52,8 @@ bool Drone::travel(uint eid) {
 
 	en.lookAt(overheadPoint);
 
-	Point arrivalStep = en.pos + (arrivalDir*speed);
-	Point overheadStep = en.pos + (overheadDir*speed);
+	Point arrivalStep = arrivalDir * speed;
+	Point overheadStep = overheadDir * speed;
 
 	if (arrivalDist < speed*1.1f) {
 		en.move(arrivalPoint);
@@ -62,7 +62,7 @@ bool Drone::travel(uint eid) {
 
 	if (arrivalDist < speed*60.0f) {
 		en.move(en.pos + arrivalStep);
-		return false;
+		return true;
 	}
 
 	std::function<bool(Point, Point)> rayCast = [&](Point start, Point end) {
@@ -72,21 +72,27 @@ bool Drone::travel(uint eid) {
 			return cid == id || cid == src || cid == dst || cid == dep || all.has(cid);
 		});
 
-		if (!hits.size()) return true;
-
 		std::vector<Box> boxes;
 		for (auto cid: hits) {
 			boxes.push_back(Entity::get(cid).box());
 		}
 
 		float step = 0.5f;
-		Point direction = (end-start).normalize();
-		int steps = (int)std::floor(start.distance(end)/step);
+		Point direction = (end - start).normalize();
+		int steps = (int)std::floor(start.distance(end) / step);
 
+		// this could use sphere path tracing
 		for (int i = 0; i < steps; i++) {
-			float offset = step*(float)i;
-			Point stepPoint = start + (direction*offset);
+			float offset = step * (float)i;
+			Point stepPoint = start + (direction * offset);
+
+			auto tile = Chunk::tileTryGet(stepPoint.x, stepPoint.z);
+			if (tile && (tile->elevation*100.0f) > (stepPoint.y - step)) {
+				return false;
+			}
+
 			Box stepBox = stepPoint.box().grow(step);
+
 			for (auto box: boxes) {
 				if (box.intersects(stepBox)) {
 					return false;
@@ -96,21 +102,22 @@ bool Drone::travel(uint eid) {
 		return true;
 	};
 
-	bool arrivalVisibleNext = rayCast(en.pos + arrivalStep, arrivalPoint);
+	bool arrivalVisibleNext = rayCast(en.pos + arrivalStep + Point::Down, arrivalPoint + Point::Down);
 
 	if (arrivalVisibleNext) {
 		en.move(en.pos + arrivalStep);
-		return false;
+		return true;
 	}
 
-	bool overheadVisibleNext = rayCast(en.pos + overheadStep, overheadPoint);
+	bool overheadVisibleNext = rayCast(en.pos + overheadStep + Point::Down, overheadPoint + Point::Down);
 
 	if (overheadVisibleNext) {
 		en.move(en.pos + overheadStep);
-		return false;
+		return true;
 	}
 
-	en.move(en.pos + overheadDir*speed + Point::Up*speed);
+	// 45deg
+	en.move(en.pos + (overheadDir * (speed/1.175)) + (Point::Up * (speed/1.175)));
 	return true;
 }
 
