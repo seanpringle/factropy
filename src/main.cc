@@ -811,7 +811,8 @@ void scenario() {
 	spec = new Spec("ropeway-tower");
 	spec->collision = {0, 0, 0, 3, 10, 3};
 	spec->selection = spec->collision;
-	//spec->place = Spec::Land || Spec::OnHill;
+	spec->place = Spec::Land | Spec::Hill;
+	spec->placeOnHill = true;
 	spec->rotate = false;
 	spec->ropeway = true;
 	spec->ropewayTower = true;

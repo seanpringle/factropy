@@ -61,6 +61,7 @@ struct Chunk {
 	static bool isLand(Box b);
 	static bool isWater(Box b);
 	static bool isHill(Box b);
+	static float hillPlatform(Box b);
 	static Stack mine(Box b, uint iid);
 	static bool canMine(Box b, uint iid);
 	static uint countMine(Box b, uint iid);

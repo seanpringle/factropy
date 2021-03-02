@@ -290,9 +290,16 @@ void MainCamera::update(bool worldFocused) {
 		}
 
 		if (placing) {
-			RayHitInfo hit = GetCollisionRayGround(mouse.ray, buildLevel);
-			placing->move(Point(hit.position));
-			placing->floor(buildLevel);
+			if (placing->entities.size() == 1 && placing->entities[0]->spec->placeOnHill) {
+				RayHitInfo hit = GetCollisionRayGround(mouse.ray, buildLevel);
+				auto pe = placing->entities[0];
+				Box box = pe->spec->box(hit.position, pe->dir, pe->spec->collision);
+				placing->move(Point(hit.position.x, Chunk::hillPlatform(box), hit.position.z));
+			} else {
+				RayHitInfo hit = GetCollisionRayGround(mouse.ray, buildLevel);
+				placing->move(Point(hit.position));
+				placing->floor(buildLevel);
+			}
 		}
 
 		Point target = groundTarget(buildLevel);

@@ -162,6 +162,17 @@ bool Chunk::isHill(Box b) {
 	return true;
 }
 
+float Chunk::hillPlatform(Box b) {
+	float h = -1.0f;
+	for (auto [x,y]: walkTiles(b)) {
+		Tile *tile = tileTryGet(x, y);
+		if (!tile || !tile->isHill()) return 0.0f;
+		float e = tile->elevation*100.0f;
+		h = h < 0.0f ? e: std::min(e, h);
+	}
+	return std::round(std::max(h, 0.0f));
+}
+
 Stack Chunk::mine(Box b, uint iid) {
 	Stack stack = {0,0};
 	for (auto [x,y]: walkTiles(b)) {

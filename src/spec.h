@@ -25,9 +25,9 @@ struct Spec {
 
 	enum Place {
 		Footings = 0,
-		Land = 1,
-		Water = 2,
-		Hill = 3,
+		Land = 1<<1,
+		Water = 1<<2,
+		Hill = 1<<3,
 	};
 
 	struct Footing {
@@ -69,7 +69,8 @@ struct Spec {
 	Box selection;
 	EnergyUser electrical;
 
-	Place place;
+	int place;
+	bool placeOnHill;
 	std::vector<Footing> footings;
 
 	float costGreedy;

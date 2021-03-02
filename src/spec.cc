@@ -52,6 +52,7 @@ Spec::Spec(std::string name) {
 	defaultOverflow = false;
 
 	place = Land;
+	placeOnHill = false;
 
 	collision = {0,0,0,0,0,0};
 	selection = {0,0,0,0,0,0};

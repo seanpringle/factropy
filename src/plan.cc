@@ -86,6 +86,10 @@ void Plan::cycle() {
 
 void Plan::floor(float level) {
 	position.y = std::floor(level);
+	//for (uint i = 0; i < entities.size(); i++) {
+	//	auto te = entities[i];
+	//	te->floor(position.y + offsets[i].y);
+	//}
 }
 
 bool Plan::fits() {
@@ -112,9 +116,11 @@ bool Plan::entityFits(Spec *spec, Point pos, Point dir) {
 		for (auto [x,y]: Chunk::walkTiles(bounds)) {
 			Chunk::Tile *tile = Chunk::tileTryGet(x, y);
 			if (!tile) return false;
-			if (spec->place == Spec::Land && !tile->isLand()) return false;
-			if (spec->place == Spec::Hill && !tile->isHill()) return false;
-			if (spec->place == Spec::Water && !tile->isWater()) return false;
+			bool ok = false;
+			ok = ok || ((spec->place & Spec::Land) && tile->isLand());
+			ok = ok || ((spec->place & Spec::Hill) && tile->isHill());
+			ok = ok || ((spec->place & Spec::Water) && tile->isWater());
+			if (!ok) return false;
 		}
 		return true;
 	}
@@ -124,9 +130,11 @@ bool Plan::entityFits(Spec *spec, Point pos, Point dir) {
 		Chunk::Tile *tile = Chunk::tileTryGet(std::floor(point.x), std::floor(point.z));
 
 		if (!tile) return false;
-		if (footing.place == Spec::Land && !tile->isLand()) return false;
-		if (footing.place == Spec::Hill && !tile->isHill()) return false;
-		if (footing.place == Spec::Water && !tile->isWater()) return false;
+		bool ok = false;
+		ok = ok || ((footing.place & Spec::Land) && tile->isLand());
+		ok = ok || ((footing.place & Spec::Hill) && tile->isHill());
+		ok = ok || ((footing.place & Spec::Water) && tile->isWater());
+		if (!ok) return false;
 	}
 
 	return true;
