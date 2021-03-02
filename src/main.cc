@@ -1173,6 +1173,7 @@ void scenario() {
 	};
 	spec->align = false;
 	spec->drone = true;
+	spec->droneSpeed = 0.1f;
 
 	spec = new Spec("arm");
 	spec->health = 10;

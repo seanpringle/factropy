@@ -20,7 +20,6 @@ Spec::Spec(std::string name) {
 
 	align = true;
 	pivot = false;
-	drone = false;
 	explodes = false;
 	explosion = false;
 	store = false;
@@ -85,6 +84,9 @@ Spec::Spec(std::string name) {
 
 	arm = false;
 	armOffset = 1.0f;
+
+	drone = false;
+	droneSpeed = 0.0f;
 
 	pipe = false;
 	pipeCapacity = 0;

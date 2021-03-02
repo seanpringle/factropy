@@ -58,7 +58,6 @@ struct Spec {
 	bool pivot;
 	bool loader;
 	bool shunt;
-	bool drone;
 	bool rotate;
 	bool toggle;
 	bool enable;
@@ -119,6 +118,9 @@ struct Spec {
 
 	bool depot;
 	uint drones;
+
+	bool drone;
+	float droneSpeed;
 
 	std::vector<Stack> materials;
 

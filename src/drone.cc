@@ -39,36 +39,78 @@ void Drone::destroy() {
 bool Drone::travel(uint eid) {
 	Entity& en = Entity::get(id);
 	Entity& te = Entity::get(eid);
-	Point tp = te.pos + (Point::Up * te.spec->collision.h);
 
-	en.lookAt({tp.x, en.pos.y, tp.z});
+	Point arrivalPoint = te.pos + (Point::Up * te.spec->collision.h);
+	Point arrivalDir = (arrivalPoint - en.pos).normalize();
+	float arrivalDist = en.pos.distance(arrivalPoint);
 
-	if (en.pos.distance(tp) < 0.11) {
-		en.move(tp);
+	Point overheadPoint = {arrivalPoint.x, en.pos.y, arrivalPoint.z};
+	Point overheadDir = (overheadPoint - en.pos).normalize();
+	//float overheadDist = en.pos.distance(overheadPoint);
+
+	float speed = en.spec->droneSpeed;
+
+	en.lookAt(overheadPoint);
+
+	Point arrivalStep = en.pos + (arrivalDir*speed);
+	Point overheadStep = en.pos + (overheadDir*speed);
+
+	if (arrivalDist < speed*1.1f) {
+		en.move(arrivalPoint);
 		return false;
 	}
 
-	float speed = 0.1f;
-
-	Point dir = (tp - en.pos).normalize();
-	Point step = en.pos + (dir*speed);
-
-	auto hits = Entity::intersecting(Box(en.pos, te.pos));
-
-	for (int i = 0, l = (int)std::ceil(en.pos.distance(tp)/speed); i < l; i++) {
-		Point p = en.pos + (dir*(speed*(float)i));
-		for (auto cid: hits) {
-			if (cid == id || cid == src || cid == dst || cid == dep) continue;
-			if (all.has(cid)) continue; // drone
-			if (Entity::get(cid).box().intersects((p+Point::Down).box().grow(0.5f))) {
-				step = en.pos + en.dir*speed + Point::Up*speed;
-				i = l;
-				break;
-			}
-		}
+	if (arrivalDist < speed*60.0f) {
+		en.move(en.pos + arrivalStep);
+		return false;
 	}
 
-	en.move(step);
+	std::function<bool(Point, Point)> rayCast = [&](Point start, Point end) {
+		auto hits = Entity::intersecting(Box(start, end));
+
+		discard_if(hits, [&](uint cid) {
+			return cid == id || cid == src || cid == dst || cid == dep || all.has(cid);
+		});
+
+		if (!hits.size()) return true;
+
+		std::vector<Box> boxes;
+		for (auto cid: hits) {
+			boxes.push_back(Entity::get(cid).box());
+		}
+
+		float step = 0.5f;
+		Point direction = (end-start).normalize();
+		int steps = (int)std::floor(start.distance(end)/step);
+
+		for (int i = 0; i < steps; i++) {
+			float offset = step*(float)i;
+			Point stepPoint = start + (direction*offset);
+			Box stepBox = stepPoint.box().grow(step);
+			for (auto box: boxes) {
+				if (box.intersects(stepBox)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	};
+
+	bool arrivalVisibleNext = rayCast(en.pos + arrivalStep, arrivalPoint);
+
+	if (arrivalVisibleNext) {
+		en.move(en.pos + arrivalStep);
+		return false;
+	}
+
+	bool overheadVisibleNext = rayCast(en.pos + overheadStep, overheadPoint);
+
+	if (overheadVisibleNext) {
+		en.move(en.pos + overheadStep);
+		return false;
+	}
+
+	en.move(en.pos + overheadDir*speed + Point::Up*speed);
 	return true;
 }
 
