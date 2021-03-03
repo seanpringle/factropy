@@ -14,6 +14,8 @@
 struct Store;
 
 #include "slabmap.h"
+#include "minivec.h"
+#include "miniset.h"
 #include "item.h"
 #include "mass.h"
 #include <vector>
@@ -41,10 +43,10 @@ struct Store {
 	uint sid;
 	uint64_t activity;
 	Mass capacity;
-	std::vector<Stack> stacks;
-	std::vector<Level> levels;
-	std::set<uint> drones;
-	std::set<uint> arms;
+	minivec<Stack> stacks;
+	minivec<Level> levels;
+	miniset<uint> drones;
+	miniset<uint> arms;
 	bool fuel;
 	std::string fuelCategory;
 
@@ -58,7 +60,7 @@ struct Store {
 	Stack remove(Stack stack);
 	Stack removeAny(uint size);
 	uint wouldRemoveAny();
-	uint wouldRemoveAny(std::set<uint>& filter);
+	uint wouldRemoveAny(miniset<uint>& filter);
 	Stack removeFuel(std::string chemical, uint size);
 	Stack overflowAny(uint size);
 	void promise(Stack stack);
@@ -82,11 +84,11 @@ struct Store {
 	bool isAccepting(uint iid);
 	bool isOverflowDefault(uint iid);
 	Stack forceSupplyFrom(Store& src);
-	Stack forceSupplyFrom(Store& src, std::set<uint>& filter);
+	Stack forceSupplyFrom(Store& src, miniset<uint>& filter);
 	Stack supplyFrom(Store& src);
-	Stack supplyFrom(Store& src, std::set<uint>& filter);
+	Stack supplyFrom(Store& src, miniset<uint>& filter);
 	Stack forceOverflowTo(Store& dst);
 	Stack overflowTo(Store& dst);
-	Stack overflowTo(Store& dst, std::set<uint>& filter);
+	Stack overflowTo(Store& dst, miniset<uint>& filter);
 	Stack overflowDefaultTo(Store& dst);
 };

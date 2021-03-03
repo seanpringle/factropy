@@ -1,13 +1,14 @@
 #include "common.h"
 #include "computer.h"
+#include "entity.h"
 
 void Computer::reset() {
 	all.clear();
 }
 
 void Computer::tick() {
-	for (auto& pair: all) {
-		pair.second.update();
+	for (auto& computer: all) {
+		computer.update();
 	}
 }
 
@@ -19,8 +20,7 @@ Computer& Computer::create(uint id) {
 }
 
 Computer& Computer::get(uint id) {
-	ensuref(all.count(id) > 0, "invalid computer access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Computer::destroy() {

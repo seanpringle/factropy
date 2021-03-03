@@ -8,6 +8,7 @@
 struct Depot;
 
 #include "slabmap.h"
+#include "miniset.h"
 #include "entity.h"
 
 struct Depot {
@@ -22,7 +23,7 @@ struct Depot {
 	static Depot& get(uint id);
 
 	uint64_t pause;
-	std::set<uint> drones;
+	miniset<uint> drones;
 
 	void destroy();
 	void update();

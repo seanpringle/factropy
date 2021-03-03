@@ -921,8 +921,7 @@ void Computer::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/computers.json");
 
-	for (auto& pair: all) {
-		auto computer = pair.second;
+	for (auto& computer: all) {
 
 		json state;
 		state["id"] = computer.id;

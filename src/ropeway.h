@@ -10,6 +10,8 @@ struct Ropeway;
 struct RopewayBucket;
 
 #include "entity.h"
+#include "minivec.h"
+#include "miniset.h"
 #include <list>
 
 struct Ropeway {
@@ -28,12 +30,12 @@ struct Ropeway {
 	uint cycle;
 	bool check;
 	Point aim;
-	std::vector<Point> steps;
+	minivec<Point> steps;
 	std::list<uint> buckets;
 	uint handover;
 
-	std::set<uint> inputFilters;
-	std::set<uint> outputFilters;
+	miniset<uint> inputFilters;
+	miniset<uint> outputFilters;
 
 	void destroy();
 

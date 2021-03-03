@@ -71,12 +71,32 @@ GuiEntity::GuiEntity(uint id) : GuiEntity() {
 	}
 
 	if (spec->ropeway) {
-		aim = en.ropeway().aim;
+		auto& r = en.ropeway();
+		aim = r.aim;
+		ropeway.next = r.next;
+		ropeway.a = r.arrive();
+		ropeway.c = r.depart();
+		if (r.next) {
+			auto &s = Entity::get(r.next).ropeway();
+			ropeway.b = s.arrive();
+			ropeway.d = s.depart();
+		} else {
+			ropeway.b = Point::Zero;
+			ropeway.d = Point::Zero;
+		}
 	}
 
 	if (spec->conveyor) {
 		conveyor.iid = en.conveyor().iid;
 		conveyor.offset = en.conveyor().offset;
+	}
+
+	if (spec->arm) {
+		arm.iid = en.arm().iid;
+	}
+
+	if (spec->drone) {
+		drone.iid = en.drone().iid;
 	}
 }
 

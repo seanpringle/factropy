@@ -287,7 +287,10 @@ Entity& Entity::get(uint id) {
 
 bool Entity::fits(Spec *spec, Point pos, Point dir) {
 	Box bounds = spec->box(pos, dir, spec->collision).shrink(0.1);
-	if (intersecting(bounds).size()) return false;
+
+	for (auto cid: intersecting(bounds)) {
+		if (get(cid).spec->collideBuild) return false;
+	}
 
 	if (spec->place != Spec::Footings) {
 		for (auto [x,y]: Chunk::walkTiles(bounds)) {

@@ -203,6 +203,22 @@ struct GuiEntity {
 		uint offset;
 	} conveyor;
 
+	struct {
+		uint iid;
+	} arm;
+
+	struct {
+		uint iid;
+	} drone;
+
+	struct {
+		uint next;
+		Point a;
+		Point b;
+		Point c;
+		Point d;
+	} ropeway;
+
 	GuiEntity();
 	GuiEntity(uint id);
 	~GuiEntity();

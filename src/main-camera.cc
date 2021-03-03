@@ -393,11 +393,11 @@ void MainCamera::draw() {
 		BeginMode3D(camera);
 			Point groundZero = groundTarget(buildLevel);
 
-			std::vector<Mat4> water;
-			std::vector<Mesh> chunk_meshes;
-			std::vector<Mat4> chunk_transforms;
+			minivec<Mat4> water;
+			minivec<Mesh> chunk_meshes;
+			minivec<Mat4> chunk_transforms;
 
-			std::map<uint,std::vector<Mat4>> resource_transforms;
+			std::map<uint,minivec<Mat4>> resource_transforms;
 
 			float size = (float)Chunk::size;
 			Mat4 scale = Mat4::scale(size,size,size);
@@ -437,16 +437,14 @@ void MainCamera::draw() {
 				}
 			}
 
-			std::map<Part*,std::vector<Mat4>> extant_ld;
-			std::map<Part*,std::vector<Mat4>> extant_hd;
-			std::map<Part*,std::vector<Mat4>> ghosts_ld;
-			std::map<Part*,std::vector<Mat4>> ghosts_hd;
+			std::map<Part*,minivec<Mat4>> extant_ld;
+			std::map<Part*,minivec<Mat4>> extant_hd;
+			std::map<Part*,minivec<Mat4>> ghosts_ld;
+			std::map<Part*,minivec<Mat4>> ghosts_hd;
+			std::map<Part*,minivec<Mat4>> items_hd;
+			std::map<Part*,minivec<Mat4>> items_ld;
 
-			std::vector<Mat4> belt_pillars;
-			std::map<Part*,std::vector<Mat4>> items_hd;
-			std::map<Part*,std::vector<Mat4>> items_ld;
-
-			std::vector<Mat4> gridSquares;
+			minivec<Mat4> gridSquares;
 
 			if (showGrid && groundZero.distanceSquared(position) < hdDistanceSquared) {
 				Point zero = {std::floor(groundZero.x),0,std::floor(groundZero.z)};
@@ -509,10 +507,8 @@ void MainCamera::draw() {
 				}
 
 				if (!ge->ghost && ge->spec->arm) {
-					Arm& arm = en.arm();
-
-					if (arm.iid && hd) {
-						Item* item = Item::get(arm.iid);
+					if (ge->arm.iid && hd) {
+						Item* item = Item::get(ge->arm.iid);
 						uint grip = en.spec->states[0].size()-1;
 						for (uint i = 0; i < item->parts.size(); i++) {
 							Part* part = item->parts[i];
@@ -525,10 +521,8 @@ void MainCamera::draw() {
 				}
 
 				if (!ge->ghost && ge->spec->drone) {
-					Drone& drone = en.drone();
-
-					if (drone.iid && hd) {
-						Item* item = Item::get(drone.iid);
+					if (ge->drone.iid && hd) {
+						Item* item = Item::get(ge->drone.iid);
 						Point p = ge->pos - (Point::Up*0.75f);
 						Mat4 t = Mat4::translate(p.x, p.y + item->armV, p.z);
 						for (uint i = 0; i < item->parts.size(); i++) {
@@ -564,17 +558,9 @@ void MainCamera::draw() {
 				}
 
 				if (!ge->ghost && ge->spec->ropeway) {
-					Ropeway& ropeway = en.ropeway();
-
-					if (ropeway.next) {
-						Entity& sibling = Entity::get(ropeway.next);
-
-						Point a = ropeway.arrive();
-						Point b = sibling.ropeway().arrive();
-						DrawLine3D(a, b, BLACK);
-						Point c = ropeway.depart();
-						Point d = sibling.ropeway().depart();
-						DrawLine3D(c, d, BLACK);
+					if (ge->ropeway.next) {
+						DrawLine3D(ge->ropeway.a, ge->ropeway.b, BLACK);
+						DrawLine3D(ge->ropeway.c, ge->ropeway.d, BLACK);
 					}
 				}
 			}
@@ -775,8 +761,8 @@ void MainCamera::draw() {
 				Path* job = Path::jobs.front();
 				DrawCube(job->target, 0.5f, 0.5f, 0.5f, GOLD);
 
-				std::vector<Mat4> reds;
-				std::vector<Mat4> greens;
+				minivec<Mat4> reds;
+				minivec<Mat4> greens;
 
 				for (auto pair: job->nodes) {
 					Path::Node* node = pair.second;

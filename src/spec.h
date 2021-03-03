@@ -65,6 +65,9 @@ struct Spec {
 	bool named;
 	bool block;
 
+	bool forceDelete;
+	bool collideBuild;
+
 	Box collision;
 	Box selection;
 	EnergyUser electrical;

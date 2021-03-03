@@ -186,7 +186,7 @@ uint Store::wouldRemoveAny() {
 	return 0;
 }
 
-uint Store::wouldRemoveAny(std::set<uint>& filter) {
+uint Store::wouldRemoveAny(miniset<uint>& filter) {
 	for (auto it = stacks.begin(); it != stacks.end(); it++) {
 		if (filter.count(it->iid) && isActiveProviding(it->iid)) {
 			return it->iid;
@@ -410,7 +410,7 @@ Stack Store::forceSupplyFrom(Store& src) {
 	return {0,0};
 }
 
-Stack Store::forceSupplyFrom(Store& src, std::set<uint>& filter) {
+Stack Store::forceSupplyFrom(Store& src, miniset<uint>& filter) {
 	for (Level& dl: levels) {
 		if (filter.count(dl.iid) && isRequesting(dl.iid) && src.countAvailable(dl.iid) > 0) {
 			return {dl.iid, 1};
@@ -443,7 +443,7 @@ Stack Store::supplyFrom(Store& src) {
 	return {0,0};
 }
 
-Stack Store::supplyFrom(Store& src, std::set<uint>& filter) {
+Stack Store::supplyFrom(Store& src, miniset<uint>& filter) {
 	for (Level& dl: levels) {
 		if (filter.count(dl.iid) && isRequesting(dl.iid) && src.isProviding(dl.iid)) {
 			return {dl.iid, 1};
@@ -481,7 +481,7 @@ Stack Store::overflowTo(Store& dst) {
 	return {0,0};
 }
 
-Stack Store::overflowTo(Store& dst, std::set<uint>& filter) {
+Stack Store::overflowTo(Store& dst, miniset<uint>& filter) {
 	for (Level& sl: levels) {
 		if (filter.count(sl.iid) && dst.isAccepting(sl.iid) && isActiveProviding(sl.iid)) {
 			return {sl.iid, 1};

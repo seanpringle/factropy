@@ -33,8 +33,8 @@ void Popup::center(int w, int h) {
 		((float)GetScreenHeight()-size.y)/2.0f
 	};
 
-	ImGui::SetNextWindowSize(size, ImGuiCond_Always);
-	ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+	ImGui::SetNextWindowSize(size, ImGuiCond_Once);
+	ImGui::SetNextWindowPos(pos, ImGuiCond_Once);
 
 	Vector2 mouse = GetMousePosition();
 	mouseOver = mouse.x >= pos.x && mouse.x < pos.x+size.x && mouse.y >= pos.y && mouse.y < pos.y+size.y;
@@ -54,7 +54,7 @@ MessagePopup::~MessagePopup() {
 }
 
 void MessagePopup::draw() {
-	center(1,1);
+	center(100,100);
 	ImGui::Begin("##message", nullptr,
 		ImGuiWindowFlags_AlwaysAutoResize |
 		ImGuiWindowFlags_NoTitleBar |
@@ -600,6 +600,8 @@ void EntityPopup2::draw() {
 				store.levelClear(down);
 				store.levelSet(down, lower, upper);
 			}
+
+			Print(fmtc("drones: %u, arms: %u", store.drones.size(), store.arms.size()));
 
 			PopID();
 		}

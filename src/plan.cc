@@ -86,10 +86,6 @@ void Plan::cycle() {
 
 void Plan::floor(float level) {
 	position.y = std::floor(level);
-	//for (uint i = 0; i < entities.size(); i++) {
-	//	auto te = entities[i];
-	//	te->floor(position.y + offsets[i].y);
-	//}
 }
 
 bool Plan::fits() {
@@ -107,6 +103,7 @@ bool Plan::entityFits(Spec *spec, Point pos, Point dir) {
 
 	for (auto sid: Entity::intersecting(bounds)) {
 		Entity& es = Entity::get(sid);
+		if (!es.spec->collideBuild) continue;
 		if (es.spec != spec) return false;
 		if (es.pos != pos) return false;
 		if (es.dir != dir) return false;

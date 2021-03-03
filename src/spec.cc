@@ -32,6 +32,9 @@ Spec::Spec(std::string name) {
 	toggle = false;
 	enable = false;
 
+	forceDelete = false;
+	collideBuild = true;
+
 	health = 0;
 	explosionSpec = "";
 	explosionDamage = 0;

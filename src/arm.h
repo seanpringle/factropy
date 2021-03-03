@@ -5,6 +5,7 @@
 struct Arm;
 
 #include "slabmap.h"
+#include "miniset.h"
 #include "item.h"
 #include "entity.h"
 #include <map>
@@ -38,7 +39,7 @@ struct Arm {
 	float orientation;
 	enum Stage stage;
 	uint64_t pause;
-	std::set<uint> filter;
+	miniset<uint> filter;
 
 	void destroy();
 	void update();

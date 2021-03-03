@@ -39,7 +39,6 @@ const char* quotes[] = {
 	"Though a candle burns in my house... there's nobody home.",
 };
 
-
 void scenario() {
 	Sim::reset();
 	Sim::reseed(879600773);
@@ -1099,6 +1098,7 @@ void scenario() {
 	spec->consumeChemical = true;
 	spec->generateElectricity = true;
 	spec->energyGenerate = Energy::kW(250);
+	spec->forceDelete = true;
 
 	spec->depot = true;
 	spec->drones = 10;
@@ -1133,7 +1133,7 @@ void scenario() {
 	spec->capacity = Mass::kg(5000);
 	spec->enableSetUpper = true;
 	spec->consumeChemical = true;
-
+	spec->forceDelete = true;
 	spec->costGreedy = 1.3;
 	spec->clearance = 1.5;
 
@@ -1175,6 +1175,7 @@ void scenario() {
 	spec->align = false;
 	spec->drone = true;
 	spec->droneSpeed = 0.1f;
+	spec->collideBuild = false;
 
 	spec = new Spec("arm");
 	spec->health = 10;
@@ -2207,10 +2208,13 @@ int main(int argc, char const *argv[]) {
 						for (auto te: camera->selected) {
 							uint id = te->id;
 							if (!Entity::exists(id)) continue;
+							if (te->spec->forceDelete && !IsKeyDown(KEY_LEFT_SHIFT)) continue;
 							if (camera->directing && camera->directing->id == id) continue;
 							Entity::get(id).deconstruct();
 						}
 					});
+					camera->selection = {Point::Zero, Point::Zero};
+					camera->selecting = false;
 				}
 				if (camera->hovering) {
 					Sim::locked([&]() {
@@ -2228,7 +2232,7 @@ int main(int argc, char const *argv[]) {
 					if (Entity::exists(id)) {
 						Entity& en = Entity::get(id);
 						if (en.spec->conveyor) {
-							en.conveyor().insert(Item::byName("copper-wire")->id);
+							en.conveyor().insert(Item::byName("pipe")->id);
 						}
 					}
 				});
@@ -2488,6 +2492,13 @@ int main(int argc, char const *argv[]) {
 		Chunk *chunk = pair.second;
 		chunk->dropHeightMap();
 	}
+
+	delete status;
+	delete statsPopup;
+	delete waypointsPopup;
+	delete techPopup;
+	delete buildPopup;
+	delete entityPopup;
 
 	delete mod;
 	delete camera;
