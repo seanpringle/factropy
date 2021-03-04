@@ -38,5 +38,4 @@ struct Unveyor {
 	void unmanage();
 
 	Box range();
-	void toggle();
 };

@@ -139,6 +139,10 @@ Entity& Entity::create(uint id, Spec *spec) {
 		Unveyor::create(id);
 	}
 
+	if (spec->loader) {
+		Loader::create(id);
+	}
+
 	if (spec->ropeway) {
 		Ropeway::create(id);
 	}
@@ -235,6 +239,10 @@ void Entity::destroy() {
 
 	if (spec->unveyor) {
 		unveyor().destroy();
+	}
+
+	if (spec->loader) {
+		loader().destroy();
 	}
 
 	if (spec->ropeway) {
@@ -690,6 +698,10 @@ Conveyor& Entity::conveyor() {
 
 Unveyor& Entity::unveyor() {
 	return Unveyor::get(id);
+}
+
+Loader& Entity::loader() {
+	return Loader::get(id);
 }
 
 Ropeway& Entity::ropeway() {

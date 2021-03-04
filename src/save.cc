@@ -75,6 +75,7 @@ namespace Sim {
 		Pipe::saveAll(name);
 		Conveyor::saveAll(name);
 		Unveyor::saveAll(name);
+		Loader::saveAll(name);
 		Computer::saveAll(name);
 		RopewayBucket::saveAll(name);
 		Ropeway::saveAll(name);
@@ -132,6 +133,7 @@ namespace Sim {
 		Pipe::loadAll(name);
 		Conveyor::loadAll(name);
 		Unveyor::loadAll(name);
+		Loader::loadAll(name);
 		Computer::loadAll(name);
 		RopewayBucket::loadAll(name);
 		Ropeway::loadAll(name);
@@ -912,6 +914,36 @@ void Unveyor::loadAll(const char* name) {
 		for (auto item: state["items"]) {
 			unveyor.items.push_back((Unveyor::item){ .offset = item[0], .iid = item[1] });
 		}
+	}
+
+	in.close();
+}
+
+void Loader::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/loaders.json");
+
+	for (auto& loader: all) {
+
+		json state;
+		state["id"] = loader.id;
+		state["storeId"] = loader.storeId;
+		state["pause"] = loader.pause;
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Loader::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/loaders.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+		Loader& loader = get(state["id"]);
+		loader.storeId = state["storeId"];
+		loader.pause = state["pause"];
 	}
 
 	in.close();

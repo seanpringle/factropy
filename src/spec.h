@@ -56,7 +56,6 @@ struct Spec {
 	RenderTexture texture;
 	bool align;
 	bool pivot;
-	bool loader;
 	bool shunt;
 	bool rotate;
 	bool toggle;
@@ -168,6 +167,10 @@ struct Spec {
 	bool unveyorEntry;
 	float unveyorRange;
 
+	bool loader;
+	bool loaderUnload;
+	Point loaderPoint;
+
 	bool ropeway;
 	bool ropewayTerminus;
 	bool ropewayTower;
@@ -180,6 +183,7 @@ struct Spec {
 
 	Spec* pipette;
 	Spec* cycle;
+	bool cycleReverseDirection;
 
 	bool build;
 	bool select;

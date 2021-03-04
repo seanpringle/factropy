@@ -783,9 +783,96 @@ void scenario() {
 	};
 
 	Spec::byName("unveyor-entry")->cycle = Spec::byName("unveyor-exit");
+	Spec::byName("unveyor-entry")->cycleReverseDirection = true;
 	Spec::byName("unveyor-exit")->cycle = Spec::byName("unveyor-entry");
+	Spec::byName("unveyor-exit")->cycleReverseDirection = true;
 
 	Spec::byName("unveyor-exit")->statsGroup = Spec::byName("unveyor-entry");
+
+	spec = new Spec("loader");
+	spec->collision = {0, 0, 0, 1, 2, 2};
+	spec->selection = spec->collision;
+	spec->rotate = true;
+	spec->loader = true;
+	spec->loaderUnload = false;
+	spec->loaderPoint = Point::South*1.5f;
+	spec->conveyor = true;
+	spec->conveyorInput = Point::North*1.5f;
+	spec->conveyorOutput = Point::Zero;
+	spec->consumeElectricity = true;
+	spec->energyDrain = Energy::kW(1);
+	spec->health = 10;
+
+	{
+		Point base = Point::Zero;
+		Point step = Point::North * (1.0f/30.0f);
+		for (int i = 0; i < 30; i++) {
+			Point p = base + (step * (float)i);
+			spec->conveyorTransforms.push_back(p.translation());
+		}
+	}
+
+	{
+		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
+		spec->parts = {
+			(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))
+				->scale(0.001, 0.001, 0.001)->paint(0xcccc00ff)->translate(0,-1,0),
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,-0.5),
+			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,-0.5),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+		};
+	}
+
+	spec->materials = {
+		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("gear-wheel")->id, 2 },
+	};
+
+	spec = new Spec("unloader");
+	spec->collision = {0, 0, 0, 1, 2, 2};
+	spec->selection = spec->collision;
+	spec->rotate = true;
+	spec->loader = true;
+	spec->loaderUnload = true;
+	spec->loaderPoint = Point::North*1.5f;
+	spec->conveyor = true;
+	spec->conveyorInput = Point::Zero;
+	spec->conveyorOutput = Point::South*1.5f;
+	spec->consumeElectricity = true;
+	spec->energyDrain = Energy::kW(1);
+	spec->health = 10;
+
+	{
+		Point base = Point::South;
+		Point step = Point::North * (1.0f/30.0f);
+		for (int i = 0; i < 30; i++) {
+			Point p = base + (step * (float)i);
+			spec->conveyorTransforms.push_back(p.translation());
+		}
+	}
+
+	{
+		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
+		spec->parts = {
+			(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xcccc00ff)
+				->scale(0.001, 0.001, 0.001)->rotate(Point::Up, 180)->translate(0,-1,0),
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,0.5),
+			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,0.5),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+		};
+	}
+
+	spec->materials = {
+		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("gear-wheel")->id, 2 },
+	};
+
+	Spec::byName("loader")->cycle = Spec::byName("unloader");
+	Spec::byName("loader")->cycleReverseDirection = true;
+	Spec::byName("unloader")->cycle = Spec::byName("loader");
+	Spec::byName("unloader")->cycleReverseDirection = true;
+
+	Spec::byName("unloader")->statsGroup = Spec::byName("loader");
 
 	spec = new Spec("ropeway-terminus");
 	spec->collision = {0, 0, 0, 5, 10, 5};
@@ -845,21 +932,6 @@ void scenario() {
 	Spec::byName("ropeway-tower")->cycle = Spec::byName("ropeway-terminus");
 
 	Spec::byName("ropeway-terminus")->ropewayBucketSpec = Spec::byName("ropeway-bucket");
-
-//	spec = new Spec("loader");
-//	spec->collision = {0, 0, 0, 1, 2, 1};
-	spec->selection = spec->collision;
-//	spec->rotate = true;
-//	spec->loader = true;
-//	spec->consumeElectricity = true;
-//	spec->energyConsume = Energy::kW(10);
-//	spec->health = 10;
-//
-//	spec->parts = {
-//		(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1,0),
-//		(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1,0),
-//		//(new PartCycle(beltRidge, BeltSegment::slot))->paint(0xcccc00ff)->translate(0,-1,0)->ld(false),
-//	};
 
 	spec = new Spec("fluid-tank");
 	spec->pipe = true;

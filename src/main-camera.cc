@@ -627,38 +627,9 @@ void MainCamera::draw() {
 					}
 				}
 
-//				if (hovering->spec->arm) {
-//					Entity& en = Entity::get(hovering->id);
-//					DrawCube(en.arm().input(), 0.25f, 0.25f, 0.25f, GREEN);
-//					DrawCube(en.arm().output(), 0.25f, 0.25f, 0.25f, RED);
-//				}
-
 				if (hovering->spec->turret) {
 					DrawSphereWires(hovering->pos, hovering->spec->turretRange, 72, 72, RED);
 				}
-
-//				if (hovering->spec->conveyor) {
-//					Sim::locked([&]() {
-//						Entity& en = Entity::get(hovering->id);
-//						DrawCube(en.conveyor().input(), 0.25f, 0.25f, 0.25f, GREEN);
-//						DrawCube(en.conveyor().output(), 0.25f, 0.25f, 0.25f, RED);
-//
-//						if (en.conveyor().prev) {
-//							Entity& sib = Entity::get(en.conveyor().prev);
-//							drawBox(sib.spec->southBox(sib.pos), sib.dir, GREEN);
-//						}
-//
-//						if (en.conveyor().next) {
-//							Entity& sib = Entity::get(en.conveyor().next);
-//							drawBox(sib.spec->southBox(sib.pos), sib.dir, RED);
-//						}
-//
-//						if (en.conveyor().side) {
-//							Entity& sib = Entity::get(en.conveyor().side);
-//							drawBox(sib.spec->southBox(sib.pos), sib.dir, ORANGE);
-//						}
-//					});
-//				}
 
 				if (hovering->spec->unveyor) {
 					Sim::locked([&]() {
@@ -685,14 +656,6 @@ void MainCamera::draw() {
 						}
 					});
 				}
-
-//				if (hovering->spec->ropeway) {
-//					Sim::locked([&]() {
-//						Entity& en = Entity::get(hovering->id);
-//						DrawCube(en.ropeway().arrive(), 0.25f, 0.25f, 0.25f, GREEN);
-//						DrawCube(en.ropeway().depart(), 0.25f, 0.25f, 0.25f, RED);
-//					});
-//				}
 			}
 
 			if (selecting) {
@@ -728,12 +691,6 @@ void MainCamera::draw() {
 							DrawCube(p, 0.25f, 0.25f, 0.25f, RED);
 						}
 					}
-
-//					if (te->spec->supportPoints.size()) {
-//						for (Point p: te->spec->relativePoints(te->spec->supportPoints, te->dir.rotation(), te->pos)) {
-//							DrawCube(p, 0.25f, 0.25f, 0.25f, GOLD);
-//						}
-//					}
 				}
 			}
 

@@ -61,7 +61,7 @@ void Plan::cycle() {
 
 		if (ge->spec->cycle) {
 			auto ce = new GuiFakeEntity(ge->spec->cycle);
-			ce->dir = ge->dir;
+			ce->dir = ge->spec->cycleReverseDirection ? -ge->dir: ge->dir;
 			ce->move(ge->pos);
 			entities[0] = ce;
 

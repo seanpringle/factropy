@@ -7,12 +7,6 @@ module base() {
 	}
 }
 
-module loaderBase() {
-	difference() {
-		translate([0,0,1250]) box([1000, 1000, 700]);
-		translate([0,0,1250]) box([900, 1100, 600]);
-	}
-}
 
 module pillar() {
 	translate([0,0,450]) box([500, 500, 900]);
@@ -68,10 +62,17 @@ module unveyor() {
 	}
 }
 
+module loader() {
+	translate([0,0,750]) difference() {
+		box([1000,2000,1500]);
+		translate([0,501,0]) box([900,1001,1400]);
+	}
+}
+
 //fillet(10, $fn=12) base();
 //base();
-//fillet(10, $fn=12) loaderBase();
-//loaderBase();
+//fillet(10, $fn=12) loader();
+loader();
 //fillet(10, $fn=12) pillar();
 //pillar();
 //belt();
@@ -90,4 +91,4 @@ module unveyor() {
 //beltLeft($fn=36);
 
 //base();
-unveyor();
+//unveyor();

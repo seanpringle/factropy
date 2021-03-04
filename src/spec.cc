@@ -23,7 +23,6 @@ Spec::Spec(std::string name) {
 	explodes = false;
 	explosion = false;
 	store = false;
-	loader = false;
 	shunt = false;
 	junk = false;
 	named = false;
@@ -112,6 +111,10 @@ Spec::Spec(std::string name) {
 	unveyorRange = 0.0f;
 	unveyorEntry = false;
 
+	loader = false;
+	loaderUnload = false;
+	loaderPoint = Point::Zero;
+
 	ropeway = false;
 	ropewayTower = false;
 	ropewayTerminus = false;
@@ -123,6 +126,8 @@ Spec::Spec(std::string name) {
 	networker = false;
 
 	cycle = nullptr;
+	cycleReverseDirection = false;
+
 	pipette = nullptr;
 
 	build = true;
