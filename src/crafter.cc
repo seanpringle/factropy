@@ -242,7 +242,7 @@ void Crafter::update() {
 		}
 	}
 
-	if (en.isEnabled() && !working && !exporting() && recipe) {
+	if (en.isEnabled() && !working && !exporting() && recipe && recipe->licensed) {
 
 		if (inputItemsReady() && inputFluidsReady() && inputMiningReady() && inputCurrencyReady() && outputItemsReady()) {
 

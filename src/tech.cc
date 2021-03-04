@@ -54,4 +54,12 @@ void Tech::buy() {
 	if (miningRate > 0.0f) {
 		Recipe::miningRate = std::max(Recipe::miningRate, miningRate);
 	}
+
+	for (auto spec: licenseSpecs) {
+		spec->licensed = true;
+	}
+
+	for (auto recipe: licenseRecipes) {
+		recipe->licensed = true;
+	}
 }

@@ -39,7 +39,7 @@ void Depot::update() {
 	for (uint eid: entities) {
 		Entity& se = Entity::get(eid);
 
-		if (se.isConstruction()) {
+		if (se.isConstruction() && se.spec->licensed) {
 			Stack stack = se.ghost().store.forceSupplyFrom(en.store());
 			if (stack.size) {
 				dispatch(id, id, se.id, stack);

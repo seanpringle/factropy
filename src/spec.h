@@ -54,6 +54,7 @@ struct Spec {
 
 	Image image;
 	RenderTexture texture;
+	bool licensed;
 	bool align;
 	bool pivot;
 	bool shunt;

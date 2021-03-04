@@ -182,6 +182,7 @@ void scenario() {
 		for (auto part: item->parts) {
 			recipe->parts.push_back(part);
 		}
+		recipe->licensed = true;
 	}
 
 	for (uint i = 1; i < 10; i++) {
@@ -189,9 +190,9 @@ void scenario() {
 		tech->tags = {"mining"};
 		tech->cost = Currency::k(i);
 		tech->miningRate = 1.0f + ((float)i * 0.1);
-		tech->parts = {
-			(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
-		};
+		//tech->parts = {
+		//	(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
+		//};
 	}
 
 	recipe = new Recipe(Recipe::next(), "iron-smelting1");
@@ -206,6 +207,7 @@ void scenario() {
 	recipe->parts = {
 		(new Part(thingIngot))->paint(0x686969ff),
 	};
+	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "copper-smelting1");
 	recipe->energyUsage = Energy::kJ(300);
@@ -219,6 +221,7 @@ void scenario() {
 	recipe->parts = {
 		(new Part(thingIngot))->paint(0xDC7F64ff),
 	};
+	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "steel-smelting1");
 	recipe->energyUsage = Energy::kJ(900);
@@ -232,6 +235,7 @@ void scenario() {
 	recipe->parts = {
 		(new Part(thingIngot))->paint(0x888989ff),
 	};
+	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "brick-smelting1");
 	recipe->energyUsage = Energy::kJ(300);
@@ -243,6 +247,7 @@ void scenario() {
 		{ Item::byName("brick")->id, 1 },
 	};
 	recipe->parts = Item::byName("brick")->parts;
+	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "copper-wire");
 	recipe->energyUsage = Energy::kJ(300);
@@ -254,6 +259,7 @@ void scenario() {
 		{ Item::byName("copper-wire")->id, 2 },
 	};
 	recipe->parts = Item::byName("copper-wire")->parts;
+	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "circuit-board");
 	recipe->energyUsage = Energy::kJ(600);
@@ -266,6 +272,7 @@ void scenario() {
 		{ Item::byName("circuit-board")->id, 2 },
 	};
 	recipe->parts = Item::byName("circuit-board")->parts;
+	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "gear-wheel");
 	recipe->energyUsage = Energy::kJ(600);
@@ -277,6 +284,7 @@ void scenario() {
 		{ Item::byName("gear-wheel")->id, 2 },
 	};
 	recipe->parts = Item::byName("gear-wheel")->parts;
+	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "pipe");
 	recipe->energyUsage = Energy::kJ(600);
@@ -288,6 +296,7 @@ void scenario() {
 		{ Item::byName("pipe")->id, 1 },
 	};
 	recipe->parts = Item::byName("pipe")->parts;
+	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "battery");
 	recipe->energyUsage = Energy::kJ(900);
@@ -300,6 +309,11 @@ void scenario() {
 		{ Item::byName("battery")->id, 1 },
 	};
 	recipe->parts = Item::byName("battery")->parts;
+
+	tech = new Tech(Tech::next(), "batteries");
+	tech->tags = {"products"};
+	tech->cost = Currency::k(1);
+	tech->licenseRecipes.insert(Recipe::byName("battery"));
 
 	recipe = new Recipe(Recipe::next(), "electric-motor");
 	recipe->energyUsage = Energy::kJ(900);
@@ -314,7 +328,13 @@ void scenario() {
 	};
 	recipe->parts = Item::byName("electric-motor")->parts;
 
+	tech = new Tech(Tech::next(), "electric-motors");
+	tech->tags = {"products"};
+	tech->cost = Currency::k(1);
+	tech->licenseRecipes.insert(Recipe::byName("electric-motor"));
+
 	Spec* spec = new Spec("provider-container");
+	spec->licensed = true;
 	spec->collision = {0, 0, 0, 2, 2, 5};
 	spec->selection = spec->collision;
 	spec->parts = {
@@ -347,6 +367,11 @@ void scenario() {
 		{Item::byName("copper-ingot")->id, 5},
 	};
 
+	tech = new Tech(Tech::next(), "requester-containers");
+	tech->tags = {"storage"};
+	tech->cost = Currency::k(10);
+	tech->licenseSpecs.insert(Spec::byName("requester-container"));
+
 	spec = new Spec("buffer-container");
 	spec->collision = {0, 0, 0, 2, 2, 5};
 	spec->selection = spec->collision;
@@ -361,9 +386,15 @@ void scenario() {
 		{Item::byName("steel-ingot")->id, 5},
 	};
 
+	tech = new Tech(Tech::next(), "buffer-containers");
+	tech->tags = {"storage"};
+	tech->cost = Currency::k(10);
+	tech->licenseSpecs.insert(Spec::byName("buffer-container"));
+
 	auto thingAssemblerPiston = Thing("models/assembler-piston-hd.stl", "models/assembler-piston-ld.stl");
 
 	spec = new Spec("assembler");
+	spec->licensed = true;
 	spec->store = true;
 	spec->capacity = Mass::kg(100);
 	spec->loadPriority = true;
@@ -450,6 +481,7 @@ void scenario() {
 	}
 
 	spec = new Spec("furnace");
+	spec->licensed = true;
 	spec->collision = {0, 0, 0, 4, 4, 4};
 	spec->selection = spec->collision;
 	spec->parts = {
@@ -504,6 +536,7 @@ void scenario() {
 	}
 
 	spec = new Spec("miner");
+	spec->licensed = true;
 	spec->store = true;
 	spec->capacity = Mass::kg(10);
 	spec->rotate = true;
@@ -545,6 +578,7 @@ void scenario() {
 	}
 
 	spec = new Spec("offshore-pump");
+	spec->licensed = true;
 	spec->rotate = true;
 	spec->place = Spec::Water;
 	spec->pipeOutputConnections = {
@@ -573,6 +607,7 @@ void scenario() {
 	recipe->outputFluids = {
 		{ Fluid::byName("water")->id, 1000 },
 	};
+	recipe->licensed = true;
 
 	auto waterDroplet = new Part(droplet);
 	waterDroplet->color = Fluid::byName("water")->color;
@@ -583,6 +618,7 @@ void scenario() {
 	auto beltRidge = Thing("models/belt-ridge-hd.stl", "models/belt-ridge-ld.stl");
 
 	spec = new Spec("conveyor");
+	spec->licensed = true;
 	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = {0, -0.75, 0, 1, 0.5, 1};
 	spec->rotate = true;
@@ -616,6 +652,7 @@ void scenario() {
 	};
 
 	spec = new Spec("conveyor-right");
+	spec->licensed = true;
 	spec->build = false;
 	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = {0, -0.75, 0, 1, 0.5, 1};
@@ -655,6 +692,7 @@ void scenario() {
 	};
 
 	spec = new Spec("conveyor-left");
+	spec->licensed = true;
 	spec->build = false;
 	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = {0, -0.75, 0, 1, 0.5, 1};
@@ -705,6 +743,7 @@ void scenario() {
 	Spec::byName("conveyor-right")->statsGroup = Spec::byName("conveyor");
 
 	spec = new Spec("unveyor-entry");
+	spec->licensed = true;
 	spec->collision = {0, 0, 0, 1, 2, 2};
 	spec->selection = spec->collision;
 	spec->rotate = true;
@@ -744,6 +783,7 @@ void scenario() {
 	};
 
 	spec = new Spec("unveyor-exit");
+	spec->licensed = true;
 	spec->collision = {0, 0, 0, 1, 2, 2};
 	spec->selection = spec->collision;
 	spec->rotate = true;
@@ -874,6 +914,15 @@ void scenario() {
 
 	Spec::byName("unloader")->statsGroup = Spec::byName("loader");
 
+	tech = new Tech(Tech::next(), "tech-loaders");
+	tech->tags = {"logistics"};
+	tech->cost = Currency::k(10);
+	tech->licenseSpecs.insert(Spec::byName("loader"));
+	tech->licenseSpecs.insert(Spec::byName("unloader"));
+	//tech->parts = {
+	//	(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
+	//};
+
 	spec = new Spec("ropeway-terminus");
 	spec->collision = {0, 0, 0, 5, 10, 5};
 	spec->selection = spec->collision;
@@ -933,7 +982,14 @@ void scenario() {
 
 	Spec::byName("ropeway-terminus")->ropewayBucketSpec = Spec::byName("ropeway-bucket");
 
+	tech = new Tech(Tech::next(), "ropeways");
+	tech->tags = {"logistics"};
+	tech->cost = Currency::k(10);
+	tech->licenseSpecs.insert(Spec::byName("ropeway-terminus"));
+	tech->licenseSpecs.insert(Spec::byName("ropeway-tower"));
+
 	spec = new Spec("fluid-tank");
+	spec->licensed = true;
 	spec->pipe = true;
 	spec->collision = {0, 0, 0, 5, 3, 5};
 	spec->selection = spec->collision;
@@ -950,6 +1006,7 @@ void scenario() {
 	};
 
 	spec = new Spec("pipe-straight");
+	spec->licensed = true;
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->collision = {0, 0, 0, 1, 1, 1};
@@ -967,6 +1024,7 @@ void scenario() {
 	};
 
 	spec = new Spec("pipe-cross");
+	spec->licensed = true;
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->collision = {0, 0, 0, 1, 1, 1};
@@ -984,6 +1042,7 @@ void scenario() {
 	};
 
 	spec = new Spec("pipe-tee");
+	spec->licensed = true;
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->collision = {0, 0, 0, 1, 1, 1};
@@ -1001,6 +1060,7 @@ void scenario() {
 	};
 
 	spec = new Spec("pipe-elbow");
+	spec->licensed = true;
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->collision = {0, 0, 0, 1, 1, 1};
@@ -1018,6 +1078,7 @@ void scenario() {
 	};
 
 	spec = new Spec("pipe-ground");
+	spec->licensed = true;
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(500);
 	spec->pipeUnderground = true;
@@ -1185,6 +1246,11 @@ void scenario() {
 		{ Item::byName("circuit-board")->id, 2 },
 	};
 
+	tech = new Tech(Tech::next(), "truck-engineers");
+	tech->tags = {"vehicles"};
+	tech->cost = Currency::k(10);
+	tech->licenseSpecs.insert(Spec::byName("truck-engineer"));
+
 	spec = new Spec("truck-hauler");
 	spec->collision = {0, 0, 0, 2, 2, 3};
 	spec->selection = spec->collision;
@@ -1215,7 +1281,13 @@ void scenario() {
 		{ Item::byName("gear-wheel")->id, 2 },
 	};
 
+	tech = new Tech(Tech::next(), "truck-haulers");
+	tech->tags = {"vehicles"};
+	tech->cost = Currency::k(10);
+	tech->licenseSpecs.insert(Spec::byName("truck-hauler"));
+
 	spec = new Spec("truck-stop");
+	spec->licensed = true;
 	spec->health = 10;
 	spec->collision = {0, 0, 0, 3, 0.1, 3};
 	spec->selection = spec->collision;
@@ -1231,6 +1303,7 @@ void scenario() {
 	auto thingDroneRotor = Thing("models/drone-rotor-hd.stl", "models/drone-rotor-ld.stl");
 
 	spec = new Spec("drone");
+	spec->licensed = true;
 	spec->select = false;
 	spec->build = false;
 	spec->health = 10;
@@ -1250,6 +1323,7 @@ void scenario() {
 	spec->collideBuild = false;
 
 	spec = new Spec("arm");
+	spec->licensed = true;
 	spec->health = 10;
 	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = spec->collision;
@@ -1345,6 +1419,7 @@ void scenario() {
 	}
 
 	spec = new Spec("long-arm");
+	spec->licensed = true;
 	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = spec->collision;
 	spec->arm = true;
@@ -1456,6 +1531,7 @@ void scenario() {
 	auto steamEnginewheel = Thing("models/steam-engine-wheel-hd.stl", "models/steam-engine-wheel-ld.stl");
 
 	spec = new Spec("boiler");
+	spec->licensed = true;
 	spec->collision = {0, 0, 0, 3, 2, 2};
 	spec->selection = spec->collision;
 	spec->pipe = true;
@@ -1493,6 +1569,7 @@ void scenario() {
 	recipe->outputFluids = {
 		{ Fluid::byName("steam")->id, 100 },
 	};
+	recipe->licensed = true;
 
 	auto steamDroplet = new Part(droplet);
 	steamDroplet->color = Fluid::byName("steam")->color;
@@ -1500,6 +1577,7 @@ void scenario() {
 	recipe->parts = {steamDroplet};
 
 	spec = new Spec("steam-engine");
+	spec->licensed = true;
 	spec->collision = {0, 0, 0, 4, 4, 5};
 	spec->selection = spec->collision;
 	spec->electrical = { .area = Area(5,6), .rate = Energy::MW(1) };
@@ -1583,6 +1661,11 @@ void scenario() {
 	spec->explosionRadius = 0.1;
 	spec->explosionRate = 0.01;
 
+	tech = new Tech(Tech::next(), "turrets");
+	tech->tags = {"defence"};
+	tech->cost = Currency::k(10);
+	tech->licenseSpecs.insert(Spec::byName("turret"));
+
 	spec = new Spec("missile");
 	spec->explodes = true;
 	spec->explosionSpec = "missile-explosion1";
@@ -1603,7 +1686,13 @@ void scenario() {
 	spec->explosionRadius = 10;
 	spec->explosionRate = 0.5;
 
+	tech = new Tech(Tech::next(), "missiles");
+	tech->tags = {"defence"};
+	tech->cost = Currency::k(10);
+	tech->licenseSpecs.insert(Spec::byName("missile"));
+
 	spec = new Spec("teleporter");
+	spec->licensed = true;
 	spec->health = 10;
 	spec->store = true;
 	spec->capacity = Mass::kg(10000);
@@ -1662,6 +1751,11 @@ void scenario() {
 		{ Item::byName("circuit-board")->id, 10 },
 	};
 
+	tech = new Tech(Tech::next(), "computers");
+	tech->tags = {"computation"};
+	tech->cost = Currency::k(10);
+	tech->licenseSpecs.insert(Spec::byName("computer"));
+
 	recipe = new Recipe(Recipe::next(), "sell-iron-ingots1");
 	recipe->energyUsage = Energy::MJ(100);
 	recipe->tags = {"teleporting"};
@@ -1670,15 +1764,7 @@ void scenario() {
 	};
 	recipe->outputCurrency = 1000;
 	recipe->parts = Item::byName("iron-ingot")->parts;
-
-	recipe = new Recipe(Recipe::next(), "buy-iron-ingots1");
-	recipe->energyUsage = Energy::MJ(100);
-	recipe->tags = {"teleporting"};
-	recipe->outputItems = {
-		{ Item::byName("iron-ingot")->id, 1000 },
-	};
-	recipe->outputCurrency = 1000;
-	recipe->parts = Item::byName("iron-ingot")->parts;
+	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "sell-copper-ingots1");
 	recipe->energyUsage = Energy::MJ(100);
@@ -1688,6 +1774,7 @@ void scenario() {
 	};
 	recipe->outputCurrency = 1000;
 	recipe->parts = Item::byName("copper-ingot")->parts;
+	recipe->licensed = true;
 
 	spec = new Spec("projector");
 	spec->health = 10;

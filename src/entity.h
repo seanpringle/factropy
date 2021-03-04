@@ -182,6 +182,7 @@ struct GuiEntity {
 	struct {
 		Mass limit;
 		Mass usage;
+		minivec<Store::Level> levels;
 	} store;
 
 	struct {

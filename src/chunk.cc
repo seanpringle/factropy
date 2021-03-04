@@ -179,7 +179,7 @@ Stack Chunk::mine(Box b, uint iid) {
 		Tile *tile = tileTryGet(x, y);
 		if (tile && tile->hill) {
 			Hill* hill = tile->hill;
-			if (hill->minerals.count(iid) && hill->minerals[iid]) {
+			if (hill->minerals.count(iid) && hill->minerals[iid] > 0) {
 				for (auto tile: hill->tiles) {
 					if (tile->mineral.iid == iid && tile->mineral.size > 0) {
 						tile->mineral.size -= 1;
@@ -198,7 +198,7 @@ Stack Chunk::mine(Box b, uint iid) {
 bool Chunk::canMine(Box b, uint iid) {
 	for (auto [x,y]: walkTiles(b)) {
 		Tile *tile = tileTryGet(x, y);
-		if (tile && tile->hill && tile->hill->minerals.count(iid) && tile->hill->minerals[iid]) {
+		if (tile && tile->hill && tile->hill->minerals.count(iid) && tile->hill->minerals[iid] > 0) {
 			return true;
 		}
 	}
@@ -231,7 +231,7 @@ std::vector<Stack> Chunk::minables(Box b) {
 		Tile *tile = tileTryGet(x, y);
 		if (tile && tile->hill) {
 			for (auto [iid,count]: tile->hill->minerals) {
-				counts.push_back({iid,count});
+				if (count) counts.push_back({iid,count});
 			}
 			break;
 		}

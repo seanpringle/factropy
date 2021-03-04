@@ -605,7 +605,9 @@ Energy Entity::consume(Energy e) {
 	if (spec->consumeThermalFluid) {
 		c = generator().consume(e);
 	}
-	energyConsumers[id] += c;
+	if (energyConsumers.count(id)) {
+		energyConsumers[id] += c;
+	}
 	return c;
 }
 

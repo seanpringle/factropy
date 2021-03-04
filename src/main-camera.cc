@@ -419,6 +419,10 @@ void MainCamera::draw() {
 				if (groundZero.distance(Point(cx+halt, 0.0f, cz+halt)) < 1000) {
 					for (auto [tx,ty]: chunk->minerals) {
 						Chunk::Tile* tile = &chunk->tiles[ty][tx];
+						if (!tile->hill) continue;
+						if (!tile->hill->minerals.count(tile->mineral.iid)) continue;
+						if (!tile->hill->minerals[tile->mineral.iid]) continue;
+
 						float h = tile->elevation*(49.82*2)-0.25;
 						Mat4 r = Mat4::rotate(Point(cx+tx, h, cz+ty), tx);
 						Mat4 m = Mat4::translate(cx+tx, h, cz+ty);

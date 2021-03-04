@@ -7,6 +7,7 @@ struct Tech;
 #include "raylib-ex.h"
 #include "item.h"
 #include "spec.h"
+#include "recipe.h"
 #include "currency.h"
 #include <map>
 #include <set>
@@ -29,7 +30,7 @@ struct Tech {
 	std::string name;
 	Image image;
 	RenderTexture texture;
-	std::vector<Part*> parts;
+	//std::vector<Part*> parts;
 
 	std::set<std::string> tags;
 
@@ -37,6 +38,9 @@ struct Tech {
 	Currency cost;
 
 	float miningRate;
+
+	std::set<Spec*> licenseSpecs;
+	std::set<Recipe*> licenseRecipes;
 
 	Tech(uint id, std::string name);
 	~Tech();

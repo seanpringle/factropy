@@ -14,6 +14,7 @@ struct Popup {
 	virtual void draw();
 	void show(bool state = true);
 	void center(int w, int h);
+	void bottomLeft(int w, int h);
 };
 
 struct MessagePopup : Popup {

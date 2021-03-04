@@ -62,6 +62,7 @@ namespace Sim {
 		out.close();
 
 		Spec::saveAll(name);
+		Recipe::saveAll(name);
 		Tech::saveAll(name);
 		Chunk::saveAll(name);
 		Entity::saveAll(name);
@@ -120,6 +121,7 @@ namespace Sim {
 		in.close();
 
 		Spec::loadAll(name);
+		Recipe::loadAll(name);
 		Tech::loadAll(name);
 		Chunk::loadAll(name);
 		Entity::loadAll(name);
@@ -285,6 +287,7 @@ void Spec::saveAll(const char* name) {
 		Spec *spec = pair.second;
 		json state;
 		state["name"] = spec->name;
+		state["licensed"] = spec->licensed;
 		out << state << "\n";
 	}
 
@@ -292,6 +295,42 @@ void Spec::saveAll(const char* name) {
 }
 
 void Spec::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/specs.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+
+		Spec* spec = Spec::byName(state["name"]);
+		spec->licensed = state["licensed"];
+	}
+}
+
+void Recipe::saveAll(const char* name) {
+	auto path = std::string(name);
+	auto out = std::ofstream(path + "/recipes.json");
+
+	for (auto& pair: ids) {
+		Recipe *recipe = Recipe::get(pair.first);
+		json state;
+		state["name"] = recipe->name;
+		state["licensed"] = recipe->licensed;
+		out << state << "\n";
+	}
+
+	out.close();
+}
+
+void Recipe::loadAll(const char* name) {
+	auto path = std::string(name);
+	auto in = std::ifstream(path + "/recipes.json");
+
+	for (std::string line; std::getline(in, line);) {
+		auto state = json::parse(line);
+
+		Recipe* recipe = Recipe::byName(state["name"]);
+		recipe->licensed = state["licensed"];
+	}
 }
 
 void Tech::saveAll(const char* name) {

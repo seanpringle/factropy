@@ -18,6 +18,7 @@ Spec::Spec(std::string name) {
 	ZERO(image);
 	ZERO(texture);
 
+	licensed = false;
 	align = true;
 	pivot = false;
 	explodes = false;

@@ -33,11 +33,26 @@ void Popup::center(int w, int h) {
 		((float)GetScreenHeight()-size.y)/2.0f
 	};
 
-	ImGui::SetNextWindowSize(size, ImGuiCond_Once);
-	ImGui::SetNextWindowPos(pos, ImGuiCond_Once);
+	ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+	ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
 
 	Vector2 mouse = GetMousePosition();
 	mouseOver = mouse.x >= pos.x && mouse.x < pos.x+size.x && mouse.y >= pos.y && mouse.y < pos.y+size.y;
+}
+
+void Popup::bottomLeft(int w, int h) {
+
+	const ImVec2 size = {
+		(float)w,(float)h
+	};
+
+	const ImVec2 pos = {
+		0.0f,
+		(float)GetScreenHeight()-size.y,
+	};
+
+	ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+	ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
 }
 
 void Popup::show(bool state) {
@@ -54,7 +69,7 @@ MessagePopup::~MessagePopup() {
 }
 
 void MessagePopup::draw() {
-	center(100,100);
+	bottomLeft(0,100);
 	ImGui::Begin("##message", nullptr,
 		ImGuiWindowFlags_AlwaysAutoResize |
 		ImGuiWindowFlags_NoTitleBar |
@@ -65,6 +80,7 @@ void MessagePopup::draw() {
 
 	ImGui::Print(text.c_str());
 
+	mouseOver = ImGui::IsWindowHovered();
 	ImGui::End();
 }
 
@@ -124,6 +140,7 @@ void StatsPopup2::draw() {
 		ImGui::Print(fmtc("%s %s", spec->name, energy.formatRate()));
 	}
 
+	mouseOver = ImGui::IsWindowHovered();
 	ImGui::End();
 }
 
@@ -246,6 +263,7 @@ void WaypointsPopup::draw() {
 			}
 		}
 
+		mouseOver = ImGui::IsWindowHovered();
 		ImGui::End();
 	});
 }
@@ -278,6 +296,7 @@ void TechPopup::draw() {
 		}
 	}
 
+	mouseOver = ImGui::IsWindowHovered();
 	ImGui::End();
 }
 
@@ -311,7 +330,7 @@ void BuildPopup2::draw() {
 		TableHeadersRow();
 
 		for (auto& [name,spec]: Spec::all) {
-			if (!spec->build)
+			if (!spec->build || !spec->licensed)
 				continue;
 
 			if (searches.build[0] && !std::strstr(name.c_str(), searches.build))
@@ -409,7 +428,7 @@ void EntityPopup2::draw() {
 						show = show || recipe->tags.count(tag);
 					}
 				}
-				if (show) {
+				if (show && recipe->licensed) {
 					options.push_back(name.c_str());
 					if (crafter.recipe == recipe) {
 						selected = name.c_str();

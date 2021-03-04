@@ -21,6 +21,7 @@ Recipe::Recipe(uint id, std::string name) {
 	ids[id] = this;
 
 	mine = 0;
+	licensed = false;
 	outputCurrency = 0;
 	inputCurrency = 0;
 	energyUsage = 0;

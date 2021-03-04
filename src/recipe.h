@@ -17,6 +17,8 @@ struct Recipe {
 	static void reset();
 	static void save(const char *path);
 	static void load(const char *path);
+	static void saveAll(const char *path);
+	static void loadAll(const char *path);
 
 	static inline uint sequence;
 	static uint next();
@@ -27,6 +29,7 @@ struct Recipe {
 	static Recipe* get(uint id);
 
 	uint id;
+	bool licensed;
 	std::string name;
 	Image image;
 	RenderTexture texture;

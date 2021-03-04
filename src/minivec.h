@@ -128,7 +128,7 @@ public:
 
 		explicit iterator(const minivec* mmv, size_type iii) {
 			mv = mmv;
-			ii = iii;
+			ii = std::min(mv->top, iii);
 		}
 
 		V& operator*() const {
@@ -157,6 +157,7 @@ public:
 
 		iterator& operator+=(difference_type d) {
 			ii += d;
+			ii = std::min(mv->top, ii);
 			return *this;
 		}
 
@@ -186,7 +187,7 @@ public:
 		}
 
 		iterator& operator++() {
-			++ii;
+			ii = ii < mv->top ? ii+1: mv->top;
 			return *this;
 		}
 
@@ -226,14 +227,18 @@ public:
 			low = ie.ii;
 		}
 
-		for (size_type i = low; i < high; i++) {
-			std::destroy_at(items + i);
+		if (high > low && low < top && high <= top) {
+
+			for (size_type i = low; i < high; i++) {
+				std::destroy_at(items + i);
+			}
+
+			size_type moveDown = (top - low - 1) * sizeof(V);
+			std::memmove((void*)&items[low], (void*)&items[high], moveDown);
+
+			top -= (high-low);
 		}
 
-		size_type moveDown = (top - low - 1) * sizeof(V);
-		std::memmove((void*)&items[low], (void*)&items[high], moveDown);
-
-		top -= (high-low);
 		return it;
 	}
 
