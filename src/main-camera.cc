@@ -376,6 +376,7 @@ void MainCamera::draw() {
 
 		ClearBackground(SKYBLUE);
 
+		objects = 0;
 		float hdDistanceSquared = 100.0f*100.0f;
 
 		BeginMode3D(camera);
@@ -422,10 +423,14 @@ void MainCamera::draw() {
 			rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());
 			rlDrawMeshInstanced2(waterCube.meshes[0], waterCube.materials[0], water.size(), water.data());
 
+			objects += chunk_transforms.size();
+			objects += water.size();
+
 			for (auto& [iid,transforms]: resource_transforms) {
 				Item* item = Item::get(iid);
 				for (uint i = 0; i < item->parts.size(); i++) {
 					item->parts[i]->drawInstanced(true, transforms.size(), transforms.data());
+					objects += transforms.size();
 				}
 			}
 
@@ -562,29 +567,36 @@ void MainCamera::draw() {
 
 			for (auto& [part,batch]: extant_ld) {
 				part->drawInstanced(false, batch.size(), batch.data());
+				objects += batch.size();
 			}
 
 			for (auto& [part,batch]: extant_hd) {
 				part->drawInstanced(true, batch.size(), batch.data());
+				objects += batch.size();
 			}
 
 			for (auto& [part,batch]: items_hd) {
 				part->drawInstanced(true, batch.size(), batch.data());
+				objects += batch.size();
 			}
 
 			for (auto& [part,batch]: items_ld) {
 				part->drawInstanced(false, batch.size(), batch.data());
+				objects += batch.size();
 			}
 
 			// Ghosts and the build grid are translucent so draw order matters
 			gridSquareLand->drawGhostInstanced(true, gridSquares.size(), gridSquares.data());
+			objects += gridSquares.size();
 
 			for (auto& [part,batch]: ghosts_ld) {
 				part->drawGhostInstanced(false, batch.size(), batch.data());
+				objects += gridSquares.size();
 			}
 
 			for (auto& [part,batch]: ghosts_hd) {
 				part->drawGhostInstanced(true, batch.size(), batch.data());
+				objects += gridSquares.size();
 			}
 
 			for (auto& ge: entities) {
@@ -730,6 +742,9 @@ void MainCamera::draw() {
 
 				if (greens.size() > 0)
 					rlDrawMeshInstanced2(greenCube.meshes[0], greenCube.materials[0], greens.size(), greens.data());
+
+				objects += reds.size();
+				objects += greens.size();
 			}
 
 			if (selecting) {

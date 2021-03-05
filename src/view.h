@@ -104,6 +104,8 @@ struct MainCamera : View {
 	TimeSeries statsDraw;
 	TimeSeries statsFrame;
 
+	uint32_t objects = 0;
+
 	MainCamera(Point, Point);
 	~MainCamera();
 	void update(bool worldFocused);

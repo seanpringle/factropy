@@ -2496,7 +2496,7 @@ int main(int argc, char const *argv[]) {
 			ImGui::SetWindowSize({(float)400,0.0f}, ImGuiCond_Always);
 			ImGui::SetWindowPos({(float)(GetScreenWidth()-400),0}, ImGuiCond_Always);
 
-			ImGui::Print(fmt("%d FPS", GetFPS()));
+			ImGui::Print(fmt("%d FPS, %u meshes", GetFPS(), camera->objects));
 
 			ImGui::Image(secondary.texture.id, ImVec2(secondary.texture.width, secondary.texture.height), ImVec2(0,1), ImVec2(1,0));
 

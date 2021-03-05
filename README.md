@@ -93,3 +93,39 @@ Nothing in-game yet. Consider enabling FSAA or similar at the video driver level
 | F3 | Technology licensing popup |
 | F5 | Quick save game |
 | F9 | Move the secondary camera to the main camera's current view |
+
+# interesting questions to answer
+
+## Hasn't Factorio in 3D been done?
+
+IMHO Factorio's top-down 2D view is far more comfortable than Satisfactory's first-person or the Dyson Program's third-person on-a-sphere view, and the build grid is also far simpler to use. So Factropy is still largely about building a base that spreads over flat ground on a fixed grid. The use of 3D is in specific areas where it seems worthwhile:
+
+* **Hills**. Instead of ore patches we have hills and mountains which contain minable resources. Instead of laying out a grid of Factorio _mining drills_ and belts to cover every bit of an ore patch, which gets boring, a few well-placed Factropy _miners_ can eventually tunnel throughout their local hill and extract all available resources. Hills also get in the way of the base a lot more than ore patches and require significant effort to build around or flatten.
+
+* **Lakes**. Technically Factropy lakes have underwater topography too. Nothing done with it so far but some vague ideas about oil rigs and underwater resource extraction; dredging, drilling etc.
+
+* **Plains**. Deliberately not 3D and all suspiciously level and easy to build on. You see all the imaginary silt is washed down by the imaginary rain from the hills and...
+
+* **Entity height matters**. Collision boxes are 3D, and a furnace is obviously taller than an arm (inserter) which must be able to extend over a conveyor (belt). Grouping and layout of Factropy entities must make sense in three dimensions, and introduces limitations and challenges around access and line of sight that Factorio can ignore.
+
+* **Ropeways**. Like these https://en.wikipedia.org/wiki/Material_ropeway . They're a long-distance logistics alternative to trains for transporting ore from remote outposts, that can be built over hills and across water depending on cable span. The buckets travel at around 10 metres up in the air, well above other entities.
+
+* **Drone flight paths**. The equivalent of construction/logistic robots, these guys have slightly more realistic flight paths to contend with 3D terrain and entities, and as a result certain limitations that would be seen as nerfing Factorio's robots.
+
+* **Combat**. Gun turrets can fire in any direction including upward so some sort of aerial enemy seems logical.
+
+## Is 3D rendering practical at Factorio's scale?
+
+A few times Factorio devs have said that 3D wouldn't be practical. Eg from Kovarex: ...[show me a game that can render 30 000 3D objects (instead of sprites) on the same screen](https://forums.factorio.com/viewtopic.php?p=538365#p538365). Sounds like a challenge!
+
+Anecdata: so far Factropy has rendered a base with 15000 objects on screen at 60FPS on a not-that-new machine with a not-that-new graphics card. That includes terrain meshes, entities with moving parts, items on belts, ore on the ground, particle emitters for smoke, lights etc. 30000 or more doesn't seem unrealistic.
+
+Factropy does this by only permitting 3D models that can be fully instanced into render batches with minimal shader switching. Entities consist of one or more component meshes with associated materials: wheels, hulls, arms, gears, pistons, fans, wires, metal, wood etc. A shared library of components are composed into entities, rather than entities coming with dedicated graphical assets. All the instances of a single component on screen are one mesh rendered many times with a single draw call. Animation of components is done using OpenGL VBO arrays of transformation matrices to control mesh rotation/translation/scale, allowing one assmbler to be idling while another is running at full speed. The same approach is used for items on belts: one draw call per type of item on screen.
+
+All this boils down to the rendering thread being largely bottlenecked on CPU doing math and updating dynamic VBO arrays each frame before the relatively few draw calls execute. There are ways to reduce the load. Some math is deferred and queued to be done by the graphics card, particularly where a component transforms deterministically. Some components use pre-computed sets of transformation matrices so the work is done at startup rather than per-entity per-frame, effectively an indexed lookup table in VRAM. Particle emitters are instanced too and tweaked in the shader to appear a bit random.
+
+However, these are the hurdles that might yet bring it all crashing down in a smoking heap of burnt out GPUs:
+
+* No shadow mapping is done yet. _Not too scary_ based on some test runs though, and works fine with instancing
+* Only a small number of dynamic lights are supported. _Somewhat scary_ as dynamic lighting affects how instance batches are handled. Needs thought...
+* The use of textures is limited so far, instead relying on customisation of materials and shaders for effects. _Not too scary either_ as texture switching is already restricted to material and shader switches (ie, rare). Physically-based rendering coming to Raylib is also potentially more interesting than messing with Blender anyway.
