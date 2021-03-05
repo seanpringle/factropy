@@ -94,11 +94,17 @@ Nothing in-game yet. Consider enabling FSAA or similar at the video driver level
 | F5 | Quick save game |
 | F9 | Move the secondary camera to the main camera's current view |
 
-# interesting questions to answer
+# interesting questions
+
+## Fac-what-now?
+
+Entropy, in the colloquial sense, the _measure of disorder in a system_. Fighting with entropy seems to describe my Factorio experience rather well. Factropy.
+
+Or if you hate that etymology maybe it's just that Factorio is such a successful genre-defining game that implementing anything remotely like it will be considered nothing but a [collection of tropes](https://tvtropes.org/pmwiki/pmwiki.php/Videogame/Factorio). Factropy.
 
 ## Hasn't Factorio in 3D been done?
 
-IMHO Factorio's top-down 2D view is far more comfortable than Satisfactory's first-person or the Dyson Program's third-person on-a-sphere view, and the build grid is also far simpler to use. So Factropy is still largely about building a base that spreads over flat ground on a fixed grid. The use of 3D is in specific areas where it seems worthwhile:
+IMHO Factorio's top-down 2D view is far more comfortable than Satisfactory's first-person or the Dyson Sphere Program's third-person on-a-sphere view, and the build grid is also far simpler to use. So Factropy is still largely about building a base that spreads over flat ground on a fixed grid. The use of 3D is in specific areas where it seems worthwhile:
 
 * **Hills**. Instead of ore patches we have hills and mountains which contain minable resources. Instead of laying out a grid of Factorio _mining drills_ and belts to cover every bit of an ore patch, which gets boring, a few well-placed Factropy _miners_ can eventually tunnel throughout their local hill and extract all available resources. Hills also get in the way of the base a lot more than ore patches and require significant effort to build around or flatten.
 
@@ -110,7 +116,7 @@ IMHO Factorio's top-down 2D view is far more comfortable than Satisfactory's fir
 
 * **Ropeways**. Like these https://en.wikipedia.org/wiki/Material_ropeway . They're a long-distance logistics alternative to trains for transporting ore from remote outposts, that can be built over hills and across water depending on cable span. The buckets travel at around 10 metres up in the air, well above other entities.
 
-* **Drone flight paths**. The equivalent of construction/logistic robots, these guys have slightly more realistic flight paths to contend with 3D terrain and entities, and as a result certain limitations that would be seen as nerfing Factorio's robots.
+* **Drone flight paths**. The equivalent of construction/logistic robots, these guys have slightly more realistic flight paths to contend with 3D terrain and entities, and as a result have certain limitations that would be seen as nerfing Factorio's robots.
 
 * **Combat**. Gun turrets can fire in any direction including upward so some sort of aerial enemy seems logical.
 
