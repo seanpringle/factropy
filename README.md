@@ -106,7 +106,7 @@ Or if you hate that etymology maybe it's just that Factorio is such a successful
 
 IMHO Factorio's top-down 2D view is more comfortable than Satisfactory's first-person or the Dyson Sphere Program's third-person view, and the Factorio build grid is simpler to use than other approaches too. So Factropy is still largely about building a base that spreads over flat ground on a fixed grid. The use of 3D is in specific areas where it seems worthwhile:
 
-* **Hills**. Instead of ore patches we have hills and mountains which contain minable resources. Instead of laying out a grid of Factorio _mining drills_ and belts to cover every bit of an ore patch, which gets boring, a few well-placed Factropy _miners_ can eventually tunnel throughout their local hill and extract all available resources. Hills also get in the way of the base a lot more than ore patches and require significant effort to build around or flatten.
+* **Hills**. Instead of ore patches we have hills and mountains which contain minable resources. Instead of laying out a grid of Factorio _mining drills_ and belts to cover every bit of an ore patch, which gets boring, a few well-placed Factropy _miners_ can eventually tunnel throughout their local hill and extract all available resources. Hills also get in the way of base expansion in a non-arbitrary way (looking at you, Factorio cliffs!) requiring careful thought to build around or ultimately flatten out.
 
 * **Lakes**. Technically Factropy lakes have underwater topography too. Nothing done with it so far but some vague ideas about oil rigs and underwater resource extraction; dredging, drilling etc.
 
@@ -120,7 +120,7 @@ IMHO Factorio's top-down 2D view is more comfortable than Satisfactory's first-p
 
 * **Combat**. Gun turrets can fire in any direction including upward so some sort of aerial enemy seems logical.
 
-Basically I'm interested in features that use 3D to enhance the basic 2D factory experience, not just saying _hey, let's go 3D so we can build vertically and frustrate ourselves trying to control the camera!_.
+Basically I'm interested in features that use 3D to enhance the basic 2D factory experience, not just saying _hey, let's go 3D so we can build vertically and frustrate ourselves trying to control the camera!_
 
 ## Is 3D rendering practical at Factorio's scale?
 
@@ -130,10 +130,10 @@ Anecdata: so far Factropy has rendered a base with 15000 objects on screen at 60
 
 Factropy does this by only permitting 3D models that can be fully instanced into render batches with minimal shader switching. Entities consist of one or more component meshes with associated materials: wheels, hulls, arms, gears, pistons, fans, wires, metal, wood etc. A shared library of components are composed into entities, rather than entities coming with dedicated graphical assets. All the instances of a single component on screen are one mesh rendered many times with a single draw call. Animation of components is done using OpenGL VBO arrays of transformation matrices to control mesh rotation/translation/scale, allowing one assmbler to be idling while another is running at full speed. The same approach is used for items on belts: one draw call per type of item on screen.
 
-All this boils down to the rendering thread being largely bottlenecked on CPU doing math and updating dynamic VBO arrays each frame before the relatively few draw calls execute. There are ways to reduce the load. Some math is deferred and queued to be done by the graphics card, particularly where a component transforms deterministically. Some components use pre-computed sets of transformation matrices so the work is done at startup rather than per-entity per-frame, effectively an indexed lookup table in VRAM. Particle emitters are instanced too and tweaked in the shader to appear a bit random.
+All this boils down to the rendering thread being largely bottlenecked on CPU doing math and updating dynamic VBO arrays each frame before the relatively few draw calls execute. There are ways to reduce the load. Some math is deferred and queued to be done by the graphics card, particularly where a component transforms deterministically. Some components use pre-computed sets of transforms so the work is done at startup rather than per-entity per-frame, effectively a lookup table in VRAM. Particle emitters are instanced too and just tweaked in their shader to appear a bit random.
 
-However, these are the hurdles that might yet bring it all crashing down in a smoking heap of burnt out GPUs:
+However, these are the hurdles that might yet bring it all crashing down in a smoking heap of burnt-out GPUs:
 
 * No shadow mapping is done yet. _Not too scary_ based on some test runs though, and works fine with instancing
 * Only a small number of dynamic lights are supported. _Somewhat scary_ as dynamic lighting affects how instance batches are handled. Needs thought...
-* The use of textures is limited so far, instead relying on customisation of materials and shaders for effects. _Not too scary either_ as texture switching is already restricted to material and shader switches (ie, rare). Physically-based rendering coming to Raylib is also potentially more interesting than messing with Blender anyway.
+* The use of textures is limited so far, instead relying on customisation of materials and shaders for effects. _Not too scary either_ as texture switching is already restricted to material and shader switch points (ie, rare). Alternatives like the physically-based rendering coming to Raylib are also potentially more interesting than messing with Blender anyway.
