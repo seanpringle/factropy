@@ -14,7 +14,6 @@ struct MainCamera;
 #include "raylib-ex.h"
 #include "entity.h"
 #include "plan.h"
-#include "panel.h"
 #include "time-series.h"
 #include <vector>
 
