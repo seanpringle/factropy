@@ -137,3 +137,5 @@ However, these are the hurdles that might yet bring it all crashing down in a sm
 * No shadow mapping is done yet. _Not too scary_ based on some test runs though, and works fine with instancing
 * Only a small number of dynamic lights are supported. _Somewhat scary_ as dynamic lighting affects how instance batches are handled. Needs thought...
 * The use of textures is limited so far, instead relying on customisation of materials and shaders for effects. _Not too scary either_ as texture switching is already restricted to material and shader switch points (ie, rare). Alternatives like the physically-based rendering coming to Raylib are also potentially more interesting than messing with Blender anyway.
+
+None of this is rocket science; plenty of game engines do the same stuff and much more. I guess I'm as-yet-unconvinced that Factorio is so complex or so large that it can only be done with 2D sprites.
