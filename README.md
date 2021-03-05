@@ -104,7 +104,7 @@ Or if you hate that etymology maybe it's just that Factorio is such a successful
 
 ## Hasn't Factorio in 3D been done?
 
-IMHO Factorio's top-down 2D view is far more comfortable than Satisfactory's first-person or the Dyson Sphere Program's third-person on-a-sphere view, and the build grid is also far simpler to use. So Factropy is still largely about building a base that spreads over flat ground on a fixed grid. The use of 3D is in specific areas where it seems worthwhile:
+IMHO Factorio's top-down 2D view is more comfortable than Satisfactory's first-person or the Dyson Sphere Program's third-person view, and the Factorio build grid is simpler to use than other approaches too. So Factropy is still largely about building a base that spreads over flat ground on a fixed grid. The use of 3D is in specific areas where it seems worthwhile:
 
 * **Hills**. Instead of ore patches we have hills and mountains which contain minable resources. Instead of laying out a grid of Factorio _mining drills_ and belts to cover every bit of an ore patch, which gets boring, a few well-placed Factropy _miners_ can eventually tunnel throughout their local hill and extract all available resources. Hills also get in the way of the base a lot more than ore patches and require significant effort to build around or flatten.
 
@@ -112,13 +112,15 @@ IMHO Factorio's top-down 2D view is far more comfortable than Satisfactory's fir
 
 * **Plains**. Deliberately not 3D and all suspiciously level and easy to build on. You see all the imaginary silt is washed down by the imaginary rain from the hills and...
 
-* **Entity height matters**. Collision boxes are 3D, and a furnace is obviously taller than an arm (inserter) which must be able to extend over a conveyor (belt). Grouping and layout of Factropy entities must make sense in three dimensions, and introduces limitations and challenges around access and line of sight that Factorio can ignore.
+* **Entity heights**. Collision boxes are 3D, and a furnace is obviously taller than an arm (inserter) which must be able to extend over a conveyor (belt). Grouping and layout of Factropy entities must make sense in three dimensions, and introduces limitations and challenges around access and line of sight that Factorio can ignore.
 
 * **Ropeways**. Like these https://en.wikipedia.org/wiki/Material_ropeway . They're a long-distance logistics alternative to trains for transporting ore from remote outposts, that can be built over hills and across water depending on cable span. The buckets travel at around 10 metres up in the air, well above other entities.
 
 * **Drone flight paths**. The equivalent of construction/logistic robots, these guys have slightly more realistic flight paths to contend with 3D terrain and entities, and as a result have certain limitations that would be seen as nerfing Factorio's robots.
 
 * **Combat**. Gun turrets can fire in any direction including upward so some sort of aerial enemy seems logical.
+
+Basically I'm interested in features that use 3D to enhance the basic 2D factory experience, not just saying _hey, let's go 3D so we can build vertically and frustrate ourselves trying to control the camera!_.
 
 ## Is 3D rendering practical at Factorio's scale?
 
