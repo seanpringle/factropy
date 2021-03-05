@@ -122,3 +122,8 @@ bool Box::contains(Point p) const {
 float Box::volume() const {
 	return w*d*h;
 }
+
+Sphere Box::sphere() const {
+	float r = Point(w/2.0f, h/2.0f, d/2.0f).length();
+	return Sphere(x, y, z, r);
+}

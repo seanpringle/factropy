@@ -123,6 +123,10 @@ Point GuiEntity::ground() {
 	return {pos.x, pos.y - spec->collision.h/2.0f, pos.z};
 }
 
+Sphere GuiEntity::sphere() {
+	return box().sphere();
+}
+
 void GuiEntity::updateTransform() {
 	Mat4 r = dir.rotation();
 	Mat4 t = Mat4::translate(pos.x, pos.y, pos.z);

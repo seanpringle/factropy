@@ -12,6 +12,7 @@ struct Vehicle;
 #include <vector>
 
 struct Vehicle {
+	uint id;
 
 	struct Route: Path {
 		Vehicle *vehicle;
@@ -66,11 +67,10 @@ struct Vehicle {
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,Vehicle> all;
-	static Vehicle& create(int id);
-	static Vehicle& get(int id);
+	static inline slabmap<Vehicle,&Vehicle::id> all;
+	static Vehicle& create(uint id);
+	static Vehicle& get(uint id);
 
-	int id = 0;
 	std::list<Point> path;
 	std::list<Waypoint*> waypoints;
 	Waypoint* waypoint;
@@ -83,4 +83,7 @@ struct Vehicle {
 	void update();
 	Waypoint* addWaypoint(Point p);
 	Waypoint* addWaypoint(uint eid);
+
+	std::vector<Point> sensors();
+	bool moving();
 };

@@ -515,10 +515,10 @@ void Vehicle::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/vehicles.json");
 
-	for (auto& [id,vehicle]: all) {
+	for (auto& vehicle: all) {
 		json state;
 
-		state["id"] = id;
+		state["id"] = vehicle.id;
 		state["pause"] = vehicle.pause;
 		state["patrol"] = vehicle.patrol;
 		state["handbrake"] = vehicle.handbrake;

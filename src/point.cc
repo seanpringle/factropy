@@ -105,6 +105,11 @@ Box Point::box() const {
 	return (Box){x, y, z, ep, ep, ep};
 }
 
+Sphere Point::sphere() const {
+	float ep = std::numeric_limits<float>::epsilon() * 2;
+	return Sphere(x, y, z, ep);
+}
+
 float Point::distanceSquared(Point p) const {
   float dx = p.x - x;
   float dy = p.y - y;

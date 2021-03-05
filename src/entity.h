@@ -25,6 +25,7 @@ struct GuiFakeEntity;
 #include "mat4.h"
 #include "point.h"
 #include "box.h"
+#include "sphere.h"
 #include "ghost.h"
 
 // Components
@@ -93,6 +94,7 @@ struct Entity {
 	static bool fits(Spec *spec, Point pos, Point dir);
 
 	static std::vector<uint> intersecting(Box box);
+	static std::vector<uint> intersecting(Sphere sphere);
 	static std::vector<uint> intersecting(Point pos, float radius);
 	static uint at(Point p);
 
@@ -110,6 +112,7 @@ struct Entity {
 	std::string name();
 	bool rename(std::string n);
 	Box box();
+	Sphere sphere();
 	Box miningBox();
 	Point ground();
 	Entity& look(Point); // rel
@@ -232,6 +235,7 @@ struct GuiEntity {
 	Box miningBox();
 	Box supportBox();
 	Point ground();
+	Sphere sphere();
 	void updateTransform();
 	Mat4 partTransform(Part* part);
 

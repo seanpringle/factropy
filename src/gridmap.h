@@ -45,4 +45,8 @@ struct gridmap {
 		deduplicate(hits);
 		return hits;
 	}
+
+	std::vector<V> search(Sphere sphere) {
+		return search((Box){sphere.x, sphere.y, sphere.z, sphere.r*2, sphere.r*2, sphere.r*2});
+	}
 };

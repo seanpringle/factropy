@@ -2177,7 +2177,14 @@ int main(int argc, char const *argv[]) {
 		Sim::locked(Sim::update);
 		mod->update();
 
-		bool worldFocused = !popup || !popup->visible || (popup && popup->visible && !popup->mouseOver);
+		if (popup && !popup->visible) {
+			popup = nullptr;
+		}
+
+		bool popupVisible = popup && popup->visible;
+		bool popupFocused = popup && (popup->mouseOver || popup->inputFocused);
+
+		bool worldFocused = !popupVisible && !popupFocused;
 
 		camera->update(worldFocused);
 		camSec->update(worldFocused);
@@ -2273,14 +2280,6 @@ int main(int argc, char const *argv[]) {
 						}
 					});
 				}
-			}
-
-			if (IsKeyReleased(KEY_PAGE_UP)) {
-				camera->buildLevel = std::min(5.0f, std::round(camera->buildLevel+1.0f));
-			}
-
-			if (IsKeyReleased(KEY_PAGE_DOWN)) {
-				camera->buildLevel = std::max(0.0f, std::round(camera->buildLevel-1.0f));
 			}
 
 			if (IsKeyReleased(KEY_G)) {
@@ -2422,29 +2421,39 @@ int main(int argc, char const *argv[]) {
 			popup->show(true);
 		}
 
-		if (IsKeyReleased(KEY_E) && (!popup || !popup->inputFocused)) {
-			bool wasBuildPopup = popup == buildPopup;
-			bool wasVisible = popup && popup->visible;
+		if (IsKeyReleased(KEY_E)) {
+			[&]() {
+				if (popup && popup != buildPopup) return;
+				if (popup && popup->inputFocused) return;
 
-			if (popup) {
-				popup->show(false);
-				popup = nullptr;
-			}
+				if (popup) {
+					popup->show(false);
+					popup = nullptr;
+					return;
+				}
 
-			if (!wasBuildPopup || (wasBuildPopup && !wasVisible)) {
-				popup = buildPopup;
-				popup->show(true);
-			}
+				if (!popup) {
+					popup = buildPopup;
+					popup->show(true);
+					return;
+				}
+			}();
 		}
 
 		if (IsKeyReleased(KEY_ESCAPE)) {
 			if (popup) {
+				popup->show(false);
 				popup = nullptr;
 			}
 			else
 			if (camera->placing) {
 				delete camera->placing;
 				camera->placing = nullptr;
+			}
+			else
+			if (camera->selecting) {
+				camera->selection = {Point::Zero, Point::Zero};
+				camera->selecting = false;
 			}
 			else
 			if (camera->directing) {

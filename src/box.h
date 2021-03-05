@@ -3,6 +3,7 @@
 struct Box;
 #include "raylib-ex.h"
 #include "point.h"
+#include "sphere.h"
 #include "volume.h"
 #include <initializer_list>
 
@@ -32,4 +33,5 @@ struct Box {
 	bool intersects(Box b) const;
 	bool contains(Point p) const;
 	float volume() const;
+	Sphere sphere() const;
 };

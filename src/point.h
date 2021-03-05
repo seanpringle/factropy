@@ -6,6 +6,7 @@ struct Point;
 
 #include "raylib-ex.h"
 #include "box.h"
+#include "sphere.h"
 #include "mat4.h"
 #include "volume.h"
 #include <initializer_list>
@@ -43,6 +44,7 @@ struct Point : Vector3 {
 	Point(float xx, float yy, float zz);
 
 	Box box() const;
+	Sphere sphere() const;
 	float distanceSquared(Point p) const;
 	float distance(Point p) const;
 	Point round() const;

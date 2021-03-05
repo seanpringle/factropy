@@ -36,8 +36,8 @@ void Popup::center(int w, int h) {
 	ImGui::SetNextWindowSize(size, ImGuiCond_Always);
 	ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
 
-	Vector2 mouse = GetMousePosition();
-	mouseOver = mouse.x >= pos.x && mouse.x < pos.x+size.x && mouse.y >= pos.y && mouse.y < pos.y+size.y;
+	//Vector2 mouse = GetMousePosition();
+	//mouseOver = mouse.x >= pos.x && mouse.x < pos.x+size.x && mouse.y >= pos.y && mouse.y < pos.y+size.y;
 }
 
 void Popup::bottomLeft(int w, int h) {
@@ -358,6 +358,7 @@ void BuildPopup2::draw() {
 		EndTable();
 		PopID();
 
+	mouseOver = IsWindowHovered();
 	End();
 }
 
@@ -400,6 +401,7 @@ void EntityPopup2::draw() {
 			if (InputText("Name", name, sizeof(name))) {
 				en.rename(name);
 			}
+			inputFocused = IsItemActive();
 		}
 
 		if (en.spec->consumeChemical) {
@@ -702,6 +704,7 @@ void EntityPopup2::draw() {
 			PopID();
 		}
 
+		mouseOver = IsWindowHovered();
 		End();
 	});
 }

@@ -277,18 +277,6 @@ void MainCamera::update(bool worldFocused) {
 			updateCamera();
 		}
 
-		if (IsKeyReleased(KEY_ESCAPE)) {
-			if (placing) {
-				delete placing;
-				placing = nullptr;
-			}
-			else
-			if (selecting) {
-				selection = {Point::Zero, Point::Zero};
-				selecting = false;
-			}
-		}
-
 		if (placing) {
 			if (placing->entities.size() == 1 && placing->entities[0]->spec->placeOnHill) {
 				RayHitInfo hit = GetCollisionRayGround(mouse.ray, buildLevel);
@@ -495,6 +483,9 @@ void MainCamera::draw() {
 						DrawSphere(n->position, 0.25f, BLUE);
 						DrawLine3D(p, n->position, BLUE);
 						p = n->position;
+					}
+					for (auto p: vehicle.sensors()) {
+						DrawSphere(p, 0.25f, BLUE);
 					}
 				}
 

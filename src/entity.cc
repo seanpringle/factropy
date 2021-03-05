@@ -334,6 +334,12 @@ std::vector<uint> Entity::intersecting(Box box) {
 	return hits;
 }
 
+std::vector<uint> Entity::intersecting(Sphere sphere) {
+	auto hits = grid.search(sphere);
+	discard_if(hits, [&](uint id) { return !get(id).sphere().intersects(sphere); });
+	return hits;
+}
+
 std::vector<uint> Entity::intersecting(Point pos, float radius) {
 	auto hits = intersecting(pos.box().grow(radius));
 	discard_if(hits, [&](uint id) { return !(get(id).pos.distance(pos) < radius); });
@@ -426,6 +432,10 @@ bool Entity::rename(std::string name) {
 
 Box Entity::box() {
 	return spec->box(pos, dir, spec->collision);
+}
+
+Sphere Entity::sphere() {
+	return box().sphere();
 }
 
 Box Entity::miningBox() {

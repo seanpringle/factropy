@@ -7,12 +7,12 @@ void Vehicle::reset() {
 }
 
 void Vehicle::tick() {
-	for (auto& pair: all) {
-		pair.second.update();
+	for (auto& vehicle: all) {
+		vehicle.update();
 	}
 }
 
-Vehicle& Vehicle::create(int id) {
+Vehicle& Vehicle::create(uint id) {
 	Vehicle& vehicle = all[id];
 	vehicle.id = id;
 	vehicle.pause = 0;
@@ -23,9 +23,8 @@ Vehicle& Vehicle::create(int id) {
 	return vehicle;
 }
 
-Vehicle& Vehicle::get(int id) {
-	ensuref(all.count(id), "invalid vehicle access %d", id);
-	return all[id];
+Vehicle& Vehicle::get(uint id) {
+	return all.refer(id);
 }
 
 void Vehicle::destroy() {
@@ -124,7 +123,39 @@ void Vehicle::update() {
 	Point n = v.normalize();
 	Point s = n * speed;
 
-	en.move(centroid + s).floor(0);
+	bool crash = false;
+
+	auto hits = Entity::intersecting(en.sphere().grow(speed*2.0f));
+
+	discard_if(hits, [&](uint cid) {
+		return cid == id || !all.has(cid) || !get(cid).moving();
+	});
+
+	for (auto p: sensors()) {
+		auto s = p.sphere().grow(0.1f);
+		for (auto cid: hits) {
+			if (Entity::get(cid).sphere().intersects(s)) {
+				crash = true;
+				break;
+			}
+		}
+	}
+
+	if (!crash) {
+		en.move(centroid + s).floor(0);
+	}
+}
+
+std::vector<Point> Vehicle::sensors() {
+	Entity& en = Entity::get(id);
+	Point ahead = en.pos + (en.dir * (en.spec->collision.d*0.5f));
+	Point left  = ahead + (en.dir.transform(Mat4::rotateY( 90.0f*DEG2RAD)) * (en.spec->collision.w*0.25f));
+	Point right = ahead + (en.dir.transform(Mat4::rotateY(-90.0f*DEG2RAD)) * (en.spec->collision.w*0.25f));
+	return std::vector<Point>{left, right};
+}
+
+bool Vehicle::moving() {
+	return (!path.empty() || pathRequest) && pause < Sim::tick;
 }
 
 Vehicle::Waypoint* Vehicle::addWaypoint(Point p) {
@@ -169,7 +200,7 @@ std::vector<Point> Vehicle::Route::getNeighbours(Point p) {
 		(p + Point(-1.0f, 0.0f,-1.0f)).tileCentroid(),
 	};
 
-	for (int eid: entities) {
+	for (auto eid: entities) {
 		if (Entity::get(eid).spec->vehicleStop) {
 			continue;
 		}
@@ -232,7 +263,7 @@ double Vehicle::Route::calcCost(Point a, Point b) {
 
 	auto entities = Entity::intersecting(b.box().grow(clearance, 0, clearance));
 
-	for (int eid: entities) {
+	for (auto eid: entities) {
 		if (Entity::get(eid).spec->vehicleStop) {
 			continue;
 		}
@@ -260,7 +291,7 @@ bool Vehicle::Route::rayCast(Point a, Point b) {
 		if (!Chunk::isLand(c.box().grow(clearance))) {
 			return false;
 		}
-		for (int eid: Entity::intersecting(c.box().grow(1))) {
+		for (auto eid: Entity::intersecting(c.box().grow(1))) {
 			if (Entity::get(eid).spec->vehicleStop) {
 				continue;
 			}
