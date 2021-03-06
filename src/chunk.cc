@@ -90,7 +90,7 @@ Chunk* Chunk::get(int x, int y) {
 					.y = y*Chunk::size+ty,
 					.hill = NULL,
 					.elevation = elevation,
-					.mineral = {mineral, (uint)(resource*20.0f)},
+					.mineral = {mineral, (uint)(resource*100.0f)},
 				};
 
 				// minables visible on hills

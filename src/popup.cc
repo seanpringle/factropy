@@ -638,7 +638,7 @@ void EntityPopup2::draw() {
 							SetNextItemWidth(100);
 							if (BeginCombo(fmtc("##%d", n++), ops[con->op].c_str(), ImGuiComboFlags_None)) {
 								for (auto [op,opname]: ops) {
-									if (Selectable(fmtc("==##%d-%u", n++, op), con->op == op)) {
+									if (Selectable(fmtc("%s##%d-%u", opname.c_str(), n++, op), con->op == op)) {
 										con->op = op;
 									}
 								}

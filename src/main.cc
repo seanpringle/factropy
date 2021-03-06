@@ -186,7 +186,7 @@ void scenario() {
 	}
 
 	for (uint i = 1; i < 10; i++) {
-		tech = new Tech(Tech::next(), fmt("tech-mining-%u", i));
+		tech = new Tech(Tech::next(), fmt("mining-%u", i));
 		tech->tags = {"mining"};
 		tech->cost = Currency::k(i);
 		tech->miningRate = 1.0f + ((float)i * 0.1);
@@ -895,9 +895,9 @@ void scenario() {
 
 	Spec::byName("unloader")->statsGroup = Spec::byName("loader");
 
-	tech = new Tech(Tech::next(), "tech-loaders");
+	tech = new Tech(Tech::next(), "loaders");
 	tech->tags = {"logistics"};
-	tech->cost = Currency::k(10);
+	tech->cost = Currency::k(5);
 	tech->licenseSpecs.insert(Spec::byName("loader"));
 	tech->licenseSpecs.insert(Spec::byName("unloader"));
 	//tech->parts = {
