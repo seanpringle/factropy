@@ -62,6 +62,7 @@ struct Entity {
 	static const uint32_t CONSTRUCTION = 1<<1;
 	static const uint32_t DECONSTRUCTION = 1<<2;
 	static const uint32_t ENABLED = 1<<3;
+	static const uint32_t GENERATING = 1<<4;
 
 	static inline gridmap<32,uint> grid;
 	static inline std::set<uint> removing;
@@ -108,6 +109,8 @@ struct Entity {
 	Entity& setDeconstruction(bool state);
 	bool isEnabled();
 	Entity& setEnabled(bool state);
+	bool isGenerating();
+	Entity& setGenerating(bool state);
 
 	std::string name();
 	bool rename(std::string n);

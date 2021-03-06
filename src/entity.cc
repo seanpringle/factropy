@@ -57,9 +57,8 @@ void Entity::preTick() {
 
 	for (auto [eid,consumption]: energyConsumers) {
 		Entity& en = Entity::get(eid);
-		if (!consumption && en.isEnabled() && en.spec->energyDrain) {
-			en.consume(en.spec->energyDrain);
-			consumption = energyConsumers[eid];
+		if (en.isEnabled() && en.spec->energyDrain && !consumption) {
+			consumption = en.consume(en.spec->energyDrain);
 		}
 		en.spec->statsGroup->energyConsumption.add(Sim::tick, consumption);
 		energyConsumers[eid] = 0;
@@ -177,6 +176,7 @@ Entity& Entity::create(uint id, Spec *spec) {
 
 	if (spec->generateElectricity) {
 		electricityGenerators.insert(id);
+		en.setGenerating(true);
 	}
 
 	if (spec->named) {
@@ -418,6 +418,15 @@ Entity& Entity::setEnabled(bool state) {
 	return *this;
 }
 
+bool Entity::isGenerating() {
+	return (flags & GENERATING) != 0;
+}
+
+Entity& Entity::setGenerating(bool state) {
+	flags = state ? (flags | GENERATING) : (flags & ~GENERATING);
+	return *this;
+}
+
 std::string Entity::name() {
 	return spec->named ? names[id]: fmt("%s %u", spec->name, id);
 }
@@ -626,11 +635,15 @@ float Entity::consumeRate(Energy e) {
 }
 
 void Entity::generate() {
-	if (!isEnabled()) return;
+	if (!isEnabled() || !isGenerating() || !electricityGenerators.count(id)) return;
+
+	// At the start of the game when a single generator exists, or when the electricity network
+	// fuel supply crashes and generators need to restart, load must always be slightly > 0.
+	Energy energy = std::max(Energy::J(1), spec->energyGenerate * electricityLoad);
 
 	if (spec->generateElectricity && spec->consumeChemical) {
 
-		electricitySupply += burner().consume(spec->energyGenerate * electricityLoad);
+		electricitySupply += burner().consume(energy);
 		if (burner().energy) electricityCapacityReady += spec->energyGenerate;
 		electricityCapacity += spec->energyGenerate;
 
@@ -641,7 +654,7 @@ void Entity::generate() {
 
 	if (spec->generateElectricity && spec->consumeThermalFluid) {
 
-		Energy supplied = generator().consume(spec->energyGenerate * electricityLoad);
+		Energy supplied = generator().consume(energy);
 		electricitySupply += supplied;
 
 		if (generator().supplying) electricityCapacityReady += spec->energyGenerate;

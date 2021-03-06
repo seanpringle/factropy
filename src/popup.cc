@@ -394,6 +394,12 @@ void EntityPopup2::draw() {
 					en.setEnabled(enabled);
 				}
 			}
+			if (en.spec->generateElectricity) {
+				bool generating = en.isGenerating();
+				if (Checkbox("Generate Electricity", &generating)) {
+					en.setGenerating(generating);
+				}
+			}
 		PopID();
 
 		if (en.spec->named) {

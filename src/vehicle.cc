@@ -103,8 +103,7 @@ void Vehicle::update() {
 		return;
 	}
 
-	float fueled = en.consume(en.spec->vehicleEnergy).portion(en.spec->vehicleEnergy);
-
+	float fueled = en.consumeRate(en.spec->energyConsume);
 	float distance = target.distance(centroid);
 	float speed = std::max(0.01f, 0.1f * fueled);
 

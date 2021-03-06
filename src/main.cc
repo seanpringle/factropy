@@ -1222,13 +1222,13 @@ void scenario() {
 	spec->align = false;
 	spec->pivot = true;
 	spec->vehicle = true;
-	spec->vehicleEnergy = Energy::kW(50);
+	spec->energyConsume = Energy::kW(50);
+	spec->consumeChemical = true;
 	spec->store = true;
 	spec->capacity = Mass::kg(1000);
 	spec->logistic = true;
 	spec->enableSetLower = true;
 	spec->enableSetUpper = true;
-	spec->consumeChemical = true;
 	spec->generateElectricity = true;
 	spec->energyGenerate = Energy::kW(250);
 	spec->forceDelete = true;
@@ -1266,11 +1266,11 @@ void scenario() {
 	spec->health = 100;
 	spec->align = false;
 	spec->vehicle = true;
-	spec->vehicleEnergy = Energy::kW(50);
+	spec->energyConsume = Energy::kW(50);
+	spec->consumeChemical = true;
 	spec->store = true;
 	spec->capacity = Mass::kg(5000);
 	spec->enableSetUpper = true;
-	spec->consumeChemical = true;
 	spec->forceDelete = true;
 	spec->costGreedy = 1.3;
 	spec->clearance = 1.5;
@@ -2165,10 +2165,11 @@ int main(int argc, char const *argv[]) {
 		en.store().insert({Item::byName("coal")->id, 50});
 		en.store().insert({Item::byName("iron-ingot")->id, 100});
 		en.store().insert({Item::byName("copper-ingot")->id, 100});
-		en.store().insert({Item::byName("brick")->id, 100});
+		en.store().insert({Item::byName("brick")->id, 50});
 		en.store().insert({Item::byName("steel-ingot")->id, 50});
 		en.store().insert({Item::byName("circuit-board")->id, 50});
-		en.store().insert({Item::byName("gear-wheel")->id, 50});
+		en.store().insert({Item::byName("gear-wheel")->id, 100});
+		en.store().insert({Item::byName("pipe")->id, 50});
 	}
 
 	RenderTexture secondary = LoadRenderTexture(400-imGuiStyle.WindowPadding.x*2, 270-imGuiStyle.WindowPadding.y*2);

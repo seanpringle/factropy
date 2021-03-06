@@ -138,7 +138,7 @@ struct Spec {
 
 	bool vehicle;
 	bool vehicleStop;
-	Energy vehicleEnergy;
+	//Energy vehicleEnergy;
 	bool vehicleWaitActivity;
 
 	bool pipe;
