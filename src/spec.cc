@@ -41,13 +41,9 @@ Spec::Spec(std::string name) {
 	explosionRadius = 0;
 	explosionRate = 0;
 
-	magic = false;
 	capacity = 0;
-	enableSetLower = false;
-	enableSetUpper = false;
-	// loaders
-	loadAnything = false;
-	unloadAnything = false;
+	storeSetLower = false;
+	storeSetUpper = false;
 	// drones
 	logistic = false;
 	loadPriority = false;
@@ -202,4 +198,16 @@ std::vector<Point> Spec::relativePoints(const std::vector<Point> points, const M
 		rpoints.push_back(point.transform(rotation) + position);
 	}
 	return rpoints;
+}
+
+bool Spec::operable() {
+	return named
+		|| vehicle
+		|| crafter
+		|| arm
+		|| ropewayTerminus
+		|| storeSetLower
+		|| storeSetUpper
+		|| generateElectricity
+	;
 }

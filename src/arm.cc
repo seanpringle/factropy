@@ -96,8 +96,8 @@ Stack Arm::transferStoreToStore(Store& dst, Store& src) {
 		if (!stack.iid) {
 			for (Stack& ss: src.stacks) {
 				bool allow = filter.count(ss.iid) > 0;
-				bool dstOk = dst.isAccepting(ss.iid) || de.spec->loadAnything;
-				bool srcOk = !src.fuel && (src.isProviding(ss.iid) || se.spec->unloadAnything || src.level(ss.iid) == NULL);
+				bool dstOk = dst.isAccepting(ss.iid);
+				bool srcOk = !src.fuel && (src.isProviding(ss.iid) || src.level(ss.iid) == NULL);
 				if (allow && dstOk && srcOk) {
 					stack = {ss.iid,1};
 					break;
@@ -118,8 +118,8 @@ Stack Arm::transferStoreToStore(Store& dst, Store& src) {
 	}
 	if (!stack.iid) {
 		for (Stack& ss: src.stacks) {
-			bool dstOk = dst.isAccepting(ss.iid) || de.spec->loadAnything;
-			bool srcOk = !src.fuel && (src.isProviding(ss.iid) || se.spec->unloadAnything || src.level(ss.iid) == NULL);
+			bool dstOk = dst.isAccepting(ss.iid);
+			bool srcOk = !src.fuel && (src.isProviding(ss.iid) || src.level(ss.iid) == NULL);
 			if (dstOk && srcOk) {
 				stack = {ss.iid,1};
 				break;
@@ -312,7 +312,7 @@ void Arm::updateOutput() {
 
 		if (eo.spec->store || eo.spec->consumeChemical) {
 			for (Store* so: eo.stores()) {
-				if (so->sid == outputStoreId || eo.spec->loadAnything) {
+				if (so->sid == outputStoreId) {
 					if (so->insert({iid,1}).size == 0) {
 						so->arms.erase(id);
 						break;

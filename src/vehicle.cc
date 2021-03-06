@@ -306,14 +306,12 @@ bool Vehicle::Route::rayCast(Point a, Point b) {
 Vehicle::Waypoint::Waypoint(Point pos) {
 	position = pos;
 	stopId = 0;
-	stopName = "";
 }
 
 Vehicle::Waypoint::Waypoint(uint eid) {
 	Entity& en = Entity::get(eid);
 	position = en.ground();
 	stopId = en.id;
-	stopName = en.name();
 }
 
 Vehicle::Waypoint::~Waypoint() {
@@ -359,6 +357,9 @@ bool Vehicle::DepartItem::ready(Waypoint* waypoint, Vehicle *vehicle) {
 			}
 			case Gte: {
 				return en.store().count(iid) >= count;
+			}
+			default: {
+				notef("bad op %u", op);
 			}
 		}
 	}

@@ -125,9 +125,9 @@ void scenario() {
 	item = new Item(Item::next(), "pipe");
 	item->parts = {
 		(new Part(Thing("models/pipe-item-hd.stl", "models/pipe-item-ld.stl")))
-		->paint(0xff6600ff)->scale(0.7, 0.7, 0.7)->translate(0,0.34,0),
+			->paint(0xff6600ff)->scale(0.7, 0.7, 0.7)->translate(0,0.32,0),
 	};
-	item->armV = -0.2f;
+	item->armV = -0.18f;
 
 	auto thingContainer = Thing("models/container-hd.stl", "models/container-ld.stl");
 	auto thingFan = Thing("models/fan-hd.stl", "models/fan-ld.stl");
@@ -141,7 +141,7 @@ void scenario() {
 	item->parts = {
 		(new Part(thingGear))->paint(0x666666ff)->scale(0.8,0.8,0.8),
 	};
-	item->armV = 0.45f;
+	item->armV = 0.38f;
 
 	auto thingBatteryTerminal = Thing("models/battery-terminal-hd.stl", "models/battery-terminal-ld.stl");
 
@@ -342,8 +342,8 @@ void scenario() {
 	};
 	spec->store = true;
 	spec->capacity = Mass::kg(1000);
+	spec->storeSetUpper = true;
 	spec->logistic = true;
-	spec->enableSetUpper = true;
 	spec->rotate = true;
 	spec->health = 10;
 	spec->materials = {
@@ -359,8 +359,8 @@ void scenario() {
 	spec->store = true;
 	spec->capacity = Mass::kg(1000);
 	spec->logistic = true;
-	spec->enableSetLower = true;
-	spec->enableSetUpper = true;
+	spec->storeSetLower = true;
+	spec->storeSetUpper = true;
 	spec->rotate = true;
 	spec->health = 10;
 	spec->materials = {
@@ -371,25 +371,6 @@ void scenario() {
 	tech->tags = {"storage"};
 	tech->cost = Currency::k(10);
 	tech->licenseSpecs.insert(Spec::byName("requester-container"));
-
-	spec = new Spec("buffer-container");
-	spec->collision = {0, 0, 0, 2, 2, 5};
-	spec->selection = spec->collision;
-	spec->parts = {
-		(new Part(thingContainer))->paint(0x006600ff)->gloss(16),
-	};
-	spec->store = true;
-	spec->capacity = Mass::kg(1000);
-	spec->rotate = true;
-	spec->health = 10;
-	spec->materials = {
-		{Item::byName("steel-ingot")->id, 5},
-	};
-
-	tech = new Tech(Tech::next(), "buffer-containers");
-	tech->tags = {"storage"};
-	tech->cost = Currency::k(10);
-	tech->licenseSpecs.insert(Spec::byName("buffer-container"));
 
 	auto thingAssemblerPiston = Thing("models/assembler-piston-hd.stl", "models/assembler-piston-ld.stl");
 
@@ -932,7 +913,7 @@ void scenario() {
 	spec->ropewayCableEast = (Point::East*1.5f) + (Point::Up*5.0f);
 	spec->store = true;
 	spec->capacity = Mass::kg(1000);
-	spec->enableSetUpper = true;
+	spec->storeSetUpper = true;
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::MW(1);
 	spec->energyDrain = Energy::kW(33);
@@ -1227,8 +1208,8 @@ void scenario() {
 	spec->store = true;
 	spec->capacity = Mass::kg(1000);
 	spec->logistic = true;
-	spec->enableSetLower = true;
-	spec->enableSetUpper = true;
+	spec->storeSetLower = true;
+	spec->storeSetUpper = true;
 	spec->generateElectricity = true;
 	spec->energyGenerate = Energy::kW(250);
 	spec->forceDelete = true;
@@ -1270,7 +1251,7 @@ void scenario() {
 	spec->consumeChemical = true;
 	spec->store = true;
 	spec->capacity = Mass::kg(5000);
-	spec->enableSetUpper = true;
+	spec->storeSetUpper = true;
 	spec->forceDelete = true;
 	spec->costGreedy = 1.3;
 	spec->clearance = 1.5;
@@ -1909,7 +1890,6 @@ int main(int argc, char const *argv[]) {
 
 	Popup* popup = nullptr;
 	StatsPopup2* statsPopup = new StatsPopup2(camera);
-	WaypointsPopup* waypointsPopup = new WaypointsPopup(camera);
 	TechPopup* techPopup = new TechPopup(camera);
 	BuildPopup2* buildPopup = new BuildPopup2(camera);
 	EntityPopup2* entityPopup = new EntityPopup2(camera);
@@ -2202,15 +2182,19 @@ int main(int argc, char const *argv[]) {
 				camera->placing = nullptr;
 
 				if (camera->selecting && camera->selected.size()) {
-					camera->placing = new Plan(camera->selected[0]->pos);
 					Sim::locked([&]() {
 						for (auto se: camera->selected) {
+							if (se->spec->junk) continue;
+
 							if (Entity::exists(se->id)) {
 								Entity& en = Entity::get(se->id);
 								auto ge = new GuiFakeEntity(se->spec);
 								ge->dir = en.dir;
 								ge->move(en.pos);
 								ge->getConfig(en);
+
+								if (!camera->placing)
+									camera->placing = new Plan(camera->selected[0]->pos);
 								camera->placing->add(ge);
 							}
 						}
@@ -2219,8 +2203,7 @@ int main(int argc, char const *argv[]) {
 					camera->selecting = false;
 				}
 				else
-				if (camera->hovering) {
-					camera->placing = new Plan(camera->hovering->pos);
+				if (camera->hovering && !camera->hovering->spec->junk) {
 					Sim::locked([&]() {
 						auto se = camera->hovering;
 						if (Entity::exists(se->id)) {
@@ -2231,7 +2214,10 @@ int main(int argc, char const *argv[]) {
 								ge->dir = en.spec->conveyorOutput.transform(en.dir.rotation());
 							}
 							ge->move(en.pos);
-							ge->getConfig(en);
+							//ge->getConfig(en);
+
+							if (!camera->placing)
+								camera->placing = new Plan(camera->hovering->pos);
 							camera->placing->add(ge);
 						}
 					});
@@ -2354,7 +2340,12 @@ int main(int argc, char const *argv[]) {
 				});
 			}
 
-			if (camera->mouse.left.clicked && !camera->placing && camera->hovering && !IsKeyDown(KEY_LEFT_CONTROL)) {
+			if (camera->mouse.left.clicked
+				&& !IsKeyDown(KEY_LEFT_CONTROL)
+				&& !camera->placing
+				&& camera->hovering
+				&& camera->hovering->spec->operable()
+			){
 				if (popup) popup->show(false);
 				popup = entityPopup;
 				popup->show(true);
@@ -2407,13 +2398,6 @@ int main(int argc, char const *argv[]) {
 				popup = statsPopup;
 				popup->show(true);
 			}
-		}
-
-		if (IsKeyReleased(KEY_F2) && camera->directing) {
-			waypointsPopup->useEntity(camera->directing->id);
-			if (popup) popup->show(false);
-			popup = waypointsPopup;
-			popup->show(true);
 		}
 
 		if (IsKeyReleased(KEY_F3)) {
@@ -2664,7 +2648,6 @@ int main(int argc, char const *argv[]) {
 
 	delete status;
 	delete statsPopup;
-	delete waypointsPopup;
 	delete techPopup;
 	delete buildPopup;
 	delete entityPopup;

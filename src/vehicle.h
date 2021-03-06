@@ -54,7 +54,6 @@ struct Vehicle {
 	struct Waypoint {
 		Point position;
 		uint stopId;
-		std::string stopName;
 		std::vector<DepartCondition*> conditions;
 
 		Waypoint(Point pos);

@@ -528,12 +528,18 @@ void Vehicle::saveAll(const char* name) {
 			state["path"][i++] = {point.x, point.y, point.z};
 		}
 
+		state["waypoint"] = -1;
+
 		i = 0;
 		for (auto wp: vehicle.waypoints) {
+
+			if (wp == vehicle.waypoint) {
+				state["waypoint"] = i;
+			}
+
 			json wstate;
 			wstate["position"] = {wp->position.x, wp->position.y, wp->position.z};
 			wstate["stopId"] = wp->stopId;
-			wstate["stopName"] = wp->stopName;
 
 			int j = 0;
 			for (auto condition: wp->conditions) {
@@ -579,6 +585,7 @@ void Vehicle::loadAll(const char* name) {
 			vehicle.path.push_back(Point(array[0], array[1], array[2]));
 		}
 
+		int i = 0;
 		for (auto wstate: state["waypoints"]) {
 			uint stopId = wstate["stopId"];
 
@@ -606,6 +613,10 @@ void Vehicle::loadAll(const char* name) {
 			} else {
 				auto pos = wstate["position"];
 				vehicle.addWaypoint(Point(pos[0], pos[1], pos[2]));
+			}
+
+			if (i++ == state["waypoint"]) {
+				vehicle.waypoint = vehicle.waypoints.back();
 			}
 		}
 	}
@@ -1022,8 +1033,7 @@ void Ropeway::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/ropeways.json");
 
-	for (auto& pair: all) {
-		auto ropeway = pair.second;
+	for (auto& ropeway: all) {
 
 		json state;
 		state["id"] = ropeway.id;
@@ -1085,8 +1095,7 @@ void RopewayBucket::saveAll(const char* name) {
 	auto path = std::string(name);
 	auto out = std::ofstream(path + "/ropeway-buckets.json");
 
-	for (auto& pair: all) {
-		auto bucket = pair.second;
+	for (auto& bucket: all) {
 
 		json state;
 		state["id"] = bucket.id;

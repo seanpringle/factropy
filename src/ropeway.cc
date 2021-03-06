@@ -7,8 +7,7 @@ void Ropeway::reset() {
 }
 
 void Ropeway::tick() {
-	for (auto& pair: all) {
-		auto& ropeway = pair.second;
+	for (auto& ropeway: all) {
 		if (!ropeway.next && ropeway.check) {
 			ropeway.reorient();
 			ropeway.rebucket();
@@ -16,8 +15,7 @@ void Ropeway::tick() {
 			ropeway.check = false;
 		}
 	}
-	for (auto& pair: all) {
-		auto& ropeway = pair.second;
+	for (auto& ropeway: all) {
 		if (ropeway.next && ropeway.prev) continue;
 		ropeway.update();
 	}
@@ -36,8 +34,7 @@ Ropeway& Ropeway::create(uint id) {
 }
 
 Ropeway& Ropeway::get(uint id) {
-	ensuref(all.count(id), "invalid ropeway access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Ropeway::destroy() {
@@ -361,8 +358,7 @@ void RopewayBucket::reset() {
 }
 
 void RopewayBucket::tick() {
-	for (auto& pair: all) {
-		auto& bucket = pair.second;
+	for (auto& bucket: all) {
 		bucket.update();
 	}
 }
@@ -376,8 +372,7 @@ RopewayBucket& RopewayBucket::create(uint id) {
 }
 
 RopewayBucket& RopewayBucket::get(uint id) {
-	ensuref(all.count(id), "invalid ropeway bucket access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void RopewayBucket::destroy() {

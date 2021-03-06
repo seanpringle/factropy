@@ -92,12 +92,8 @@ struct Spec {
 	// store
 	bool store;
 	Mass capacity;
-	bool magic;
-	bool enableSetLower;
-	bool enableSetUpper;
-	// loaders
-	bool loadAnything;
-	bool unloadAnything;
+	bool storeSetLower;
+	bool storeSetUpper;
 	// drones
 	bool logistic;
 	bool loadPriority;
@@ -197,8 +193,9 @@ struct Spec {
 	Point aligned(Point p, Point dir);
 	Box box(Point pos, Point dir, Box vol);
 	Box southBox(Point pos);
-	bool hasStore();
 	void setCornerSupports();
+
+	bool operable();
 
 	static std::vector<Point> relativePoints(const std::vector<Point> points, const Matrix rotation, const Point position);
 };

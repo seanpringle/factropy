@@ -7,6 +7,7 @@
 struct Popup {
 	MainCamera* camera = nullptr;
 	bool visible = false;
+	bool opened = false;
 	bool mouseOver = false;
 	bool inputFocused = false;
 	Popup(MainCamera* c);
@@ -30,14 +31,6 @@ struct StatsPopup2 : Popup {
 	void draw();
 };
 
-struct WaypointsPopup : Popup {
-	uint eid = 0;
-	WaypointsPopup(MainCamera* c);
-	~WaypointsPopup();
-	void draw();
-	void useEntity(uint eid);
-};
-
 struct TechPopup : Popup {
 	TechPopup(MainCamera* c);
 	~TechPopup();
@@ -52,6 +45,7 @@ struct BuildPopup2 : Popup {
 
 struct EntityPopup2 : Popup {
 	uint eid = 0;
+	char name[50];
 	EntityPopup2(MainCamera* c);
 	~EntityPopup2();
 	void draw();

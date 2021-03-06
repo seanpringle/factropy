@@ -10,21 +10,22 @@ struct Ropeway;
 struct RopewayBucket;
 
 #include "entity.h"
+#include "slabmap.h"
 #include "minivec.h"
 #include "miniset.h"
 #include <list>
 
 struct Ropeway {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,Ropeway> all;
+	static inline slabmap<Ropeway,&Ropeway::id> all;
 	static Ropeway& create(uint id);
 	static Ropeway& get(uint id);
 
-	uint id;
 	uint prev;
 	uint next;
 	uint cycle;
@@ -59,16 +60,16 @@ struct Ropeway {
 };
 
 struct RopewayBucket {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,RopewayBucket> all;
+	static inline slabmap<RopewayBucket,&RopewayBucket::id> all;
 	static RopewayBucket& create(uint id);
 	static RopewayBucket& get(uint id);
 
-	uint id;
 	uint rid;
 	uint step;
 

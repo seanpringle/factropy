@@ -606,7 +606,7 @@ void MainCamera::draw() {
 			}
 
 			if (hovering) {
-				drawBox(hovering->southBox(), hovering->dir, SKYBLUE);
+				drawBox(hovering->southBox(), hovering->dir, hovering->spec->operable() ? SKYBLUE: VIOLET);
 
 				if (hovering->spec->pipe) {
 					Sim::locked([&]() {

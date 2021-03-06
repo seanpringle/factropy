@@ -56,6 +56,7 @@ void Popup::bottomLeft(int w, int h) {
 }
 
 void Popup::show(bool state) {
+	opened = state && !visible;
 	visible = state;
 }
 
@@ -142,134 +143,6 @@ void StatsPopup2::draw() {
 
 	mouseOver = ImGui::IsWindowHovered();
 	ImGui::End();
-}
-
-WaypointsPopup::WaypointsPopup(MainCamera* c) : Popup(c) {
-	eid = 0;
-}
-
-WaypointsPopup::~WaypointsPopup() {
-}
-
-void WaypointsPopup::draw() {
-	Sim::locked([&]() {
-		if (!eid || !Entity::exists(eid)) {
-			return;
-		}
-
-		Entity& en = Entity::get(eid);
-
-		if (!en.spec->vehicle) {
-			return;
-		}
-
-		Vehicle& vehicle = Vehicle::get(en.id);
-
-		center(1000,600);
-		ImGui::Begin("Waypoints", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-
-		int n = 0;
-		int thisWay = 0, dropWay = -1;
-
-		for (auto waypoint: vehicle.waypoints) {
-			if (waypoint->stopId) {
-				ImGui::Print(waypoint->stopName.c_str());
-			} else {
-				ImGui::Print(fmt("%f,%f,%f", waypoint->position.x, waypoint->position.y, waypoint->position.z));
-			}
-
-			int thisCon = 0, dropCon = -1;
-			for (auto condition: waypoint->conditions) {
-				if_is<Vehicle::DepartInactivity>(condition, [&](auto con) {
-					ImGui::Print(fmt("inactivity %d", con->seconds));
-					ImGui::InputInt(fmtc("seconds##%d", n++), &con->seconds);
-				});
-
-				if_is<Vehicle::DepartItem>(condition, [&](auto con) {
-					ImGui::Print(fmt("item %d,%d,%d", con->iid, con->op, con->count));
-					if (ImGui::BeginCombo(fmtc("combo##%d", n++), (con->iid ? Item::get(con->iid)->name.c_str(): "item"), ImGuiComboFlags_None)) {
-						for (auto [iid,item]: Item::ids) {
-							if (ImGui::Selectable(fmtc("%s##%d", item->name, n++), con->iid == iid)) {
-								con->iid = iid;
-							}
-						}
-						ImGui::EndCombo();
-					}
-					if (ImGui::BeginCombo(fmtc("combo##%d", n++), fmtc("%u", con->op), ImGuiComboFlags_None)) {
-						if (ImGui::Selectable(fmtc("==##%d", n++), con->op == Vehicle::DepartItem::Eq)) {
-							con->op = Vehicle::DepartItem::Eq;
-						}
-						if (ImGui::Selectable(fmtc("!=##%d", n++), con->op == Vehicle::DepartItem::Ne)) {
-							con->op = Vehicle::DepartItem::Ne;
-						}
-						if (ImGui::Selectable(fmtc("<##%d", n++), con->op == Vehicle::DepartItem::Lt)) {
-							con->op = Vehicle::DepartItem::Lt;
-						}
-						if (ImGui::Selectable(fmtc("<=##%d", n++), con->op == Vehicle::DepartItem::Lte)) {
-							con->op = Vehicle::DepartItem::Lte;
-						}
-						if (ImGui::Selectable(fmtc(">##%d", n++), con->op == Vehicle::DepartItem::Gt)) {
-							con->op = Vehicle::DepartItem::Gt;
-						}
-						if (ImGui::Selectable(fmtc(">=##%d", n++), con->op == Vehicle::DepartItem::Gte)) {
-							con->op = Vehicle::DepartItem::Gte;
-						}
-						ImGui::EndCombo();
-					}
-					ImGui::InputInt(fmtc("count##%d", n++), (int*)(&con->count));
-				});
-
-				if (ImGui::Button(fmtc("-con##%d", n++))) {
-					dropCon = thisCon;
-				}
-
-				thisCon++;
-			}
-
-			if (dropCon >= 0) {
-				auto it = waypoint->conditions.begin();
-				std::advance(it, dropCon);
-				delete *it;
-				waypoint->conditions.erase(it);
-			}
-
-			if (ImGui::Button(fmtc("+activity##%d", n++))) {
-				waypoint->conditions.push_back(new Vehicle::DepartInactivity());
-			}
-
-			ImGui::SameLine();
-
-			if (ImGui::Button(fmtc("+item##%d", n++))) {
-				waypoint->conditions.push_back(new Vehicle::DepartItem());
-			}
-
-			if (ImGui::Button(fmtc("-way##%d", n++))) {
-				dropWay = thisWay;
-			}
-
-			thisWay++;
-		}
-
-		if (dropWay >= 0) {
-			auto it = vehicle.waypoints.begin();
-			std::advance(it, dropWay);
-			delete *it;
-			vehicle.waypoints.erase(it);
-		}
-
-		for (auto [eid,name]: Entity::names) {
-			if (ImGui::Button(fmtc("+way %s##%d", name.c_str(), n++))) {
-				vehicle.addWaypoint(eid);
-			}
-		}
-
-		mouseOver = ImGui::IsWindowHovered();
-		ImGui::End();
-	});
-}
-
-void WaypointsPopup::useEntity(uint eeid) {
-	eid = eeid;
 }
 
 TechPopup::TechPopup(MainCamera* c) : Popup(c) {
@@ -384,330 +257,489 @@ void EntityPopup2::draw() {
 
 		Entity &en = Entity::get(eid);
 
+		if (opened && en.spec->named) {
+			std::snprintf(name, sizeof(name), "%s", en.name().c_str());
+		}
+
+		auto focusedTab = [&]() {
+			bool focused = opened;
+			opened = false;
+			return (focused ? ImGuiTabItemFlags_SetSelected: ImGuiTabItemFlags_None) | ImGuiTabItemFlags_NoPushId;
+		};
+
 		center(1000,1000);
-		Begin(fmtc("%s###Entity", en.name()), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+		Begin(fmtc("%s###entity", en.name()), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
-		PushID("entity");
-			if (en.spec->enable) {
-				bool enabled = en.isEnabled();
-				if (Checkbox("Enabled", &enabled)) {
-					en.setEnabled(enabled);
-				}
-			}
-			if (en.spec->generateElectricity) {
-				bool generating = en.isGenerating();
-				if (Checkbox("Generate Electricity", &generating)) {
-					en.setGenerating(generating);
-				}
-			}
-		PopID();
+		if (BeginTabBar("entity-tabs", ImGuiTabBarFlags_None)) {
 
-		if (en.spec->named) {
-			char name[50]; std::snprintf(name, sizeof(name), "%s", en.name().c_str());
-			if (InputText("Name", name, sizeof(name))) {
-				en.rename(name);
-			}
-			inputFocused = IsItemActive();
-		}
+			if (en.spec->crafter && BeginTabItem("Crafting", nullptr, focusedTab())) {
+				Crafter& crafter = en.crafter();
 
-		if (en.spec->consumeChemical) {
-			Burner& burner = en.burner();
-			Print("Fuel");
-			LevelBar(burner.energy.portion(burner.buffer));
-			for (Stack stack: burner.store.stacks) {
-				Item* item = Item::get(stack.iid);
-				Print(fmtc("%s(%u)", item->name, stack.size));
-			}
-		}
+				PushID("crafter");
 
-		if (en.spec->crafter) {
-			Crafter& crafter = en.crafter();
-			PushID("crafter");
-			LevelBar(crafter.progress);
+				const char* selected = nullptr;
+				std::vector<const char*> options;
 
-			const char* selected = nullptr;
-			std::vector<const char*> options;
-
-			for (auto& [name,recipe]: Recipe::names) {
-				bool show = true;
-				if (en.spec->recipeTags.size()) {
-					show = false;
-					for (auto tag: en.spec->recipeTags) {
-						show = show || recipe->tags.count(tag);
+				for (auto& [name,recipe]: Recipe::names) {
+					bool show = true;
+					if (en.spec->recipeTags.size()) {
+						show = false;
+						for (auto tag: en.spec->recipeTags) {
+							show = show || recipe->tags.count(tag);
+						}
 					}
-				}
-				if (show && recipe->licensed) {
-					options.push_back(name.c_str());
-					if (crafter.recipe == recipe) {
-						selected = name.c_str();
-					}
-				}
-			}
-
-			if (BeginCombo("recipe", selected)) {
-				for (auto& s: options) {
-					if (Selectable(s, s == selected)) {
-						crafter.nextRecipe = Recipe::byName(s);
-					}
-				}
-				EndCombo();
-			}
-
-			PopID();
-		}
-
-		if (en.spec->arm) {
-			Arm& arm = en.arm();
-			PushID("arm");
-			LevelBar(arm.orientation);
-
-			for (uint iid: arm.filter) {
-				Item* item = Item::get(iid);
-				if (Button(item->name.c_str())) {
-					arm.filter.erase(iid);
-				}
-			}
-
-			std::vector<const char*> options;
-
-			for (auto& [name,item]: Item::names) {
-				if (!arm.filter.count(item->id)) {
-					options.push_back(name.c_str());
-				}
-			}
-
-			if (BeginCombo("filter", nullptr)) {
-				for (auto& s: options) {
-					if (Selectable(s, false)) {
-						arm.filter.insert(Item::byName(s)->id);
-					}
-				}
-				EndCombo();
-			}
-
-			PopID();
-		}
-
-		if (en.spec->store) {
-			Store& store = en.store();
-			PushID("store");
-
-			int id = 0;
-
-			uint clear = 0;
-			uint down = 0;
-
-			Mass usage = store.usage();
-			Mass limit = store.limit();
-
-			Print("Storage");
-			LevelBar(usage.portion(limit));
-
-			BeginTable("levels", 7);
-
-			TableSetupColumn("item", ImGuiTableColumnFlags_WidthFixed, 250);
-			TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, 100);
-			TableSetupColumn(fmtc("##%d", id++), ImGuiTableColumnFlags_WidthFixed, 50);
-			TableSetupColumn("lower", ImGuiTableColumnFlags_WidthStretch);
-			TableSetupColumn("upper", ImGuiTableColumnFlags_WidthStretch);
-			TableSetupColumn(fmtc("##%d", id++), ImGuiTableColumnFlags_WidthFixed, 50);
-			TableSetupColumn(fmtc("##%d", id++), ImGuiTableColumnFlags_WidthFixed, 50);
-			TableHeadersRow();
-
-			for (Store::Level level: store.levels) {
-				Item *item = Item::get(level.iid);
-				TableNextRow();
-
-				int limit = (int)std::max(level.upper, (uint)store.limit().value/item->mass.value);
-				int step  = (int)std::max(1U, (uint)limit/100);
-
-				TableNextColumn();
-				Print(fmtc("%s", item->name));
-
-				TableNextColumn();
-				Print(fmtc("%d", store.count(level.iid)));
-
-				TableNextColumn();
-				if (store.isRequesting(level.iid)) {
-					Print("r");
-				} else
-				if (store.isActiveProviding(level.iid)) {
-					Print("a");
-				} else
-				if (store.isProviding(level.iid)) {
-					Print("p");
-				}
-
-				int lower = level.lower;
-				int upper = level.upper;
-
-				TableNextColumn();
-				if (en.spec->enableSetLower) {
-					SetNextItemWidth(-0.001f);
-					if (InputIntClamp(fmtc("##%d", id++), &lower, 0, limit, step, step*10)) {
-						store.levelSet(level.iid, lower, upper);
+					if (show && recipe->licensed) {
+						options.push_back(name.c_str());
+						if (crafter.recipe == recipe) {
+							selected = name.c_str();
+						}
 					}
 				}
 
-				TableNextColumn();
-				if (en.spec->enableSetUpper) {
-					SetNextItemWidth(-0.001f);
-					if (InputIntClamp(fmtc("##%d", id++), &upper, 0, limit, step, step*10)) {
-						store.levelSet(level.iid, lower, upper);
-					}
-				}
-
-				TableNextColumn();
-				if (Button(fmtc("d##%d", id++), ImVec2(-1,0))) {
-					down = level.iid;
-				}
-
-				TableNextColumn();
-				if (Button(fmtc("x##%d", id++), ImVec2(-1,0))) {
-					clear = level.iid;
-				}
-			}
-
-			for (Stack stack: store.stacks) {
-				if (store.level(stack.iid) != nullptr) continue;
-				Item *item = Item::get(stack.iid);
-
-				int limit = (uint)store.limit().value/item->mass.value;
-				int step  = (int)std::max(1U, (uint)limit/100);
-
-				TableNextRow();
-
-				TableNextColumn();
-				Print(fmtc("%s", item->name));
-
-				TableNextColumn();
-				Print(fmtc("%d", store.count(stack.iid)));
-
-				TableNextColumn();
-				TableNextColumn();
-
-				TableNextColumn();
-				if (Button("+", ImVec2(-1,0))) {
-					uint size = stack.size%step ? stack.size+step-(stack.size%step): stack.size;
-					store.levelSet(stack.iid, 0, size);
-				}
-
-				TableNextColumn();
-				TableNextColumn();
-			}
-
-			EndTable();
-
-			std::vector<const char*> options;
-
-			for (auto& [name,item]: Item::names) {
-				if (!store.level(item->id) && !store.count(item->id)) {
-					options.push_back(name.c_str());
-				}
-			}
-
-			SetNextItemWidth(200);
-			if (BeginCombo(fmtc("##%d", id++), nullptr)) {
-				for (auto& s: options) {
-					if (Selectable(s, false)) {
-						store.levelSet(Item::byName(s)->id, 0, 0);
-					}
-				}
-				EndCombo();
-			}
-
-			if (clear) {
-				store.levelClear(clear);
-			}
-
-			if (down) {
-				auto level = store.level(down);
-				uint lower = level->lower;
-				uint upper = level->upper;
-				store.levelClear(down);
-				store.levelSet(down, lower, upper);
-			}
-
-			Print(fmtc("drones: %u, arms: %u", store.drones.size(), store.arms.size()));
-
-			PopID();
-		}
-
-		if (en.spec->vehicle) {
-			PushID("vehicle");
-
-			bool patrol = en.vehicle().patrol;
-			if (Checkbox("patrol", &patrol)) {
-				en.vehicle().patrol = patrol;
-			}
-
-			bool handbrake = en.vehicle().handbrake;
-			if (Checkbox("handbrake", &handbrake)) {
-				en.vehicle().handbrake = handbrake;
-			}
-
-			PopID();
-		}
-
-		if (en.spec->ropeway) {
-			PushID("ropeway");
-			auto& ropeway = en.ropeway();
-
-			Print(fmtc("ropeway %fm", ropeway.length()));
-
-			PushID("ropeway-inputFilters");
-				for (uint iid: ropeway.inputFilters) {
-					Item* item = Item::get(iid);
-					if (Button(item->name.c_str())) {
-						ropeway.inputFilters.erase(iid);
-					}
-				}
-
-				std::vector<const char*> inputOptions;
-
-				for (auto& [name,item]: Item::names) {
-					if (!ropeway.inputFilters.count(item->id)) {
-						inputOptions.push_back(name.c_str());
-					}
-				}
-
-				if (BeginCombo("input filters", nullptr)) {
-					for (auto& s: inputOptions) {
-						if (Selectable(s, false)) {
-							ropeway.inputFilters.insert(Item::byName(s)->id);
+				if (BeginCombo("recipe", selected)) {
+					for (auto& s: options) {
+						if (Selectable(s, s == selected)) {
+							crafter.nextRecipe = Recipe::byName(s);
 						}
 					}
 					EndCombo();
 				}
-			PopID();
 
-			PushID("ropeway-outputFilters");
-				for (uint iid: ropeway.outputFilters) {
+				LevelBar(crafter.progress);
+
+				if (en.spec->store && !en.spec->storeSetLower && !en.spec->storeSetUpper) {
+					Store& store = en.store();
+					PushID("store-view");
+
+					Mass usage = store.usage();
+					Mass limit = store.limit();
+
+					Print("Storage");
+					LevelBar(usage.portion(limit));
+
+					for (auto level: store.levels) {
+						Print(fmtc("%s(%u)", Item::get(level.iid)->name, store.count(level.iid)));
+					}
+
+					PopID();
+				}
+
+				PopID();
+
+				EndTabItem();
+			}
+
+			if (en.spec->arm && BeginTabItem("Arm", nullptr, focusedTab())) {
+				Arm& arm = en.arm();
+
+				PushID("arm");
+				LevelBar(arm.orientation);
+
+				for (uint iid: arm.filter) {
 					Item* item = Item::get(iid);
 					if (Button(item->name.c_str())) {
-						ropeway.outputFilters.erase(iid);
+						arm.filter.erase(iid);
 					}
 				}
 
-				std::vector<const char*> outputOptions;
+				std::vector<const char*> options;
 
 				for (auto& [name,item]: Item::names) {
-					if (!ropeway.outputFilters.count(item->id)) {
-						outputOptions.push_back(name.c_str());
+					if (!arm.filter.count(item->id)) {
+						options.push_back(name.c_str());
 					}
 				}
 
-				if (BeginCombo("output filters", nullptr)) {
-					for (auto& s: outputOptions) {
+				if (BeginCombo("filter", nullptr)) {
+					for (auto& s: options) {
 						if (Selectable(s, false)) {
-							ropeway.outputFilters.insert(Item::byName(s)->id);
+							arm.filter.insert(Item::byName(s)->id);
 						}
 					}
 					EndCombo();
 				}
-			PopID();
 
-			PopID();
+				PopID();
+
+				EndTabItem();
+			}
+
+			if (en.spec->ropeway && BeginTabItem("Ropeway", nullptr, focusedTab())) {
+				PushID("ropeway");
+				auto& ropeway = en.ropeway();
+
+				Print(fmtc("ropeway %fm", ropeway.length()));
+
+				PushID("ropeway-inputFilters");
+					for (uint iid: ropeway.inputFilters) {
+						Item* item = Item::get(iid);
+						if (Button(item->name.c_str())) {
+							ropeway.inputFilters.erase(iid);
+						}
+					}
+
+					std::vector<const char*> inputOptions;
+
+					for (auto& [name,item]: Item::names) {
+						if (!ropeway.inputFilters.count(item->id)) {
+							inputOptions.push_back(name.c_str());
+						}
+					}
+
+					if (BeginCombo("input filters", nullptr)) {
+						for (auto& s: inputOptions) {
+							if (Selectable(s, false)) {
+								ropeway.inputFilters.insert(Item::byName(s)->id);
+							}
+						}
+						EndCombo();
+					}
+				PopID();
+
+				PushID("ropeway-outputFilters");
+					for (uint iid: ropeway.outputFilters) {
+						Item* item = Item::get(iid);
+						if (Button(item->name.c_str())) {
+							ropeway.outputFilters.erase(iid);
+						}
+					}
+
+					std::vector<const char*> outputOptions;
+
+					for (auto& [name,item]: Item::names) {
+						if (!ropeway.outputFilters.count(item->id)) {
+							outputOptions.push_back(name.c_str());
+						}
+					}
+
+					if (BeginCombo("output filters", nullptr)) {
+						for (auto& s: outputOptions) {
+							if (Selectable(s, false)) {
+								ropeway.outputFilters.insert(Item::byName(s)->id);
+							}
+						}
+						EndCombo();
+					}
+				PopID();
+
+				PopID();
+
+				EndTabItem();
+			}
+
+			bool operableStore = en.spec->store && (en.spec->storeSetLower || en.spec->storeSetUpper);
+
+			if (operableStore && BeginTabItem("Storage", nullptr, focusedTab())) {
+				Store& store = en.store();
+
+				PushID("store-manual");
+
+					int id = 0;
+
+					uint clear = 0;
+					uint down = 0;
+
+					Mass usage = store.usage();
+					Mass limit = store.limit();
+
+					Print("Storage");
+					LevelBar(usage.portion(limit));
+
+					BeginTable("levels", 7);
+
+					TableSetupColumn("item", ImGuiTableColumnFlags_WidthFixed, 250);
+					TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, 100);
+					TableSetupColumn(fmtc("##%d", id++), ImGuiTableColumnFlags_WidthFixed, 50);
+					TableSetupColumn("lower", ImGuiTableColumnFlags_WidthStretch);
+					TableSetupColumn("upper", ImGuiTableColumnFlags_WidthStretch);
+					TableSetupColumn(fmtc("##%d", id++), ImGuiTableColumnFlags_WidthFixed, 50);
+					TableSetupColumn(fmtc("##%d", id++), ImGuiTableColumnFlags_WidthFixed, 50);
+					TableHeadersRow();
+
+					for (Store::Level level: store.levels) {
+						Item *item = Item::get(level.iid);
+						TableNextRow();
+
+						int limit = (int)std::max(level.upper, (uint)store.limit().value/item->mass.value);
+						int step  = (int)std::max(1U, (uint)limit/100);
+
+						TableNextColumn();
+						Print(fmtc("%s", item->name));
+
+						TableNextColumn();
+						Print(fmtc("%d", store.count(level.iid)));
+
+						TableNextColumn();
+						if (store.isRequesting(level.iid)) {
+							Print("r");
+						} else
+						if (store.isActiveProviding(level.iid)) {
+							Print("a");
+						} else
+						if (store.isProviding(level.iid)) {
+							Print("p");
+						}
+
+						int lower = level.lower;
+						int upper = level.upper;
+
+						TableNextColumn();
+						if (en.spec->storeSetLower) {
+							SetNextItemWidth(-0.001f);
+							if (InputIntClamp(fmtc("##%d", id++), &lower, 0, limit, step, step*10)) {
+								store.levelSet(level.iid, lower, upper);
+							}
+						}
+
+						TableNextColumn();
+						if (en.spec->storeSetUpper) {
+							SetNextItemWidth(-0.001f);
+							if (InputIntClamp(fmtc("##%d", id++), &upper, 0, limit, step, step*10)) {
+								store.levelSet(level.iid, lower, upper);
+							}
+						}
+
+						TableNextColumn();
+						if (Button(fmtc("d##%d", id++), ImVec2(-1,0))) {
+							down = level.iid;
+						}
+
+						TableNextColumn();
+						if (Button(fmtc("x##%d", id++), ImVec2(-1,0))) {
+							clear = level.iid;
+						}
+					}
+
+					for (Stack stack: store.stacks) {
+						if (store.level(stack.iid) != nullptr) continue;
+						Item *item = Item::get(stack.iid);
+
+						int limit = (uint)store.limit().value/item->mass.value;
+						int step  = (int)std::max(1U, (uint)limit/100);
+
+						TableNextRow();
+
+						TableNextColumn();
+						Print(fmtc("%s", item->name));
+
+						TableNextColumn();
+						Print(fmtc("%d", store.count(stack.iid)));
+
+						TableNextColumn();
+						TableNextColumn();
+
+						TableNextColumn();
+						if (Button("+", ImVec2(-1,0))) {
+							uint size = stack.size%step ? stack.size+step-(stack.size%step): stack.size;
+							store.levelSet(stack.iid, 0, size);
+						}
+
+						TableNextColumn();
+						TableNextColumn();
+					}
+
+					EndTable();
+
+					std::vector<const char*> options;
+
+					for (auto& [name,item]: Item::names) {
+						if (!store.level(item->id) && !store.count(item->id)) {
+							options.push_back(name.c_str());
+						}
+					}
+
+					SetNextItemWidth(200);
+					if (BeginCombo(fmtc("add item##%d", id++), nullptr)) {
+						for (auto& s: options) {
+							if (Selectable(s, false)) {
+								store.levelSet(Item::byName(s)->id, 0, 0);
+							}
+						}
+						EndCombo();
+					}
+
+					if (clear) {
+						store.levelClear(clear);
+					}
+
+					if (down) {
+						auto level = store.level(down);
+						uint lower = level->lower;
+						uint upper = level->upper;
+						store.levelClear(down);
+						store.levelSet(down, lower, upper);
+					}
+
+				PopID();
+
+				EndTabItem();
+			}
+
+			if (en.spec->vehicle && BeginTabItem("Vehicle", nullptr, focusedTab())) {
+				Vehicle& vehicle = en.vehicle();
+
+				PushID("vehicle");
+
+				bool patrol = en.vehicle().patrol;
+				if (Checkbox("patrol", &patrol)) {
+					vehicle.patrol = patrol;
+				}
+
+				bool handbrake = vehicle.handbrake;
+				if (Checkbox("handbrake", &handbrake)) {
+					vehicle.handbrake = handbrake;
+				}
+
+				int n = 0;
+				int thisWay = 0, dropWay = -1;
+
+				for (auto waypoint: vehicle.waypoints) {
+					if (waypoint->stopId && Entity::exists(waypoint->stopId)) {
+						Print(Entity::get(waypoint->stopId).name().c_str());
+					} else {
+						Print(fmt("%f,%f,%f", waypoint->position.x, waypoint->position.y, waypoint->position.z));
+					}
+
+					if (waypoint == vehicle.waypoint) {
+						SameLine();
+						Print("(current)");
+					}
+
+					int thisCon = 0, dropCon = -1;
+					for (auto condition: waypoint->conditions) {
+
+						if_is<Vehicle::DepartInactivity>(condition, [&](auto con) {
+							Print(fmt("inactivity %d", con->seconds));
+							InputInt(fmtc("seconds##%d", n++), &con->seconds);
+						});
+
+						if_is<Vehicle::DepartItem>(condition, [&](auto con) {
+
+							SetNextItemWidth(200);
+							if (BeginCombo(fmtc("##%d", n++), (con->iid ? Item::get(con->iid)->name.c_str(): "item"), ImGuiComboFlags_None)) {
+								for (auto [iid,item]: Item::ids) {
+									if (Selectable(fmtc("%s##%d", item->name, n++), con->iid == iid)) {
+										con->iid = iid;
+									}
+								}
+								EndCombo();
+							}
+
+							std::map<uint,std::string> ops = {
+								{ Vehicle::DepartItem::Eq,  "==" },
+								{ Vehicle::DepartItem::Ne,  "!=" },
+								{ Vehicle::DepartItem::Lt,  "<" },
+								{ Vehicle::DepartItem::Lte, "<=" },
+								{ Vehicle::DepartItem::Gt,  ">" },
+								{ Vehicle::DepartItem::Gte, ">=" },
+							};
+
+							SameLine();
+							SetNextItemWidth(100);
+							if (BeginCombo(fmtc("##%d", n++), ops[con->op].c_str(), ImGuiComboFlags_None)) {
+								for (auto [op,opname]: ops) {
+									if (Selectable(fmtc("==##%d-%u", n++, op), con->op == op)) {
+										con->op = op;
+									}
+								}
+								EndCombo();
+							}
+
+							SameLine();
+							SetNextItemWidth(200);
+							InputInt(fmtc("##%d", n++), (int*)(&con->count));
+						});
+
+						SameLine();
+						if (Button(fmtc("-con##%d", n++))) {
+							dropCon = thisCon;
+						}
+
+						thisCon++;
+					}
+
+					if (dropCon >= 0) {
+						auto it = waypoint->conditions.begin();
+						std::advance(it, dropCon);
+						delete *it;
+						waypoint->conditions.erase(it);
+					}
+
+					if (Button(fmtc("+activity##%d", n++))) {
+						waypoint->conditions.push_back(new Vehicle::DepartInactivity());
+					}
+
+					SameLine();
+
+					if (Button(fmtc("+item##%d", n++))) {
+						waypoint->conditions.push_back(new Vehicle::DepartItem());
+					}
+
+					if (Button(fmtc("-way##%d", n++))) {
+						dropWay = thisWay;
+					}
+
+					thisWay++;
+				}
+
+				if (dropWay >= 0) {
+					auto it = vehicle.waypoints.begin();
+					std::advance(it, dropWay);
+					delete *it;
+					vehicle.waypoints.erase(it);
+				}
+
+				for (auto [eid,name]: Entity::names) {
+					if (ImGui::Button(fmtc("+way %s##%d", name.c_str(), n++))) {
+						vehicle.addWaypoint(eid);
+					}
+				}
+
+				PopID();
+
+				EndTabItem();
+			}
+
+			if (BeginTabItem("Settings", nullptr, focusedTab())) {
+
+				PushID("entity");
+					if (en.spec->enable) {
+						bool enabled = en.isEnabled();
+						if (Checkbox("Enabled", &enabled)) {
+							en.setEnabled(enabled);
+						}
+					}
+					if (en.spec->generateElectricity) {
+						bool generating = en.isGenerating();
+						if (Checkbox("Generate Electricity", &generating)) {
+							en.setGenerating(generating);
+						}
+					}
+					if (en.spec->named) {
+						bool saveEnter = InputText("Name", name, sizeof(name), ImGuiInputTextFlags_EnterReturnsTrue);
+						inputFocused = IsItemActive();
+						SameLine();
+						if (Button("Save") || saveEnter) {
+							if (std::strlen(name)) {
+								en.rename(name);
+							}
+						}
+					}
+					if (en.spec->consumeChemical) {
+						Burner& burner = en.burner();
+						Print("Fuel");
+						LevelBar(burner.energy.portion(burner.buffer));
+						for (Stack stack: burner.store.stacks) {
+							Item* item = Item::get(stack.iid);
+							Print(fmtc("%s(%u)", item->name, stack.size));
+						}
+					}
+				PopID();
+
+				EndTabItem();
+			}
+
+			EndTabBar();
 		}
 
 		mouseOver = IsWindowHovered();
