@@ -28,6 +28,8 @@ struct Fluid {
 
 	Fluid(uint id, std::string name);
 	~Fluid();
+
+	bool manufacturable();
 };
 
 struct Amount {

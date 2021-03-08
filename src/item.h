@@ -55,4 +55,6 @@ struct Item {
 
 	Item(uint id, std::string name);
 	~Item();
+
+	bool manufacturable();
 };

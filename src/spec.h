@@ -20,6 +20,7 @@ typedef int Health;
 #include "mass.h"
 #include "energy.h"
 #include "time-series.h"
+#include "recipe.h"
 
 struct Spec {
 

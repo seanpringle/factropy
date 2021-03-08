@@ -1,5 +1,6 @@
 #include "common.h"
 #include "item.h"
+#include "recipe.h"
 
 Fuel::Fuel() {
 	energy = 0;
@@ -62,3 +63,15 @@ Item* Item::get(uint id) {
 	return ids[id];
 }
 
+bool Item::manufacturable() {
+	for (auto& [_,recipe]: Recipe::names) {
+		if (!recipe->licensed) continue;
+		if (recipe->mine == id) return true;
+		for (auto [iid,_]: recipe->outputItems) {
+			if (iid == id) {
+				return true;
+			}
+		}
+	}
+	return false;
+}

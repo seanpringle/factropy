@@ -43,6 +43,18 @@ Fluid* Fluid::get(uint id) {
 	return ids[id];
 }
 
+bool Fluid::manufacturable() {
+	for (auto& [_,recipe]: Recipe::names) {
+		if (!recipe->licensed) continue;
+		for (auto [fid,_]: recipe->outputFluids) {
+			if (fid == id) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 Amount::Amount() {
 	fid = 0;
 	size = 0;

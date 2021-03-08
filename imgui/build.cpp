@@ -18,7 +18,9 @@ namespace ImGui {
 	}
 
 	void PrintRight(std::string s) {
-		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(s.c_str()).x + ImGui::GetStyle().ItemSpacing.x);
+		ImVec2 size = CalcTextSize(s.c_str());
+		ImVec2 space = GetContentRegionAvail();
+		ImGui::SetCursorPosX(GetCursorPosX() + space.x - size.x - GetStyle().ItemSpacing.x);
 		TextUnformatted(s.c_str());
 	}
 
@@ -32,9 +34,9 @@ namespace ImGui {
 
 	void OverflowBar(float n) {
 		bool overflow = n > 0.999f;
-		if (overflow) ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImGui::GetColorU32(ImVec4(1.0f, 0.0f, 0.0f, 1.0f)));
+		if (overflow) PushStyleColor(ImGuiCol_PlotHistogram, GetColorU32(ImVec4(1.0f, 0.0f, 0.0f, 1.0f)));
 		ProgressBar(n, ImVec2(-1,0), "");
-		if (overflow) ImGui::PopStyleColor();
+		if (overflow) PopStyleColor();
 	}
 
 	bool InputIntClamp(const char* label, int* v, int low, int high, int step, int step_fast) {
@@ -43,4 +45,24 @@ namespace ImGui {
 		return f;
 	}
 
+	void TrySameLine(const char* label, int margin) {
+		SameLine();
+		ImVec2 size = CalcTextSize(label);
+		ImVec2 space = GetContentRegionAvail();
+		if (space.x < size.x + margin) NewLine();
+	}
+
+	bool SmallButtonInline(const char* label) {
+		TrySameLine(label, GetStyle().ItemSpacing.x + GetStyle().FramePadding.x*2);
+		return SmallButton(label);
+	}
+
+	bool SmallButtonInlineRight(const char* label) {
+		TrySameLine(label, GetStyle().ItemSpacing.x + GetStyle().FramePadding.x*2);
+
+		ImVec2 size = CalcTextSize(label);
+		ImVec2 space = GetContentRegionAvail();
+		ImGui::SetCursorPosX(GetCursorPosX() + space.x - size.x - GetStyle().ItemSpacing.x - GetStyle().FramePadding.x*2);
+		return SmallButton(label);
+	}
 }

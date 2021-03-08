@@ -6,6 +6,7 @@
 #include "vehicle.h"
 #include "energy.h"
 #include "string.h"
+#include "ledger.h"
 
 #include "raylib-ex.h"
 #include "../imgui/imgui.h"
@@ -143,96 +144,6 @@ void StatsPopup2::draw() {
 
 	mouseOver = ImGui::IsWindowHovered();
 	ImGui::End();
-}
-
-TechPopup::TechPopup(MainCamera* c) : Popup(c) {
-}
-
-TechPopup::~TechPopup() {
-}
-
-void TechPopup::draw() {
-	center(1000,600);
-	ImGui::Begin("Tech", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-	ImGui::SetWindowSize({1000.0f,600.0f}, ImGuiCond_Always);
-
-	int n = 0;
-	for (auto [name,tech]: Tech::names) {
-		if (tech->bought) {
-			ImGui::Print(fmtc("%s %s", name, tech->cost.format()));
-		} else {
-			if (ImGui::Button(fmtc("%s %s##%d", name, tech->cost.format(), n++))) {
-				Sim::locked([tech=tech]() {
-					tech->buy();
-				});
-			}
-		}
-	}
-
-	mouseOver = ImGui::IsWindowHovered();
-	ImGui::End();
-}
-
-BuildPopup2::BuildPopup2(MainCamera* c) : Popup(c) {
-}
-
-BuildPopup2::~BuildPopup2() {
-}
-
-struct {
-	char build[50];
-} searches;
-
-void BuildPopup2::draw() {
-	center(1000,1000);
-	inputFocused = false;
-	using namespace ImGui;
-
-	Begin("Build", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-
-		PushID("build");
-
-		InputText("search", searches.build, sizeof(searches.build));
-		inputFocused = IsItemActive();
-
-		BeginTable("specs", 3);
-
-		TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 128);
-		TableSetupColumn("spec", ImGuiTableColumnFlags_WidthFixed, 250);
-		TableSetupColumn("materials", ImGuiTableColumnFlags_WidthStretch);
-		TableHeadersRow();
-
-		for (auto& [name,spec]: Spec::all) {
-			if (!spec->build || !spec->licensed)
-				continue;
-
-			if (searches.build[0] && !std::strstr(name.c_str(), searches.build))
-				continue;
-
-			TableNextRow();
-
-			TableNextColumn();
-			if (ImageButton(spec->texture.texture.id, ImVec2(128, 128), ImVec2(0,0))) {
-				camera->build(spec);
-				show(false);
-			}
-
-			TableNextColumn();
-			Print(fmtc("%s", spec->name));
-
-			TableNextColumn();
-			std::vector<std::string> materials;
-			for (auto& stack: spec->materials) {
-				materials.push_back(fmt("%s (%d)", Item::get(stack.iid)->name, (int)stack.size));
-			}
-			Print(fmtc("%s", concatenate(materials)));
-		}
-
-		EndTable();
-		PopID();
-
-	mouseOver = IsWindowHovered();
-	End();
 }
 
 EntityPopup2::EntityPopup2(MainCamera* c) : Popup(c) {
@@ -745,4 +656,442 @@ void EntityPopup2::draw() {
 		mouseOver = IsWindowHovered();
 		End();
 	});
+}
+
+RecipePopup::RecipePopup(MainCamera* c) : Popup(c) {
+	for (auto& [_,item]: Item::names)
+		sorted.items.push_back(item);
+	for (auto& [_,fluid]: Fluid::names)
+		sorted.fluids.push_back(fluid);
+	for (auto& [_,recipe]: Recipe::names)
+		sorted.recipes.push_back(recipe);
+	for (auto& [_,spec]: Spec::all)
+		if (spec->build) sorted.specs.push_back(spec);
+	for (auto& [_,tech]: Tech::names)
+		sorted.techs.push_back(tech);
+
+	std::sort(sorted.items.begin(),   sorted.items.end(),   [&](auto a, auto b) { return a->name < b->name; });
+	std::sort(sorted.fluids.begin(),  sorted.fluids.end(),  [&](auto a, auto b) { return a->name < b->name; });
+	std::sort(sorted.recipes.begin(), sorted.recipes.end(), [&](auto a, auto b) { return a->name < b->name; });
+	std::sort(sorted.specs.begin(),   sorted.specs.end(),   [&](auto a, auto b) { return a->name < b->name; });
+}
+
+RecipePopup::~RecipePopup() {
+}
+
+void RecipePopup::draw() {
+	using namespace ImGui;
+
+	Sim::locked([&]() {
+		center(1500,1000);
+		Begin("recipes##recipe", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+
+		Checkbox("show unavailable stuff", &showUnavailable);
+
+		BeginTable("results", 4);
+
+		TableSetupColumn("items & fluids");
+		TableSetupColumn("recipes");
+		TableSetupColumn("structures & vehicles");
+		TableSetupColumn("technologies");
+		TableHeadersRow();
+
+		TableNextColumn();
+		BeginChild("results-items-and-fluids");
+		for (auto& item: sorted.items) drawItem(item);
+		for (auto& fluid: sorted.fluids) drawFluid(fluid);
+		EndChild();
+
+		TableNextColumn();
+		BeginChild("results-recipes");
+		for (auto& recipe: sorted.recipes) drawRecipe(recipe);
+		EndChild();
+
+		TableNextColumn();
+		BeginChild("results-specs");
+		for (auto& spec: sorted.specs) drawSpec(spec);
+		EndChild();
+
+		TableNextColumn();
+		BeginChild("results-techs");
+		for (auto& tech: sorted.techs) drawTech(tech);
+		EndChild();
+
+		EndTable();
+
+		mouseOver = IsWindowHovered();
+		End();
+	});
+}
+
+void RecipePopup::drawItem(Item* item) {
+	using namespace ImGui;
+
+	if (!showUnavailable && !item->manufacturable()) return;
+
+	if (locate.item == item) {
+		SetScrollHereY();
+		locate.item = nullptr;
+	}
+
+	int pop = 0;
+
+	if (highlited.item[item]) {
+		PushStyleColor(ImGuiCol_Header, GetStyleColorVec4(ImGuiCol_HeaderHovered));
+		pop++;
+	}
+
+	if (!item->manufacturable()) {
+		PushStyleColor(ImGuiCol_Text, GetStyleColorVec4(ImGuiCol_TextDisabled));
+		pop++;
+	}
+
+	SetNextItemOpen(expanded.item[item]);
+	expanded.item[item] = CollapsingHeader(fmtc("%s##item-%d", item->name, item->id));
+
+	if (expanded.item[item]) {
+
+		Print("produced by");
+		miniset<Recipe*> producers;
+		for (auto& [_,recipe]: Recipe::names) {
+			if (recipe->mine == item->id) {
+				producers.insert(recipe);
+			}
+			if (recipe->outputItems.count(item->id)) {
+				producers.insert(recipe);
+			}
+		}
+		for (auto& recipe: producers) {
+			drawRecipeButton(recipe);
+		}
+
+		Print("consumed by");
+		miniset<Recipe*> recipeConsumers;
+		for (auto& [_,recipe]: Recipe::names) {
+			if (recipe->inputItems.count(item->id)) {
+				recipeConsumers.insert(recipe);
+			}
+		}
+		for (auto& recipe: recipeConsumers) {
+			drawRecipeButton(recipe);
+		}
+		miniset<Spec*> specConsumers;
+		for (auto& [_,spec]: Spec::all) {
+			for (auto [iid,_]: spec->materials) {
+				if (iid == item->id) {
+					specConsumers.insert(spec);
+				}
+			}
+		}
+		for (auto& spec: specConsumers) {
+			drawSpecButton(spec);
+		}
+	}
+
+	if (pop) {
+		PopStyleColor(pop);
+	}
+
+	highlited.item[item] = false;
+}
+
+void RecipePopup::drawItemButton(Item* item, int count) {
+	using namespace ImGui;
+	if (SmallButtonInline(fmtc("%s(%d)", item->name, count))) {
+		locate.item = item;
+		expanded.item[item] = !expanded.item[item];
+	}
+	highlited.item[item] = highlited.item[item] || IsItemHovered();
+}
+
+void RecipePopup::drawFluid(Fluid* fluid) {
+	using namespace ImGui;
+
+	if (!showUnavailable && !fluid->manufacturable()) return;
+
+	if (locate.fluid == fluid) {
+		SetScrollHereY();
+		locate.fluid = nullptr;
+	}
+
+	int pop = 0;
+
+	if (highlited.fluid[fluid]) {
+		PushStyleColor(ImGuiCol_Header, GetStyleColorVec4(ImGuiCol_HeaderHovered));
+		pop++;
+	}
+
+	if (!fluid->manufacturable()) {
+		PushStyleColor(ImGuiCol_Text, GetStyleColorVec4(ImGuiCol_TextDisabled));
+		pop++;
+	}
+
+	SetNextItemOpen(expanded.fluid[fluid]);
+	expanded.fluid[fluid] = CollapsingHeader(fmtc("%s##fluid-%d", fluid->name, fluid->id));
+
+	if (expanded.fluid[fluid]) {
+
+		Print("produced by");
+		miniset<Recipe*> producers;
+		for (auto& [_,recipe]: Recipe::names) {
+			if (recipe->outputFluids.count(fluid->id)) {
+				producers.insert(recipe);
+			}
+		}
+		for (auto& recipe: producers) {
+			drawRecipeButton(recipe);
+		}
+
+		Print("consumed by");
+		miniset<Recipe*> consumers;
+		for (auto& [_,recipe]: Recipe::names) {
+			if (recipe->inputFluids.count(fluid->id)) {
+				consumers.insert(recipe);
+			}
+		}
+		for (auto& recipe: consumers) {
+			drawRecipeButton(recipe);
+		}
+	}
+
+	if (pop) {
+		PopStyleColor(pop);
+	}
+
+	highlited.fluid[fluid] = false;
+}
+
+void RecipePopup::drawFluidButton(Fluid* fluid, int count) {
+	using namespace ImGui;
+	if (SmallButtonInline(fmtc("%s(%d)", fluid->name, count))) {
+		locate.fluid = fluid;
+		expanded.fluid[fluid] = !expanded.fluid[fluid];
+	}
+	highlited.fluid[fluid] = highlited.fluid[fluid] || IsItemHovered();
+}
+
+void RecipePopup::drawRecipe(Recipe* recipe) {
+	using namespace ImGui;
+
+	if (!showUnavailable && !recipe->licensed) return;
+
+	if (locate.recipe == recipe) {
+		SetScrollHereY();
+		locate.recipe = nullptr;
+	}
+
+	int pop = 0;
+
+	if (highlited.recipe[recipe]) {
+		PushStyleColor(ImGuiCol_Header, GetStyleColorVec4(ImGuiCol_HeaderHovered));
+		pop++;
+	}
+
+	if (!recipe->licensed) {
+		PushStyleColor(ImGuiCol_Text, GetStyleColorVec4(ImGuiCol_TextDisabled));
+		pop++;
+	}
+
+	SetNextItemOpen(expanded.recipe[recipe]);
+	expanded.recipe[recipe] = CollapsingHeader(fmtc("%s##recipe-%s", recipe->name, recipe->name));
+
+	if (expanded.recipe[recipe]) {
+
+		if (recipe->inputItems.size() || recipe->inputFluids.size()) {
+			Print("inputs");
+			for (auto [iid,count]: recipe->inputItems) {
+				drawItemButton(Item::get(iid), count);
+			}
+			for (auto [fid,count]: recipe->inputFluids) {
+				drawFluidButton(Fluid::get(fid), count);
+			}
+		}
+
+		if (recipe->outputItems.size() || recipe->outputFluids.size()) {
+			Print("outputs");
+			for (auto [iid,count]: recipe->outputItems) {
+				drawItemButton(Item::get(iid), count);
+			}
+			for (auto [fid,count]: recipe->outputFluids) {
+				drawFluidButton(Fluid::get(fid), count);
+			}
+		}
+
+		miniset<Spec*> specs;
+		for (auto& [_,spec]: Spec::all) {
+			for (auto& tag: spec->recipeTags) {
+				if (recipe->tags.count(tag)) {
+					specs.insert(spec);
+				}
+			}
+		}
+		if (specs.size()) {
+			Print("made in");
+			for (auto& spec: specs) {
+				drawSpecButton(spec);
+			}
+		}
+
+		miniset<Tech*> techs;
+		for (auto& [_,tech]: Tech::names) {
+			if (tech->licenseRecipes.count(recipe)) {
+				techs.insert(tech);
+			}
+		}
+		if (techs.size()) {
+			Print("licensed by");
+			for (auto& tech: techs) {
+				drawTechButton(tech);
+			}
+		}
+	}
+
+	if (pop) {
+		PopStyleColor(pop);
+	}
+
+	highlited.recipe[recipe] = false;
+}
+
+void RecipePopup::drawRecipeButton(Recipe* recipe) {
+	using namespace ImGui;
+	if (SmallButtonInline(recipe->name.c_str())) {
+		locate.recipe = recipe;
+		expanded.recipe[recipe] = !expanded.recipe[recipe];
+	}
+	highlited.recipe[recipe] = highlited.recipe[recipe] || IsItemHovered();
+}
+
+void RecipePopup::drawSpec(Spec* spec) {
+	using namespace ImGui;
+
+	if (!showUnavailable && !spec->licensed) return;
+
+	if (locate.spec == spec) {
+		SetScrollHereY();
+		locate.spec = nullptr;
+	}
+
+	int pop = 0;
+
+	if (highlited.spec[spec]) {
+		PushStyleColor(ImGuiCol_Header, GetStyleColorVec4(ImGuiCol_HeaderHovered));
+		pop++;
+	}
+
+	if (!spec->licensed) {
+		PushStyleColor(ImGuiCol_Text, GetStyleColorVec4(ImGuiCol_TextDisabled));
+		pop++;
+	}
+
+	SetNextItemOpen(expanded.spec[spec]);
+	expanded.spec[spec] = CollapsingHeader(fmtc("%s##spec-%s", spec->name, spec->name));
+
+	if (expanded.spec[spec]) {
+
+		if (spec->licensed && Button("build", ImVec2(-1,0))) {
+			camera->build(spec);
+			show(false);
+		}
+
+		if (spec->materials.size()) {
+			Print("materials");
+			for (auto& [iid,count]: spec->materials) {
+				drawItemButton(Item::get(iid), count);
+			}
+		}
+		miniset<Tech*> techs;
+		for (auto& tech: sorted.techs) {
+			if (tech->licenseSpecs.count(spec)) {
+				techs.insert(tech);
+			}
+		}
+		if (techs.size()) {
+			Print("licensed by");
+			for (auto& tech: techs) {
+				drawTechButton(tech);
+			}
+		}
+	}
+
+	if (pop) {
+		PopStyleColor(pop);
+	}
+
+	highlited.spec[spec] = false;
+}
+
+void RecipePopup::drawSpecButton(Spec* spec) {
+	using namespace ImGui;
+	if (!spec->build) return;
+
+	if (SmallButtonInline(spec->name.c_str())) {
+		locate.spec = spec;
+		expanded.spec[spec] = !expanded.spec[spec];
+	}
+	highlited.spec[spec] = highlited.spec[spec] || IsItemHovered();
+}
+
+void RecipePopup::drawTech(Tech* tech) {
+	using namespace ImGui;
+
+	if (!showUnavailable && Ledger::balance < tech->cost) return;
+
+	if (locate.tech == tech) {
+		SetScrollHereY();
+		locate.tech = nullptr;
+	}
+
+	int pop = 0;
+
+	if (highlited.tech[tech]) {
+		PushStyleColor(ImGuiCol_Header, GetStyleColorVec4(ImGuiCol_HeaderHovered));
+		pop++;
+	}
+
+	if (!tech->bought) {
+		PushStyleColor(ImGuiCol_Text, GetStyleColorVec4(ImGuiCol_TextDisabled));
+		pop++;
+	}
+
+	SetNextItemOpen(expanded.tech[tech]);
+	expanded.tech[tech] = CollapsingHeader(fmtc("%s##tech-%s", tech->name, tech->name));
+
+	SameLine();
+	PrintRight(tech->cost.format().c_str());
+
+	if (expanded.tech[tech]) {
+
+		if (!tech->bought && Ledger::balance >= tech->cost && Button("buy", ImVec2(-1,0))) {
+			tech->buy();
+		}
+
+		if (tech->licenseSpecs.size()) {
+			Print("specs");
+			for (auto& spec: tech->licenseSpecs) {
+				drawSpecButton(spec);
+			}
+		}
+		if (tech->licenseRecipes.size()) {
+			Print("recipes");
+			for (auto& recipe: tech->licenseRecipes) {
+				drawRecipeButton(recipe);
+			}
+		}
+	}
+
+	if (pop) {
+		PopStyleColor(pop);
+	}
+
+	highlited.tech[tech] = false;
+}
+
+void RecipePopup::drawTechButton(Tech* tech) {
+	using namespace ImGui;
+	if (SmallButtonInline(tech->name.c_str())) {
+		locate.tech = tech;
+		expanded.tech[tech] = !expanded.tech[tech];
+	}
+	highlited.tech[tech] = highlited.tech[tech] || IsItemHovered();
 }

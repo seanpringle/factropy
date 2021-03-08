@@ -1006,6 +1006,7 @@ void scenario() {
 
 	spec = new Spec("pipe-cross");
 	spec->licensed = true;
+	spec->build = false;
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->collision = {0, 0, 0, 1, 1, 1};
@@ -1024,6 +1025,7 @@ void scenario() {
 
 	spec = new Spec("pipe-tee");
 	spec->licensed = true;
+	spec->build = false;
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->collision = {0, 0, 0, 1, 1, 1};
@@ -1042,6 +1044,7 @@ void scenario() {
 
 	spec = new Spec("pipe-elbow");
 	spec->licensed = true;
+	spec->build = false;
 	spec->pipe = true;
 	spec->pipeCapacity = Liquid::l(100);
 	spec->collision = {0, 0, 0, 1, 1, 1};
@@ -1888,16 +1891,15 @@ int main(int argc, char const *argv[]) {
 	Chunk::material.shader = shader;
 	Chunk::material.maps[MAP_DIFFUSE].color = WHITE;
 
-	Popup* popup = nullptr;
-	StatsPopup2* statsPopup = new StatsPopup2(camera);
-	TechPopup* techPopup = new TechPopup(camera);
-	BuildPopup2* buildPopup = new BuildPopup2(camera);
-	EntityPopup2* entityPopup = new EntityPopup2(camera);
-
 	scenario();
 
 	Mod* mod = new Mod("base");
 	mod->load();
+
+	Popup* popup = nullptr;
+	StatsPopup2* statsPopup = new StatsPopup2(camera);
+	EntityPopup2* entityPopup = new EntityPopup2(camera);
+	RecipePopup* recipePopup = new RecipePopup(camera);
 
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
@@ -1946,25 +1948,25 @@ int main(int argc, char const *argv[]) {
 				}
 			};
 
-			for ([[maybe_unused]] auto [name,item]: Item::names) {
+			for (auto [_,item]: Item::names) {
 				if (!item->texture.id) break;
 				DrawTextureEx(item->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 1.0, WHITE);
 				advance();
 			}
 
-			for ([[maybe_unused]] auto [name,fluid]: Fluid::names) {
+			for (auto [_,fluid]: Fluid::names) {
 				if (!fluid->texture.id) break;
 				DrawTextureEx(fluid->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 1.0, WHITE);
 				advance();
 			}
 
-			for ([[maybe_unused]] auto [name,recipe]: Recipe::names) {
+			for (auto [_,recipe]: Recipe::names) {
 				if (!recipe->texture.id) break;
 				DrawTextureEx(recipe->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 0.5, WHITE);
 				advance();
 			}
 
-			for ([[maybe_unused]] auto [name,spec]: Spec::all) {
+			for (auto [_,spec]: Spec::all) {
 				if (!spec->texture.id) break;
 				DrawTextureEx(spec->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 0.5, WHITE);
 				advance();
@@ -2400,15 +2402,9 @@ int main(int argc, char const *argv[]) {
 			}
 		}
 
-		if (IsKeyReleased(KEY_F3)) {
-			if (popup) popup->show(false);
-			popup = techPopup;
-			popup->show(true);
-		}
-
 		if (IsKeyReleased(KEY_E)) {
 			[&]() {
-				if (popup && popup != buildPopup) return;
+				if (popup && popup != recipePopup) return;
 				if (popup && popup->inputFocused) return;
 
 				if (popup) {
@@ -2418,7 +2414,7 @@ int main(int argc, char const *argv[]) {
 				}
 
 				if (!popup) {
-					popup = buildPopup;
+					popup = recipePopup;
 					popup->show(true);
 					return;
 				}
@@ -2648,8 +2644,6 @@ int main(int argc, char const *argv[]) {
 
 	delete status;
 	delete statsPopup;
-	delete techPopup;
-	delete buildPopup;
 	delete entityPopup;
 
 	delete mod;

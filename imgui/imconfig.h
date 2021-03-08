@@ -113,6 +113,9 @@ namespace ImGui {
 	void LevelBar(float n);
 	void OverflowBar(float n);
 	bool InputIntClamp(const char* label, int* v, int low, int high, int step = 1, int step_fast = 100);
+	void TrySameLine(const char* label, int margin = 0);
+	bool SmallButtonInline(const char* label);
+	bool SmallButtonInlineRight(const char* label);
 }
 
 
