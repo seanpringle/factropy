@@ -183,63 +183,6 @@ void EntityPopup2::draw() {
 
 		if (BeginTabBar("entity-tabs", ImGuiTabBarFlags_None)) {
 
-			if (en.spec->crafter && BeginTabItem("Crafting", nullptr, focusedTab())) {
-				Crafter& crafter = en.crafter();
-
-				PushID("crafter");
-
-				const char* selected = nullptr;
-				std::vector<const char*> options;
-
-				for (auto& [name,recipe]: Recipe::names) {
-					bool show = true;
-					if (en.spec->recipeTags.size()) {
-						show = false;
-						for (auto tag: en.spec->recipeTags) {
-							show = show || recipe->tags.count(tag);
-						}
-					}
-					if (show && recipe->licensed) {
-						options.push_back(name.c_str());
-						if (crafter.recipe == recipe) {
-							selected = name.c_str();
-						}
-					}
-				}
-
-				if (BeginCombo("recipe", selected)) {
-					for (auto& s: options) {
-						if (Selectable(s, s == selected)) {
-							crafter.nextRecipe = Recipe::byName(s);
-						}
-					}
-					EndCombo();
-				}
-
-				LevelBar(crafter.progress);
-
-				if (en.spec->store && !en.spec->storeSetLower && !en.spec->storeSetUpper) {
-					Store& store = en.store();
-					PushID("store-view");
-
-					Mass usage = store.usage();
-					Mass limit = store.limit();
-
-					Print("Storage");
-					LevelBar(usage.portion(limit));
-
-					for (auto level: store.levels) {
-						Print(fmtc("%s(%u)", Item::get(level.iid)->name, store.count(level.iid)));
-					}
-
-					PopID();
-				}
-
-				PopID();
-
-				EndTabItem();
-			}
-
 			if (en.spec->arm && BeginTabItem("Arm", nullptr, focusedTab())) {
 				Arm& arm = en.arm();
 
@@ -356,7 +299,7 @@ void EntityPopup2::draw() {
 					Print("Storage");
 					LevelBar(usage.portion(limit));
 
-					BeginTable("levels", 7);
+					BeginTable("levels", en.spec->crafter ? 8: 7);
 
 					TableSetupColumn("item", ImGuiTableColumnFlags_WidthFixed, 250);
 					TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, 100);
@@ -365,9 +308,14 @@ void EntityPopup2::draw() {
 					TableSetupColumn("upper", ImGuiTableColumnFlags_WidthStretch);
 					TableSetupColumn(fmtc("##%d", id++), ImGuiTableColumnFlags_WidthFixed, 50);
 					TableSetupColumn(fmtc("##%d", id++), ImGuiTableColumnFlags_WidthFixed, 50);
+
+					if (en.spec->crafter) {
+						TableSetupColumn(fmtc("craft##%d", id++), ImGuiTableColumnFlags_WidthFixed, 50);
+					}
+
 					TableHeadersRow();
 
-					for (Store::Level level: store.levels) {
+					for (auto& level: store.levels) {
 						Item *item = Item::get(level.iid);
 						TableNextRow();
 
@@ -419,6 +367,11 @@ void EntityPopup2::draw() {
 						if (Button(fmtc("x##%d", id++), ImVec2(-1,0))) {
 							clear = level.iid;
 						}
+
+						if (en.spec->crafter) {
+							TableNextColumn();
+							Checkbox(fmtc("##%d", id++), &level.craft);
+						}
 					}
 
 					for (Stack stack: store.stacks) {
@@ -447,6 +400,10 @@ void EntityPopup2::draw() {
 
 						TableNextColumn();
 						TableNextColumn();
+
+						if (en.spec->crafter) {
+							TableNextColumn();
+						}
 					}
 
 					EndTable();
@@ -480,6 +437,56 @@ void EntityPopup2::draw() {
 						store.levelClear(down);
 						store.levelSet(down, lower, upper);
 					}
+
+				PopID();
+
+				EndTabItem();
+			}
+
+			if (en.spec->crafter && en.spec->crafterShowTab && BeginTabItem("Crafting", nullptr, focusedTab())) {
+				Crafter& crafter = en.crafter();
+
+				PushID("crafter");
+
+				const char* selected = nullptr;
+				std::vector<const char*> options;
+
+				for (auto& [name,recipe]: Recipe::names) {
+					if (recipe->licensed && crafter.craftable(recipe)) {
+						options.push_back(name.c_str());
+						if (crafter.recipe == recipe) {
+							selected = name.c_str();
+						}
+					}
+				}
+
+				if (BeginCombo("recipe", selected)) {
+					for (auto& s: options) {
+						if (Selectable(s, s == selected)) {
+							crafter.craft(Recipe::byName(s));
+						}
+					}
+					EndCombo();
+				}
+
+				LevelBar(crafter.progress);
+
+				if (en.spec->store && !en.spec->storeSetLower && !en.spec->storeSetUpper) {
+					Store& store = en.store();
+					PushID("store-view");
+
+					Mass usage = store.usage();
+					Mass limit = store.limit();
+
+					Print("Storage");
+					LevelBar(usage.portion(limit));
+
+					for (auto level: store.levels) {
+						Print(fmtc("%s(%u)", Item::get(level.iid)->name, store.count(level.iid)));
+					}
+
+					PopID();
+				}
 
 				PopID();
 
@@ -985,11 +992,11 @@ void RecipePopup::drawSpec(Spec* spec) {
 	}
 
 	SetNextItemOpen(expanded.spec[spec]);
-	expanded.spec[spec] = CollapsingHeader(fmtc("%s##spec-%s", spec->name, spec->name));
+	expanded.spec[spec] = CollapsingHeader(fmtc("%s##build-spec-%s", spec->name, spec->name));
 
 	if (expanded.spec[spec]) {
 
-		if (spec->licensed && Button("build", ImVec2(-1,0))) {
+		if (spec->licensed && Button(fmtc("build##%s", spec->name), ImVec2(-1,0))) {
 			camera->build(spec);
 			show(false);
 		}
@@ -1062,7 +1069,7 @@ void RecipePopup::drawTech(Tech* tech) {
 
 	if (expanded.tech[tech]) {
 
-		if (!tech->bought && Ledger::balance >= tech->cost && Button("buy", ImVec2(-1,0))) {
+		if (!tech->bought && Ledger::balance >= tech->cost && Button(fmtc("buy##buy-tech-%s", tech->name), ImVec2(-1,0))) {
 			tech->buy();
 		}
 

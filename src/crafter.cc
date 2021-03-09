@@ -19,9 +19,10 @@ Crafter& Crafter::create(uint id) {
 	crafter.progress = 0.0f;
 	crafter.efficiency = 0.0f;
 	crafter.recipe = NULL;
-	crafter.nextRecipe = NULL;
+	crafter.changeRecipe = NULL;
 	crafter.energyUsed = 0;
 	crafter.completed = 0;
+	crafter.once = false;
 	return crafter;
 }
 
@@ -151,6 +152,9 @@ bool Crafter::inputCurrencyReady() {
 }
 
 bool Crafter::outputItemsReady() {
+	Entity& en = Entity::get(id);
+	if (!en.spec->crafterManageStore) return true;
+
 	bool outputReady = true;
 
 	if (recipe->outputItems.size()) {
@@ -163,6 +167,79 @@ bool Crafter::outputItemsReady() {
 	return outputReady;
 }
 
+bool Crafter::craftable(Recipe* r) {
+	Entity& en = Entity::get(id);
+	for (auto& tag: en.spec->recipeTags) {
+		if (r->tags.count(tag)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void Crafter::craft(Recipe* r) {
+	changeRecipe = r;
+}
+
+bool Crafter::autoCraft(Item* item) {
+	auto& en = Entity::get(id);
+	if (!en.isEnabled() || working || exporting()) return false;
+
+	auto& store = en.store();
+	for (auto& [_,recipe]: Recipe::names) {
+		if (recipe->inputFluids.size() || recipe->outputFluids.size() || recipe->mine)
+			continue;
+		for (auto& tag: en.spec->recipeTags) {
+			if (recipe->tags.count(tag) && recipe->outputItems.count(item->id)) {
+				bool ok = true;
+				for (auto [iid,count]: recipe->inputItems) {
+					ok = ok && store.count(iid) >= count;
+				}
+				if (ok) {
+					craft(recipe);
+					once = true;
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void Crafter::retool(Recipe* r) {
+	Entity& en = Entity::get(id);
+	recipe = r;
+
+	ensure(!recipe || recipe->energyUsage > Energy(0));
+
+	if (recipe) {
+		exportItems.clear();
+		exportFluids.clear();
+	}
+
+	if (en.spec->store && en.spec->crafterManageStore) {
+		en.store().levels.clear();
+		en.store().stacks.clear();
+	}
+
+	if (recipe && en.spec->crafterManageStore) {
+		for (auto [iid,count]: recipe->inputItems) {
+			en.store().levelSet(iid, count*2, count*2);
+		}
+		for (auto [iid,_]: recipe->outputItems) {
+			en.store().levelSet(iid, 0, 0);
+		}
+		if (recipe->mine) {
+			en.store().levelSet(recipe->mine, 0, 1);
+		}
+	}
+
+	working = false;
+	energyUsed = 0;
+	progress = 0.0f;
+	efficiency = 0.0f;
+}
+
 void Crafter::update() {
 	Entity& en = Entity::get(id);
 	if (en.isGhost()) return;
@@ -173,41 +250,6 @@ void Crafter::update() {
 		if (en.isEnabled() && working) {
 			en.state = en.state + (efficiency > 0.5 ? 2: 1);
 			if (en.state >= en.spec->states.size()) en.state = 0;
-		}
-	}
-
-	if (nextRecipe) {
-		if (nextRecipe != recipe) {
-
-			recipe = nextRecipe;
-			nextRecipe = NULL;
-
-			ensure(recipe->energyUsage > Energy(0));
-
-			exportItems.clear();
-			exportFluids.clear();
-
-			if (en.spec->store) {
-				en.store().levels.clear();
-				en.store().stacks.clear();
-			}
-
-			for (auto [iid,count]: recipe->inputItems) {
-				en.store().levelSet(iid, count*2, count*2);
-			}
-
-			for ([[maybe_unused]] auto [iid,count]: recipe->outputItems) {
-				en.store().levelSet(iid, 0, 0);
-			}
-
-			if (recipe->mine) {
-				en.store().levelSet(recipe->mine, 0, 1);
-			}
-
-			working = false;
-			energyUsed = 0;
-			progress = 0.0f;
-			efficiency = 0.0f;
 		}
 	}
 
@@ -242,6 +284,13 @@ void Crafter::update() {
 		}
 	}
 
+	if (changeRecipe) {
+		if (changeRecipe != recipe) {
+			retool(changeRecipe);
+		}
+		changeRecipe = NULL;
+	}
+
 	if (en.isEnabled() && !working && !exporting() && recipe && recipe->licensed) {
 
 		if (inputItemsReady() && inputFluidsReady() && inputMiningReady() && inputCurrencyReady() && outputItemsReady()) {
@@ -274,8 +323,9 @@ void Crafter::update() {
 	}
 
 	if (en.isEnabled() && working) {
-		energyUsed += en.consume(en.spec->energyConsume * recipe->rate(en.spec));
-		efficiency = energyUsed.portion(en.spec->energyConsume);
+		Energy energy = std::max(en.spec->crafterEnergyConsume, en.spec->energyConsume);
+		energyUsed += en.consume(energy * recipe->rate(en.spec));
+		efficiency = energyUsed.portion(energy);
 		progress = energyUsed.portion(recipe->energyUsage);
 	}
 
@@ -303,5 +353,9 @@ void Crafter::update() {
 		progress = 0.0f;
 		efficiency = 0.0f;
 		completed++;
+
+		if (once)
+			retool(nullptr);
+		once = false;
 	}
 }

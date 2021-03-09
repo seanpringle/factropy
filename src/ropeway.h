@@ -57,6 +57,7 @@ struct Ropeway {
 	float length();
 
 	void update();
+	bool enabled();
 };
 
 struct RopewayBucket {

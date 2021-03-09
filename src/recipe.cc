@@ -1,5 +1,6 @@
 #include "common.h"
 #include "recipe.h"
+#include "miniset.h"
 
 void Recipe::reset() {
 	for (auto pair: ids) {

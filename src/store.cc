@@ -77,6 +77,13 @@ void Store::update() {
 	for (uint aid: remove) {
 		arms.erase(aid);
 	}
+
+	for (auto& level: levels) {
+		if (level.craft && isRequesting(level.iid) && Entity::get(id).spec->crafter) {
+			auto& crafter = Entity::get(id).crafter();
+			crafter.autoCraft(Item::get(level.iid));
+		}
+	}
 }
 
 Store& Store::create(uint id, uint sid, Mass cap) {
@@ -254,17 +261,19 @@ void Store::reserve(Stack stack) {
 	}
 }
 
-void Store::levelSet(uint iid, uint lower, uint upper) {
+void Store::levelSet(uint iid, uint lower, uint upper, bool craft) {
 	Level *lvl = level(iid);
 	if (lvl) {
 		lvl->lower = lower;
 		lvl->upper = upper;
+		lvl->craft = craft;
 		return;
 	}
 	levels.push_back({
 		.iid = iid,
 		.lower = lower,
 		.upper = upper,
+		.craft = craft,
 	});
 }
 

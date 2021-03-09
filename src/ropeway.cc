@@ -55,6 +55,10 @@ bool Ropeway::complete() {
 	return leader() != deputy() && Entity::get(leader()).spec->ropewayTerminus && Entity::get(deputy()).spec->ropewayTerminus;
 }
 
+bool Ropeway::enabled() {
+	return complete() && Entity::get(leader()).isEnabled() && Entity::get(deputy()).isEnabled();
+}
+
 void Ropeway::reorient() {
 	Entity& en = Entity::get(id);
 	Point pe = en.pos.floor(0);
@@ -260,6 +264,7 @@ void Ropeway::update() {
 	if (next && prev) return;
 	if (!steps.size()) return;
 	if (!complete()) return;
+	if (!enabled()) return;
 
 	uint gap = 30*30;
 	bool newBucket = cycle == 0;
@@ -269,6 +274,8 @@ void Ropeway::update() {
 
 	// leader
 	if (prev) {
+		Entity& en = Entity::get(id);
+		en.consume(en.spec->energyConsume);
 
 		if (buckets.size() > 0) {
 			uint bid = buckets.back();
@@ -315,6 +322,8 @@ void Ropeway::update() {
 
 	// deputy
 	if (next) {
+		Entity& en = Entity::get(id);
+		en.consume(en.spec->energyConsume);
 
 		if (buckets.size() > 0) {
 			uint bid = buckets.back();
@@ -391,6 +400,8 @@ void RopewayBucket::update() {
 
 	auto& en = Entity::get(id);
 	auto& ropeway = Ropeway::get(rid);
+
+	if (!ropeway.enabled()) return;
 
 	step = std::min((uint)(ropeway.steps.size()-1), step+1);
 	en.move(ropeway.steps[step] + (Point::Down*2.0f));

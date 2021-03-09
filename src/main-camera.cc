@@ -591,12 +591,12 @@ void MainCamera::draw() {
 
 			for (auto& [part,batch]: ghosts_ld) {
 				part->drawGhostInstanced(false, batch.size(), batch.data());
-				objects += gridSquares.size();
+				objects += batch.size();
 			}
 
 			for (auto& [part,batch]: ghosts_hd) {
 				part->drawGhostInstanced(true, batch.size(), batch.data());
-				objects += gridSquares.size();
+				objects += batch.size();
 			}
 
 			for (auto& ge: entities) {

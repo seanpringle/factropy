@@ -9,7 +9,7 @@ module mast() {
 
 module bucket() {
 	translate([0,0,1]) union() {
-		cyl(1,1,2);
+		box([1.5,2,2]);
 		translate([0,0,1.5]) cyl(0.1,0.1,3.0);
 	}
 }
@@ -23,4 +23,5 @@ module towerBase() {
 }
 
 //mast($fn=72);
-mast($fn=12);
+//mast($fn=12);
+bucket($fn=72);

@@ -49,7 +49,7 @@ void scenario() {
 	Mesh oreLD = GenMeshSphere(0.6,6,6);
 
 	Item* item = new Item(Item::next(), "log");
-	item->fuel = Fuel("chemical", Energy::MJ(1));
+	item->fuel = Fuel("chemical", Energy::MJ(10));
 	item->parts = {
 		(new Part(Thing("models/wood.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0xCD853Fff),
 	};
@@ -73,7 +73,7 @@ void scenario() {
 		(new Part(Thing("models/coal.stl", oreLD)))->scale(0.6f, 0.6f, 0.6f)->translate(0.05f,0,0)->paint(0x222222ff),
 	};
 	item->armV = 0.2f;
-	item->fuel = Fuel("chemical", Energy::MJ(4));
+	item->fuel = Fuel("chemical", Energy::MJ(20));
 	Item::mining.insert(item->id);
 
 	item = new Item(Item::next(), "stone");
@@ -83,22 +83,30 @@ void scenario() {
 	item->armV = 0.2f;
 	Item::mining.insert(item->id);
 
+	auto thingSheet = Thing("models/sheet-hd.stl", "models/sheet-ld.stl");
 	auto thingIngot = Thing("models/ingot.stl");
-
-	item = new Item(Item::next(), "iron-ingot");
-	item->parts = {
-		(new Part(thingIngot))->paint(0x686969ff),
-	};
 
 	item = new Item(Item::next(), "copper-ingot");
 	item->parts = {
 		(new Part(thingIngot))->paint(0xDC7F64ff),
 	};
 
+	item = new Item(Item::next(), "copper-sheet");
+	item->parts = {
+		(new Part(thingSheet))->paint(0xDC7F64ff),
+	};
+	item->armV = -0.1f;
+
 	item = new Item(Item::next(), "steel-ingot");
 	item->parts = {
 		(new Part(thingIngot))->paint(0x888989ff),
 	};
+
+	item = new Item(Item::next(), "steel-sheet");
+	item->parts = {
+		(new Part(thingSheet))->paint(0x888989ff),
+	};
+	item->armV = -0.1f;
 
 	item = new Item(Item::next(), "brick");
 	item->parts = {
@@ -195,20 +203,6 @@ void scenario() {
 		//};
 	}
 
-	recipe = new Recipe(Recipe::next(), "iron-smelting1");
-	recipe->energyUsage = Energy::kJ(300);
-	recipe->tags = {"smelting"};
-	recipe->inputItems = {
-		{ Item::byName("iron-ore")->id, 1 },
-	};
-	recipe->outputItems = {
-		{ Item::byName("iron-ingot")->id, 1 },
-	};
-	recipe->parts = {
-		(new Part(thingIngot))->paint(0x686969ff),
-	};
-	recipe->licensed = true;
-
 	recipe = new Recipe(Recipe::next(), "copper-smelting1");
 	recipe->energyUsage = Energy::kJ(300);
 	recipe->tags = {"smelting"};
@@ -224,10 +218,10 @@ void scenario() {
 	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "steel-smelting1");
-	recipe->energyUsage = Energy::kJ(900);
+	recipe->energyUsage = Energy::kJ(600);
 	recipe->tags = {"smelting"};
 	recipe->inputItems = {
-		{ Item::byName("iron-ingot")->id, 2 },
+		{ Item::byName("iron-ore")->id, 2 },
 	};
 	recipe->outputItems = {
 		{ Item::byName("steel-ingot")->id, 1 },
@@ -241,12 +235,40 @@ void scenario() {
 	recipe->energyUsage = Energy::kJ(300);
 	recipe->tags = {"smelting"};
 	recipe->inputItems = {
-		{ Item::byName("stone")->id, 2 },
+		{ Item::byName("stone")->id, 1 },
 	};
 	recipe->outputItems = {
-		{ Item::byName("brick")->id, 1 },
+		{ Item::byName("brick")->id, 2 },
 	};
 	recipe->parts = Item::byName("brick")->parts;
+	recipe->licensed = true;
+
+	recipe = new Recipe(Recipe::next(), "copper-sheet");
+	recipe->energyUsage = Energy::kJ(300);
+	recipe->tags = {"crafting"};
+	recipe->inputItems = {
+		{ Item::byName("copper-ingot")->id, 1 },
+	};
+	recipe->outputItems = {
+		{ Item::byName("copper-sheet")->id, 2 },
+	};
+	recipe->parts = {
+		(new Part(thingSheet))->paint(0xDC7F64ff),
+	};
+	recipe->licensed = true;
+
+	recipe = new Recipe(Recipe::next(), "steel-sheet");
+	recipe->energyUsage = Energy::kJ(300);
+	recipe->tags = {"crafting"};
+	recipe->inputItems = {
+		{ Item::byName("steel-ingot")->id, 1 },
+	};
+	recipe->outputItems = {
+		{ Item::byName("steel-sheet")->id, 2 },
+	};
+	recipe->parts = {
+		(new Part(thingSheet))->paint(0x888989ff),
+	};
 	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "copper-wire");
@@ -265,11 +287,11 @@ void scenario() {
 	recipe->energyUsage = Energy::kJ(600);
 	recipe->tags = {"crafting"};
 	recipe->inputItems = {
-		{ Item::byName("iron-ingot")->id, 1 },
-		{ Item::byName("copper-wire")->id, 1 },
+		{ Item::byName("log")->id, 1 },
+		{ Item::byName("copper-wire")->id, 10 },
 	};
 	recipe->outputItems = {
-		{ Item::byName("circuit-board")->id, 2 },
+		{ Item::byName("circuit-board")->id, 50 },
 	};
 	recipe->parts = Item::byName("circuit-board")->parts;
 	recipe->licensed = true;
@@ -278,7 +300,7 @@ void scenario() {
 	recipe->energyUsage = Energy::kJ(600);
 	recipe->tags = {"crafting"};
 	recipe->inputItems = {
-		{ Item::byName("iron-ingot")->id, 1 },
+		{ Item::byName("steel-ingot")->id, 1 },
 	};
 	recipe->outputItems = {
 		{ Item::byName("gear-wheel")->id, 2 },
@@ -302,11 +324,11 @@ void scenario() {
 	recipe->energyUsage = Energy::kJ(900);
 	recipe->tags = {"crafting"};
 	recipe->inputItems = {
-		{ Item::byName("iron-ingot")->id, 1 },
-		{ Item::byName("copper-ingot")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
+		{ Item::byName("copper-sheet")->id, 1 },
 	};
 	recipe->outputItems = {
-		{ Item::byName("battery")->id, 1 },
+		{ Item::byName("battery")->id, 2 },
 	};
 	recipe->parts = Item::byName("battery")->parts;
 
@@ -319,7 +341,7 @@ void scenario() {
 	recipe->energyUsage = Energy::kJ(900);
 	recipe->tags = {"crafting"};
 	recipe->inputItems = {
-		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
 		{ Item::byName("circuit-board")->id, 1 },
 		{ Item::byName("gear-wheel")->id, 1 },
 	};
@@ -347,7 +369,7 @@ void scenario() {
 	spec->rotate = true;
 	spec->health = 10;
 	spec->materials = {
-		{Item::byName("iron-ingot")->id, 5},
+		{Item::byName("steel-sheet")->id, 5},
 	};
 
 	spec = new Spec("requester-container");
@@ -364,7 +386,7 @@ void scenario() {
 	spec->rotate = true;
 	spec->health = 10;
 	spec->materials = {
-		{Item::byName("copper-ingot")->id, 5},
+		{Item::byName("copper-sheet")->id, 5},
 	};
 
 	tech = new Tech(Tech::next(), "requester-containers");
@@ -418,7 +440,7 @@ void scenario() {
 		(new Part(thingGear))->paint(0xcaccceff)->scale(1.4,1.8,1.4)->rotate(Point::East, 90)->translate(1,1, 1.2)->gloss(32),
 	};
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 5 },
+		{ Item::byName("steel-sheet")->id, 5 },
 		{ Item::byName("circuit-board")->id, 3 },
 	};
 
@@ -480,10 +502,10 @@ void scenario() {
 	spec->crafterProgress = true;
 	spec->recipeTags = {"smelting"};
 	spec->consumeChemical = true;
-	spec->energyConsume = Energy::kW(60);
-	spec->energyDrain = Energy::kW(2);
+	spec->energyConsume = Energy::kW(100);
+	spec->energyDrain = Energy::kW(3);
 	spec->materials = {
-		{ Item::byName("copper-ingot")->id, 3 },
+		{ Item::byName("copper-sheet")->id, 3 },
 		{ Item::byName("brick")->id, 3 },
 	};
 
@@ -542,7 +564,7 @@ void scenario() {
 		(new Part(thingGear))->paint(0xccccccff)->scale(3,3,3)->rotate(Point::East, 90)->translate(0,0,3.75)->gloss(32),
 	};
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 3 },
+		{ Item::byName("steel-sheet")->id, 3 },
 	};
 
 	{
@@ -579,7 +601,7 @@ void scenario() {
 		(new Part(Thing("models/offshore-pump-pipe-hd.stl", "models/offshore-pump-pipe-ld.stl")))->paint(0xccccccff)->translate(0,-1.5,0),
 	};
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 3 },
+		{ Item::byName("steel-sheet")->id, 3 },
 	};
 
 	recipe = new Recipe(Recipe::next(), "offshore-pumping");
@@ -630,6 +652,7 @@ void scenario() {
 
 	spec->materials = {
 		{ Item::byName("gear-wheel")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
 	};
 
 	spec = new Spec("conveyor-right");
@@ -670,6 +693,7 @@ void scenario() {
 
 	spec->materials = {
 		{ Item::byName("gear-wheel")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
 	};
 
 	spec = new Spec("conveyor-left");
@@ -709,6 +733,7 @@ void scenario() {
 
 	spec->materials = {
 		{ Item::byName("gear-wheel")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
 	};
 
 	// conveyors are modelled for output==direction, but it seems easier to visualise in-game
@@ -759,7 +784,7 @@ void scenario() {
 	}
 
 	spec->materials = {
-		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 2 },
 		{ Item::byName("gear-wheel")->id, 2 },
 	};
 
@@ -799,7 +824,7 @@ void scenario() {
 	}
 
 	spec->materials = {
-		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 2 },
 		{ Item::byName("gear-wheel")->id, 2 },
 	};
 
@@ -845,7 +870,7 @@ void scenario() {
 	}
 
 	spec->materials = {
-		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
 		{ Item::byName("gear-wheel")->id, 2 },
 	};
 
@@ -884,7 +909,7 @@ void scenario() {
 	}
 
 	spec->materials = {
-		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
 		{ Item::byName("gear-wheel")->id, 2 },
 	};
 
@@ -907,6 +932,7 @@ void scenario() {
 	spec = new Spec("ropeway-terminus");
 	spec->collision = {0, 0, 0, 5, 10, 5};
 	spec->selection = spec->collision;
+	spec->enable = true;
 	spec->rotate = false;
 	spec->ropeway = true;
 	spec->ropewayTerminus = true;
@@ -983,7 +1009,7 @@ void scenario() {
 	};
 
 	spec->materials = {
-		{ Item::byName("steel-ingot")->id, 3 },
+		{ Item::byName("steel-sheet")->id, 3 },
 	};
 
 	spec = new Spec("pipe-straight");
@@ -1209,12 +1235,17 @@ void scenario() {
 	spec->energyConsume = Energy::kW(50);
 	spec->consumeChemical = true;
 	spec->store = true;
+	spec->crafter = true;
+	spec->crafterShowTab = false;
+	spec->crafterManageStore = false;
+	spec->crafterEnergyConsume = Energy::kW(300);
+	spec->recipeTags = {"smelting", "crafting"};
 	spec->capacity = Mass::kg(1000);
 	spec->logistic = true;
 	spec->storeSetLower = true;
 	spec->storeSetUpper = true;
 	spec->generateElectricity = true;
-	spec->energyGenerate = Energy::kW(250);
+	spec->energyGenerate = Energy::MW(1);
 	spec->forceDelete = true;
 
 	spec->depot = true;
@@ -1225,7 +1256,7 @@ void scenario() {
 
 	spec->materials = {
 		{ Item::byName("electric-motor")->id, 2 },
-		{ Item::byName("steel-ingot")->id, 2 },
+		{ Item::byName("steel-sheet")->id, 2 },
 		{ Item::byName("gear-wheel")->id, 2 },
 		{ Item::byName("circuit-board")->id, 2 },
 	};
@@ -1261,7 +1292,7 @@ void scenario() {
 
 	spec->materials = {
 		{ Item::byName("electric-motor")->id, 2 },
-		{ Item::byName("steel-ingot")->id, 2 },
+		{ Item::byName("steel-sheet")->id, 2 },
 		{ Item::byName("gear-wheel")->id, 2 },
 	};
 
@@ -1328,7 +1359,7 @@ void scenario() {
 	spec->energyConsume = Energy::kW(10);
 	spec->energyDrain = Energy::W(100);
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
 		{ Item::byName("circuit-board")->id, 1 },
 	};
 
@@ -1426,7 +1457,7 @@ void scenario() {
 	spec->energyConsume = Energy::kW(10);
 	spec->energyDrain = Energy::W(300);
 	spec->materials = {
-		{ Item::byName("iron-ingot")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
 		{ Item::byName("circuit-board")->id, 1 },
 	};
 
@@ -1541,7 +1572,7 @@ void scenario() {
 	spec->recipeTags = {"boiling"};
 	spec->materials = {
 		{ Item::byName("brick")->id, 3 },
-		{ Item::byName("copper-ingot")->id, 3 },
+		{ Item::byName("copper-sheet")->id, 3 },
 	};
 
 	recipe = new Recipe(Recipe::next(), "boiling");
@@ -1584,8 +1615,8 @@ void scenario() {
 	spec->generateElectricity = true;
 	spec->energyGenerate = Energy::MW(1);
 	spec->materials = {
-		{ Item::byName("steel-ingot")->id, 5 },
-		{ Item::byName("copper-ingot")->id, 5 },
+		{ Item::byName("steel-sheet")->id, 5 },
+		{ Item::byName("copper-sheet")->id, 5 },
 	};
 
 	{
@@ -1698,7 +1729,7 @@ void scenario() {
 		(new Part(Thing("models/teleporter-ring3-hd.stl")))->paint(0xd4af37ff)->gloss(64),
 	};
 	spec->materials = {
-		{ Item::byName("steel-ingot")->id, 5 },
+		{ Item::byName("steel-sheet")->id, 5 },
 	};
 
 	{
@@ -1730,7 +1761,7 @@ void scenario() {
 		(new Part(Thing("models/computer-rack-hd.stl", "models/computer-rack-ld.stl")))->paint(0x666666ff)->translate(0,-1,0),
 	};
 	spec->materials = {
-		{ Item::byName("steel-ingot")->id, 1 },
+		{ Item::byName("steel-sheet")->id, 1 },
 		{ Item::byName("copper-wire")->id, 10 },
 		{ Item::byName("circuit-board")->id, 10 },
 	};
@@ -1740,14 +1771,34 @@ void scenario() {
 	tech->cost = Currency::k(10);
 	tech->licenseSpecs.insert(Spec::byName("computer"));
 
-	recipe = new Recipe(Recipe::next(), "sell-iron-ingots1");
+	spec = new Spec("projector");
+	spec->health = 10;
+	spec->projector = true;
+	spec->collision = {0, 0, 0, 1, 0.1, 1};
+	spec->selection = spec->collision;
+	spec->parts = {
+		(new Part(Thing("models/projector.stl")))->paint(0x666666ff),
+		(new PartSmoke(1000, 100, 0.0025, 0.25f, 0.05f, 0.005f, 0.1f, 0.99f, 5, 10))->paint(0xeeeeeeff),
+	};
+
+	recipe = new Recipe(Recipe::next(), "sell-steel-ingots1");
 	recipe->energyUsage = Energy::MJ(100);
 	recipe->tags = {"teleporting"};
 	recipe->inputItems = {
-		{ Item::byName("iron-ingot")->id, 1000 },
+		{ Item::byName("steel-ingot")->id, 1000 },
 	};
 	recipe->outputCurrency = 1000;
-	recipe->parts = Item::byName("iron-ingot")->parts;
+	recipe->parts = Item::byName("steel-ingot")->parts;
+	recipe->licensed = true;
+
+	recipe = new Recipe(Recipe::next(), "sell-steel-sheet1");
+	recipe->energyUsage = Energy::MJ(100);
+	recipe->tags = {"teleporting"};
+	recipe->inputItems = {
+		{ Item::byName("steel-sheet")->id, 1000 },
+	};
+	recipe->outputCurrency = 1000;
+	recipe->parts = Item::byName("steel-sheet")->parts;
 	recipe->licensed = true;
 
 	recipe = new Recipe(Recipe::next(), "sell-copper-ingots1");
@@ -1760,15 +1811,15 @@ void scenario() {
 	recipe->parts = Item::byName("copper-ingot")->parts;
 	recipe->licensed = true;
 
-	spec = new Spec("projector");
-	spec->health = 10;
-	spec->projector = true;
-	spec->collision = {0, 0, 0, 1, 0.1, 1};
-	spec->selection = spec->collision;
-	spec->parts = {
-		(new Part(Thing("models/projector.stl")))->paint(0x666666ff),
-		(new PartSmoke(1000, 100, 0.0025, 0.25f, 0.05f, 0.005f, 0.1f, 0.99f, 5, 10))->paint(0xeeeeeeff),
+	recipe = new Recipe(Recipe::next(), "sell-copper-sheet1");
+	recipe->energyUsage = Energy::MJ(100);
+	recipe->tags = {"teleporting"};
+	recipe->inputItems = {
+		{ Item::byName("copper-sheet")->id, 1000 },
 	};
+	recipe->outputCurrency = 1000;
+	recipe->parts = Item::byName("copper-sheet")->parts;
+	recipe->licensed = true;
 }
 
 int main(int argc, char const *argv[]) {
@@ -2144,14 +2195,20 @@ int main(int argc, char const *argv[]) {
 		}
 
 		Entity& en = Entity::create(Entity::next(), Spec::byName("truck-engineer")).floor(0).materialize();
+
 		en.store().insert({Item::byName("coal")->id, 50});
-		en.store().insert({Item::byName("iron-ingot")->id, 100});
-		en.store().insert({Item::byName("copper-ingot")->id, 100});
+		en.store().insert({Item::byName("steel-sheet")->id, 100});
+		en.store().insert({Item::byName("copper-sheet")->id, 100});
 		en.store().insert({Item::byName("brick")->id, 50});
-		en.store().insert({Item::byName("steel-ingot")->id, 50});
 		en.store().insert({Item::byName("circuit-board")->id, 50});
 		en.store().insert({Item::byName("gear-wheel")->id, 100});
 		en.store().insert({Item::byName("pipe")->id, 50});
+
+		for (auto stack: en.store().stacks) {
+			en.store().levelSet(stack.iid, stack.size, stack.size);
+		}
+
+		camera->directing = new GuiEntity(en.id);
 	}
 
 	RenderTexture secondary = LoadRenderTexture(400-imGuiStyle.WindowPadding.x*2, 270-imGuiStyle.WindowPadding.y*2);
@@ -2253,6 +2310,16 @@ int main(int argc, char const *argv[]) {
 						if (Entity::exists(camera->hovering->id)) {
 							Entity::get(camera->hovering->id)
 								.toggle();
+						}
+					});
+				}
+			}
+
+			if (IsKeyReleased(KEY_F)) {
+				if (camera->hovering && camera->hovering->spec->pipe) {
+					Sim::locked([&]() {
+						if (Entity::exists(camera->hovering->id)) {
+							Pipe::get(camera->hovering->id).flush();
 						}
 					});
 				}
@@ -2557,20 +2624,20 @@ int main(int argc, char const *argv[]) {
 					}
 
 					if (ge->spec->recipeTags.count("smelting")) {
-						ImGui::Print(fmtc("Smelting: %s", recipe ? recipe->name: "(nothing)"));
-						ImGui::LevelBar(ge->crafter.progress);
+						ImGui::Print(fmtc("Smelting: %s", recipe && recipe->tags.count("smelting") ? recipe->name: "(nothing)"));
+						ImGui::LevelBar(recipe && recipe->tags.count("smelting") ? ge->crafter.progress: 0.0f);
 					}
 
 					if (ge->spec->recipeTags.count("teleporting")) {
-						ImGui::Print(fmtc("Teleporting: %s", recipe ? recipe->name: "(nothing)"));
-						ImGui::LevelBar(ge->crafter.progress);
+						ImGui::Print(fmtc("Teleporting: %s", recipe && recipe->tags.count("teleporting") ? recipe->name: "(nothing)"));
+						ImGui::LevelBar(recipe && recipe->tags.count("teleporting") ? ge->crafter.progress: 0.0f);
 						ImGui::Print("Shipment");
 						ImGui::LevelBar(ge->crafter.inputsProgress);
 					}
 
 					if (ge->spec->recipeTags.count("crafting")) {
-						ImGui::Print(fmtc("Crafting: %s", recipe ? recipe->name: "(nothing)"));
-						ImGui::LevelBar(ge->crafter.progress);
+						ImGui::Print(fmtc("Crafting: %s", recipe && recipe->tags.count("crafting") ? recipe->name: "(nothing)"));
+						ImGui::LevelBar(recipe && recipe->tags.count("crafting") ? ge->crafter.progress: 0.0f);
 					}
 
 					ImGui::Print(fmtc("Products completed: %d", ge->crafter.completed));

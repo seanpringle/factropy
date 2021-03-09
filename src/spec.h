@@ -107,6 +107,9 @@ struct Spec {
 
 	bool crafter;
 	bool crafterProgress;
+	bool crafterManageStore;
+	bool crafterShowTab;
+	Energy crafterEnergyConsume;
 	std::set<std::string> recipeTags;
 
 	bool projector;

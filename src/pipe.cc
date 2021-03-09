@@ -229,6 +229,12 @@ Box Pipe::undergroundRange() {
 	return Box(en.pos, far).grow(0.1f);
 }
 
+void Pipe::flush() {
+	if (network) {
+		network->flush();
+	}
+}
+
 PipeNetwork::PipeNetwork() {
 	all.insert(this);
 	fid = 0;
@@ -289,4 +295,9 @@ uint PipeNetwork::space(uint ffid) {
 
 float PipeNetwork::level() {
 	return fid ? Liquid(Fluid::get(fid)->liquid.value * tally).portion(limit): 0.0f;
+}
+
+void PipeNetwork::flush() {
+	fid = 0;
+	tally = 0;
 }

@@ -77,6 +77,9 @@ Spec::Spec(std::string name) {
 
 	crafter = false;
 	crafterProgress = false;
+	crafterEnergyConsume = 0;
+	crafterManageStore = true;
+	crafterShowTab = true;
 
 	projector = false;
 

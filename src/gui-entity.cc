@@ -179,12 +179,12 @@ GuiFakeEntity* GuiFakeEntity::setConfig(Entity& en) {
 	if (en.spec != spec) return this;
 
 	if (en.spec->crafter) {
-		en.crafter().nextRecipe = crafter.recipe;
+		en.crafter().craft(crafter.recipe);
 	}
 
 	if (en.spec->logistic && en.spec->store) {
 		for (auto level: store.levels) {
-			en.store().levelSet(level.iid, level.lower, level.upper);
+			en.store().levelSet(level.iid, level.lower, level.upper, level.craft);
 		}
 	}
 	return this;

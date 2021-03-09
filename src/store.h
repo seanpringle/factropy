@@ -33,11 +33,12 @@ struct Store {
 	static Store& get(uint id);
 
 	struct Level {
-		uint iid;
-		uint lower;
-		uint upper;
-		uint promised;
-		uint reserved;
+		uint iid = 0;
+		uint lower = 0;
+		uint upper = 0;
+		uint promised = 0;
+		uint reserved = 0;
+		bool craft = false;
 	};
 
 	uint sid;
@@ -65,7 +66,7 @@ struct Store {
 	Stack overflowAny(uint size);
 	void promise(Stack stack);
 	void reserve(Stack stack);
-	void levelSet(uint iid, uint lower, uint upper);
+	void levelSet(uint iid, uint lower, uint upper, bool craft = false);
 	void levelClear(uint iid);
 	Level* level(uint iid);
 	bool isEmpty();

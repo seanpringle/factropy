@@ -462,6 +462,7 @@ void Store::saveAll(const char* name) {
 				level.upper,
 				level.promised,
 				level.reserved,
+				level.craft,
 			};
 		}
 
@@ -500,6 +501,7 @@ void Store::loadAll(const char* name) {
 				.upper = level[2],
 				.promised = level[3],
 				.reserved = level[4],
+				//.craft = level[5],
 			});
 		}
 
@@ -675,6 +677,7 @@ void Crafter::saveAll(const char* name) {
 		state["working"] = crafter.working;
 		state["progress"] = crafter.progress;
 		state["completed"] = crafter.completed;
+		state["once"] = crafter.once;
 		if (crafter.recipe) state["recipe"] = crafter.recipe->name;
 
 		out << state << "\n";
@@ -693,6 +696,7 @@ void Crafter::loadAll(const char* name) {
 		crafter.working = state["working"];
 		crafter.progress = state["progress"];
 		crafter.completed = state["completed"];
+		crafter.once = state["once"];
 		crafter.recipe = state["recipe"].is_null() ? NULL: Recipe::byName(state["recipe"]);
 	}
 

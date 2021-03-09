@@ -54,27 +54,29 @@ void Vehicle::update() {
 	// check an existing pathfinding request for completion
 	if (pathRequest && pathRequest->done) {
 
-		if (waypoints.size()) {
-			waypoint = waypoints.front();
-			waypoints.pop_front();
-			ensure(waypoint);
-
-			if (patrol) {
-				waypoints.push_back(waypoint);
-			} else {
-				delete waypoint;
-				waypoint = NULL;
-			}
-		}
-
 		if (pathRequest->success) {
 			notef("path success");
+
+			if (waypoints.size()) {
+				waypoint = waypoints.front();
+				waypoints.pop_front();
+				ensure(waypoint);
+
+				if (patrol) {
+					waypoints.push_back(waypoint);
+				} else {
+					delete waypoint;
+					waypoint = NULL;
+				}
+			}
+
 			for (Point point: pathRequest->result) {
 				path.push_back(point);
 			}
 		}
 		else {
 			notef("path failure");
+			pause = Sim::tick + 180;
 		}
 
 		delete pathRequest;

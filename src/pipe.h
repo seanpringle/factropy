@@ -40,6 +40,7 @@ struct Pipe {
 	std::vector<Point> pipeConnections();
 	Amount contents();
 	Box undergroundRange();
+	void flush();
 };
 
 struct PipeNetwork {
@@ -62,4 +63,5 @@ struct PipeNetwork {
 	uint count(uint fid);
 	uint space(uint fid);
 	float level();
+	void flush();
 };
