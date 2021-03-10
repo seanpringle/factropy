@@ -20,9 +20,6 @@ Path::Path() {
 }
 
 Path::~Path() {
-	for (auto pair: nodes) {
-		delete pair.second;
-	}
 }
 
 void Path::submit() {
@@ -37,7 +34,7 @@ Path::Node* Path::getNode(Point point) {
 	double inf = std::numeric_limits<double>::infinity();
 
 	if (nodes.count(point) == 0) {
-		Node* node = new Node;
+		Node* node = &pool.request();
 		node->point = point;
 		node->gScore = inf;
 		node->fScore = inf;

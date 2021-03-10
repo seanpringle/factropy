@@ -68,3 +68,11 @@ struct Point : Vector3 {
 	Point nearestPointOnLine(Point l0, Point l1) const;
 	static bool linesCrossOnGround(Point a0, Point a1, Point b0, Point b1);
 };
+
+namespace std	{
+	template<> struct hash<Point> {
+		std::size_t operator()(Point const& p) const noexcept {
+			return std::hash<float>{}(p.distanceSquared(Point::Zero));
+		}
+	};
+}

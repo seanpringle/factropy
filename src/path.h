@@ -3,6 +3,7 @@
 // A* (like) path-finder.
 
 #include "point.h"
+#include "slabpool.h"
 #include <map>
 #include <list>
 #include <vector>
@@ -12,15 +13,17 @@ struct Path {
 	static void tick();
 
 	struct Node {
-		Point point = {0,0};
+		Point point = {0,0,0};
 		double gScore = 0.0;
 		double fScore = 0.0;
 		Node* cameFrom = NULL;
 		int set = 0;
 	};
 
-	Point origin = {0,0};
-	Point target = {0,0};
+	slabpool<Node> pool;
+
+	Point origin = {0,0,0};
+	Point target = {0,0,0};
 	Node* candidate = NULL;
 	std::map<Point,Node*> nodes;
 	std::map<Point,Node*> opens;

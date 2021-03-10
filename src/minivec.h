@@ -59,7 +59,7 @@ public:
 		}
 		if (items) {
 			cap = top;
-			items = (V*)std::realloc((void*)items, top * sizeof(V));
+			items = (V*)std::realloc((void*)items, top*sizeof(V));
 		}
 	}
 
