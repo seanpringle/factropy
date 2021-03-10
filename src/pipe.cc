@@ -183,7 +183,7 @@ void PipeNetwork::tick() {
 				Pipe& pipe = Pipe::get(id);
 				if (pipe.cacheFid) {
 					network->fid = pipe.cacheFid;
-					network->tally = pipe.cacheTally;
+					//network->tally = pipe.cacheTally;
 					break;
 				}
 			}
@@ -207,6 +207,7 @@ void PipeNetwork::tick() {
 				network->tally = network->limit.value;
 			}
 		}
+
 
 		rebuild = false;
 	}
