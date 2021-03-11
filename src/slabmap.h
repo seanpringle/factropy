@@ -63,17 +63,17 @@ private:
 	// Smaller index but poorer lookup locality. Better for key types
 	// that cannot be copied and destroyed on the fly.
 
-	struct islot {
+	struct pslot {
 		slabslot ss;
 
-		islot() {
+		pslot() {
 		}
 
-		islot(slabslot sss) {
+		pslot(slabslot sss) {
 			ss = sss;
 		}
 
-		islot(slabslot sss, const K& k) : islot(sss) {
+		pslot(slabslot sss, const K& k) : pslot(sss) {
 		}
 
 		bool match(const slabpool<V,slabSize>& pool, const K& k) const {
@@ -107,11 +107,11 @@ private:
 	};
 
 	// determines how keys are indexed
-	typedef typename std::conditional<sizeof(K) <= sizeof(void*),kslot,islot>::type mslot;
+	typedef typename std::conditional<sizeof(K) <= sizeof(void*),kslot,pslot>::type slot;
 
-	std::vector<minivec<mslot>> index;
+	std::vector<minivec<slot>> index;
 
-	bool match(const mslot& s, const K& k) const {
+	bool match(const slot& s, const K& k) const {
 		return s.match(pool, k);
 	}
 
@@ -162,8 +162,7 @@ public:
 			for (auto it = pool.begin(); it != pool.end(); ++it) {
 				auto& v = *it;
 				auto& k = v.*ID;
-				auto ss = it.slot();
-				index[chain(k)].push_back(mslot(ss, k));
+				index[chain(k)].push_back(slot(it.slot(), k));
 			}
 		}
 	}
@@ -177,7 +176,7 @@ public:
 	bool has(const K& k) const {
 		if (pool.empty()) return false;
 
-		for (mslot ref: index[chain(k)]) {
+		for (slot ref: index[chain(k)]) {
 			if (match(ref, k)) {
 				return true;
 			}
@@ -201,7 +200,7 @@ public:
 		for (auto it = bucket.begin(); it != bucket.end(); it++) {
 			auto& ref = *it;
 			if (match(ref, k)) {
-				assert(pool.releaseSlot(ref.ss));
+				pool.releaseSlot(ref.ss);
 				bucket.erase(it);
 				reindex();
 				return true;
@@ -213,7 +212,7 @@ public:
 	V& refer(const K& k) const {
 		if (pool.empty()) throw k;
 
-		for (mslot ref: index[chain(k)]) {
+		for (slot ref: index[chain(k)]) {
 			if (match(ref, k)) {
 				return pool.referSlot(ref.ss);
 			}
@@ -224,7 +223,7 @@ public:
 	V& operator[](const K& k) {
 		if (pool.empty()) reindex();
 
-		for (mslot ref: index[chain(k)]) {
+		for (slot ref: index[chain(k)]) {
 			if (match(ref, k)) {
 				return pool.referSlot(ref.ss);
 			}
@@ -234,7 +233,7 @@ public:
 		V& v = pool.referSlot(ss);
 
 		v.*ID = k;
-		index[chain(k)].push_back(mslot(ss, k));
+		index[chain(k)].push_back(slot(ss, k));
 
 		reindex();
 

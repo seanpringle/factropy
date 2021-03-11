@@ -6,19 +6,22 @@
 #include <new>
 #include <type_traits>
 #include <typeinfo>
+#include <bitset>
 #include "common.h"
 
 template <class V, uint slabSize = 1024>
 class slabpool {
+public:
 
 	typedef uint size_type;
 
 	size_type entries = 0;
 
 	class slabpage {
-		bool flags[slabSize];
 
 		#define vsize (sizeof(V) + alignof(V))
+
+		bool flags[slabSize];
 
 		// prevents C++ automatically calling V destructors
 		char buffer[vsize * slabSize];
@@ -43,41 +46,37 @@ class slabpool {
 			}
 		}
 
-		void use(uint i) {
-			assert(i < slabSize);
-			assert(!flags[i]);
-			flags[i] = true;
-			new (&cell(i)) V;
-		}
-
-		bool used(uint i) {
+		bool used(uint i) const {
 			assert(i < slabSize);
 			return flags[i];
 		}
 
-		uint has(V* ptr) {
+		void use(uint i) {
+			assert(!used(i));
+			flags[i] = true;
+			new (&cell(i)) V;
+		}
+
+		uint cellOf(const V* ptr) const {
+			const char* p = reinterpret_cast<const char*>(ptr);
 			V* a = &cell(0);
 			V* b = &cell(slabSize-1);
-			return ptr >= a && ptr < b;
+			return ptr >= a && ptr <= b ? (p-buffer)/vsize: slabSize;
 		}
 
 		void drop(uint i) {
-			assert(i < slabSize);
-			assert(flags[i]);
+			assert(used(i));
 			flags[i] = false;
 			std::destroy_at(&cell(i));
 		}
 
-		V& refer(uint i) {
-			assert(i < slabSize);
-			assert(flags[i]);
+		V& refer(uint i) const {
+			assert(used(i));
 			return cell(i);
 		}
 	};
 
 	std::vector<slabpage*> slabs;
-
-public:
 
 	struct slabslot {
 		uint slab;
@@ -94,10 +93,8 @@ public:
 		}
 	};
 
-private:
 	std::vector<slabslot> queue;
 
-public:
 	slabpool<V,slabSize>() {
 	}
 
@@ -139,16 +136,13 @@ public:
 		return next;
 	}
 
-	bool releaseSlot(slabslot slot) {
+	void releaseSlot(slabslot slot) {
 		slabpage* slab = slabs[slot.slab];
-		if (slab->used(slot.cell)) {
-			slab->drop(slot.cell);
-			assert(entries > 0);
-			entries--;
-			queue.push_back(slot);
-			return true;
-		}
-		return false;
+		if (!slab->used(slot.cell)) throw slot;
+		slab->drop(slot.cell);
+		assert(entries > 0);
+		entries--;
+		queue.push_back(slot);
 	}
 
 	V& referSlot(slabslot slot) const {
@@ -159,18 +153,19 @@ public:
 		return referSlot(requestSlot());
 	}
 
-	bool release(const V* v) {
+	void release(const V* v) {
 		for (uint i = 0; i < slabs.size(); i++) {
-			uint cell = slabs[i]->has(v);
+			uint cell = slabs[i]->cellOf(v);
 			if (cell < slabSize) {
-				return releaseSlot(slabslot(i, cell));
+				releaseSlot(slabslot(i, cell));
+				break;
 			}
 		}
-		return false;
+		throw v;
 	}
 
-	bool release(const V& r) {
-		return release(&r);
+	void release(const V& r) {
+		release(&r);
 	}
 
 	class iterator {
