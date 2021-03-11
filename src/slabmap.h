@@ -55,9 +55,9 @@ private:
 
 	typedef typename std::remove_reference<decltype(std::declval<V>().*ID)>::type K;
 
-	slabpool<V> pool;
+	slabpool<V,slabSize> pool;
 
-	typedef typename slabpool<V>::slabslot slabslot;
+	typedef typename slabpool<V,slabSize>::slabslot slabslot;
 
 	// Index bucket slots that don't store a copy of the key.
 	// Smaller index but poorer lookup locality. Better for key types
@@ -76,7 +76,7 @@ private:
 		islot(slabslot sss, const K& k) : islot(sss) {
 		}
 
-		bool match(const slabpool<V>& pool, const K& k) const {
+		bool match(const slabpool<V,slabSize>& pool, const K& k) const {
 			return pool.referSlot(ss).*ID == k;
 		}
 	};
@@ -100,7 +100,7 @@ private:
 			key = k;
 		}
 
-		bool match(const slabpool<V>& pool, const K& k) const {
+		bool match(const slabpool<V,slabSize>& pool, const K& k) const {
 			assert(pool.referSlot(ss).*ID == key);
 			return key == k;
 		}
@@ -241,7 +241,7 @@ public:
 		return v;
 	}
 
-	typedef typename slabpool<V>::iterator iterator;
+	typedef typename slabpool<V,slabSize>::iterator iterator;
 
 	iterator begin() {
 		return pool.begin();

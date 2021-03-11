@@ -17,11 +17,21 @@ class slabpool {
 
 	class slabpage {
 		bool flags[slabSize];
-		V* cells;
+
+		#define vsize (sizeof(V) + alignof(V))
+
+		// prevents C++ automatically calling V destructors
+		char buffer[vsize * slabSize];
+
+		V& cell(uint i) const {
+			// because buffer is really a const char*
+			const char* p = buffer + (vsize * i);
+			// remove the const qualifier
+			return *const_cast<V*>(reinterpret_cast<const V*>(p));
+		}
 
 	public:
 		slabpage() {
-			cells = (V*)std::calloc(slabSize, sizeof(V));
 			for (uint i = 0; i < slabSize; i++) {
 				flags[i] = false;
 			}
@@ -31,15 +41,13 @@ class slabpool {
 			for (uint i = 0; i < slabSize; i++) {
 				if (flags[i]) drop(i);
 			}
-			std::free(cells);
-			cells = nullptr;
 		}
 
 		void use(uint i) {
 			assert(i < slabSize);
 			assert(!flags[i]);
 			flags[i] = true;
-			new (&cells[i]) V;
+			new (&cell(i)) V;
 		}
 
 		bool used(uint i) {
@@ -47,21 +55,23 @@ class slabpool {
 			return flags[i];
 		}
 
-		uint cell(V* ptr) {
-			return ptr >= cells && ptr < cells+slabSize ? ptr-cells: slabSize;
+		uint has(V* ptr) {
+			V* a = &cell(0);
+			V* b = &cell(slabSize-1);
+			return ptr >= a && ptr < b;
 		}
 
 		void drop(uint i) {
 			assert(i < slabSize);
 			assert(flags[i]);
 			flags[i] = false;
-			std::destroy_at(&cells[i]);
+			std::destroy_at(&cell(i));
 		}
 
 		V& refer(uint i) {
 			assert(i < slabSize);
 			assert(flags[i]);
-			return cells[i];
+			return cell(i);
 		}
 	};
 
@@ -71,14 +81,14 @@ public:
 
 	struct slabslot {
 		uint slab;
-		uint16_t cell;
+		uint cell;
 
 		slabslot() {
 			slab = 0;
 			cell = 0;
 		}
 
-		slabslot(uint s, uint16_t c) {
+		slabslot(uint s, uint c) {
 			slab = s;
 			cell = c;
 		}
@@ -151,7 +161,7 @@ public:
 
 	bool release(const V* v) {
 		for (uint i = 0; i < slabs.size(); i++) {
-			uint cell = slabs[i]->cell(v);
+			uint cell = slabs[i]->has(v);
 			if (cell < slabSize) {
 				return releaseSlot(slabslot(i, cell));
 			}
@@ -167,7 +177,7 @@ public:
 		uint si;
 		uint ci;
 		bool end;
-		slabpool<V> *sm;
+		slabpool<V,slabSize> *sm;
 
 	public:
 		typedef V value_type;
@@ -176,7 +186,7 @@ public:
 		typedef V& reference;
 		typedef std::input_iterator_tag iterator_category;
 
-		explicit iterator(slabpool<V> *ssm, uint ssi, uint cci, bool eend) {
+		explicit iterator(slabpool<V,slabSize> *ssm, uint ssi, uint cci, bool eend) {
 			sm = ssm;
 			si = ssi;
 			ci = cci;
