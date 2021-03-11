@@ -15,6 +15,7 @@ namespace Sim {
 	TimeSeries statsElectricityDemand;
 	TimeSeries statsElectricitySupply;
 	TimeSeries statsEntity;
+	TimeSeries statsGhost;
 	TimeSeries statsStore;
 	TimeSeries statsArm;
 	TimeSeries statsCrafter;
@@ -39,6 +40,7 @@ namespace Sim {
 		statsElectricityDemand.clear();
 		statsElectricitySupply.clear();
 		statsEntity.clear();
+		statsGhost.clear();
 		statsStore.clear();
 		statsArm.clear();
 		statsCrafter.clear();
@@ -121,9 +123,8 @@ namespace Sim {
 		statsElectricitySupply.update(tick);
 
 		tick++;
-		Entity::preTick();
-		Ghost::tick();
-		//Wire::tick();
+		statsEntity.track(tick, Entity::preTick);
+		statsGhost.track(tick, Ghost::tick);
 		statsPipe.track(tick, Pipe::tick);
 		statsStore.track(tick, Store::tick);
 		statsArm.track(tick, Arm::tick);

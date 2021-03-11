@@ -15,8 +15,7 @@ Generator& Generator::create(uint id, uint sid) {
 }
 
 Generator& Generator::get(uint id) {
-	ensuref(all.count(id), "invalid generator access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Generator::destroy() {

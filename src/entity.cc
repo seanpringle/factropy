@@ -353,8 +353,7 @@ uint Entity::at(Point p) {
 
 std::vector<uint> Entity::enemiesInRange(Point pos, float radius) {
 	std::vector<uint>hits;
-	for (auto& pair: Missile::all) {
-		Missile& missile = pair.second;
+	for (auto& missile: Missile::all) {
 		Entity& me = Entity::get(missile.id);
 		float de = me.pos.distance(pos);
 

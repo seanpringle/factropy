@@ -133,8 +133,7 @@ Conveyor& Conveyor::create(uint id) {
 }
 
 Conveyor& Conveyor::get(uint id) {
-	ensuref(all.count(id), "invalid conveyor access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Conveyor::destroy() {

@@ -79,6 +79,8 @@ struct Chunk {
 	Tile tiles[size][size];
 	bool regenerate = false;
 	Mesh heightmap;
+	bool meshGenerated;
+	bool meshLoaded;
 	Matrix transform;
 	std::vector<XY> minerals;
 
@@ -88,5 +90,8 @@ struct Chunk {
 	Image colorImage();
 	void genHeightMap();
 	void dropHeightMap();
+	void loadMesh();
+	void unloadMesh();
 	void findHills();
+	Point centroid();
 };

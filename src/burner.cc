@@ -16,8 +16,7 @@ Burner& Burner::create(uint id, uint sid) {
 }
 
 Burner& Burner::get(uint id) {
-	ensuref(all.has(id), "invalid burner access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Burner::destroy() {

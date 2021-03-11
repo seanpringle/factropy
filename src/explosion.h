@@ -1,21 +1,20 @@
-#ifndef _H_explosion
-#define _H_explosion
+#pragma once
 
 struct Explosion;
 
-//#include
+#include "slabmap.h"
 
 struct Explosion {
+	uint id;
 	static void reset();
 	static void tick();
 	static void saveAll(const char* name);
 	static void loadAll(const char* name);
 
-	static inline std::map<uint,Explosion> all;
+	static inline slabmap<Explosion,&Explosion::id> all;
 	static Explosion& create(uint id);
 	static Explosion& get(uint id);
 
-	uint id;
 	Health damage;
 	float radius;
 	float range;
@@ -26,5 +25,3 @@ struct Explosion {
 
 	void define(Health damage, float radius, float rate);
 };
-
-#endif

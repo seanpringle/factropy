@@ -386,37 +386,47 @@ void MainCamera::draw() {
 			minivec<Mesh> chunk_meshes;
 			minivec<Mat4> chunk_transforms;
 
-			std::map<uint,minivec<Mat4>> resource_transforms;
+			std::unordered_map<uint,minivec<Mat4>> resource_transforms;
 
 			float size = (float)Chunk::size;
 			Mat4 scale = Mat4::scale(size,size,size);
+
+			Chunk::get(groundZero.x/Chunk::size, groundZero.z/Chunk::size);
+
 			for (auto pair: Chunk::all) {
 				Chunk *chunk = pair.second;
+
+				if (chunk->centroid().distance(groundZero) > 250+Chunk::size) {
+					chunk->unloadMesh();
+					continue;
+				}
+
 				float x = chunk->x;
 				float y = chunk->y;
+
 				if (chunk->regenerate) {
 					chunk->genHeightMap();
 				}
+
+				chunk->loadMesh();
+
 				chunk_meshes.push_back(chunk->heightmap);
 				chunk_transforms.push_back(chunk->transform);
 				water.push_back(Mat4::translate(x+0.5f, -0.52f, y+0.5f) * scale);
 
 				int cx = chunk->x*Chunk::size;
 				int cz = chunk->y*Chunk::size;
-				int halt = Chunk::size/2;
 
-				if (groundZero.distance(Point(cx+halt, 0.0f, cz+halt)) < 1000) {
-					for (auto [tx,ty]: chunk->minerals) {
-						Chunk::Tile* tile = &chunk->tiles[ty][tx];
-						if (!tile->hill) continue;
-						if (!tile->hill->minerals.count(tile->mineral.iid)) continue;
-						if (!tile->hill->minerals[tile->mineral.iid]) continue;
+				for (auto [tx,ty]: chunk->minerals) {
+					Chunk::Tile* tile = &chunk->tiles[ty][tx];
+					if (!tile->hill) continue;
+					if (!tile->hill->minerals.count(tile->mineral.iid)) continue;
+					if (!tile->hill->minerals[tile->mineral.iid]) continue;
 
-						float h = tile->elevation*(49.82*2)-0.25;
-						Mat4 r = Mat4::rotate(Point(cx+tx, h, cz+ty), tx);
-						Mat4 m = Mat4::translate(cx+tx, h, cz+ty);
-						resource_transforms[tile->mineral.iid].push_back(r * m);
-					}
+					float h = tile->elevation*(49.82*2)-0.25;
+					Mat4 r = Mat4::rotate(Point(cx+tx, h, cz+ty), tx);
+					Mat4 m = Mat4::translate(cx+tx, h, cz+ty);
+					resource_transforms[tile->mineral.iid].push_back(r * m);
 				}
 			}
 
@@ -434,12 +444,12 @@ void MainCamera::draw() {
 				}
 			}
 
-			std::map<Part*,minivec<Mat4>> extant_ld;
-			std::map<Part*,minivec<Mat4>> extant_hd;
-			std::map<Part*,minivec<Mat4>> ghosts_ld;
-			std::map<Part*,minivec<Mat4>> ghosts_hd;
-			std::map<Part*,minivec<Mat4>> items_hd;
-			std::map<Part*,minivec<Mat4>> items_ld;
+			std::unordered_map<Part*,minivec<Mat4>> extant_ld;
+			std::unordered_map<Part*,minivec<Mat4>> extant_hd;
+			std::unordered_map<Part*,minivec<Mat4>> ghosts_ld;
+			std::unordered_map<Part*,minivec<Mat4>> ghosts_hd;
+			std::unordered_map<Part*,minivec<Mat4>> items_hd;
+			std::unordered_map<Part*,minivec<Mat4>> items_ld;
 
 			minivec<Mat4> gridSquares;
 
@@ -473,25 +483,26 @@ void MainCamera::draw() {
 					(ge->ghost ? (hd ? ghosts_hd: ghosts_ld): (hd ? extant_hd: extant_ld))[part].push_back(instance);
 				}
 
-				Entity& en = Entity::get(ge->id);
-
 				if (!ge->ghost && ge->spec->vehicle && hovering && ge->id == hovering->id) {
-					Vehicle& vehicle = en.vehicle();
-					Point p = en.pos;
-					for (auto n: vehicle.path) {
-						DrawSphere(n, 0.25f, RED);
-						DrawLine3D(p, n, RED);
-						p = n;
-					}
-					p = en.pos;
-					for (auto n: vehicle.waypoints) {
-						DrawSphere(n->position, 0.25f, BLUE);
-						DrawLine3D(p, n->position, BLUE);
-						p = n->position;
-					}
-					for (auto p: vehicle.sensors()) {
-						DrawSphere(p, 0.25f, BLUE);
-					}
+					Sim::locked([&]() {
+						Entity& en = Entity::get(ge->id);
+						Vehicle& vehicle = en.vehicle();
+						Point p = en.pos;
+						for (auto n: vehicle.path) {
+							DrawSphere(n, 0.25f, RED);
+							DrawLine3D(p, n, RED);
+							p = n;
+						}
+						p = en.pos;
+						for (auto n: vehicle.waypoints) {
+							DrawSphere(n->position, 0.25f, BLUE);
+							DrawLine3D(p, n->position, BLUE);
+							p = n->position;
+						}
+						for (auto p: vehicle.sensors()) {
+							DrawSphere(p, 0.25f, BLUE);
+						}
+					});
 				}
 
 				if (!ge->ghost && ge->spec->conveyor && ge->conveyor.iid) {
@@ -509,10 +520,10 @@ void MainCamera::draw() {
 				if (!ge->ghost && ge->spec->arm) {
 					if (ge->arm.iid && hd) {
 						Item* item = Item::get(ge->arm.iid);
-						uint grip = en.spec->states[0].size()-1;
+						uint grip = ge->spec->states[0].size()-1;
 						for (uint i = 0; i < item->parts.size(); i++) {
 							Part* part = item->parts[i];
-							Mat4 o = en.spec->parts[grip]->specInstance(en.spec, grip, en.state, en.dir.rotation());
+							Mat4 o = ge->spec->parts[grip]->specInstance(ge->spec, grip, ge->state, ge->dir.rotation());
 							Point p = Point::Zero.transform(o) + ge->pos + Point::Up;
 							Mat4 t = Mat4::translate(p.x, p.y + item->armV, p.z);
 							(p.distanceSquared(position) < hdDistanceSquared ? items_hd: items_ld)[part].push_back(part->instance(t));
@@ -533,28 +544,30 @@ void MainCamera::draw() {
 				}
 
 				if (!ge->ghost && ge->spec->projector) {
-					Projector& projector = en.projector();
+					Sim::locked([&]() {
+						Projector& projector = Projector::get(ge->id);
 
-					if (projector.iid && hd) {
-						Item* item = Item::get(projector.iid);
-						Point p = ge->pos + (Point::Up*0.35f);
-						float rot = (float)(frame%360) * DEG2RAD;
-						float bob = std::sin(rot*4.0f)*0.1f;
-						Mat4 t1 = Mat4::scale(0.75f) * Mat4::rotate(Point::Up, rot) * Mat4::translate(p.x, p.y+bob, p.z);
-						for (uint i = 0; i < item->parts.size(); i++) {
-							Part* part = item->parts[i];
+						if (projector.iid && hd) {
+							Item* item = Item::get(projector.iid);
+							Point p = ge->pos + (Point::Up*0.35f);
+							float rot = (float)(frame%360) * DEG2RAD;
+							float bob = std::sin(rot*4.0f)*0.1f;
+							Mat4 t1 = Mat4::scale(0.75f) * Mat4::rotate(Point::Up, rot) * Mat4::translate(p.x, p.y+bob, p.z);
+							for (uint i = 0; i < item->parts.size(); i++) {
+								Part* part = item->parts[i];
+								(p.distanceSquared(position) < hdDistanceSquared ? items_hd: items_ld)[part].push_back(part->instance(t1));
+							}
+						}
+						if (projector.fid && hd) {
+							Fluid* fluid = Fluid::get(projector.fid);
+							Point p = ge->pos + (Point::Up*0.35f);
+							float rot = (float)(frame%360) * DEG2RAD;
+							float bob = std::sin(rot*4.0f)*0.1f;
+							Mat4 t1 = Mat4::scale(0.75f) * Mat4::rotate(Point::Up, rot) * Mat4::translate(p.x, p.y+bob, p.z);
+							Part* part = fluid->droplet;
 							(p.distanceSquared(position) < hdDistanceSquared ? items_hd: items_ld)[part].push_back(part->instance(t1));
 						}
-					}
-					if (projector.fid && hd) {
-						Fluid* fluid = Fluid::get(projector.fid);
-						Point p = ge->pos + (Point::Up*0.35f);
-						float rot = (float)(frame%360) * DEG2RAD;
-						float bob = std::sin(rot*4.0f)*0.1f;
-						Mat4 t1 = Mat4::scale(0.75f) * Mat4::rotate(Point::Up, rot) * Mat4::translate(p.x, p.y+bob, p.z);
-						Part* part = fluid->droplet;
-						(p.distanceSquared(position) < hdDistanceSquared ? items_hd: items_ld)[part].push_back(part->instance(t1));
-					}
+					});
 				}
 
 				if (!ge->ghost && ge->spec->ropeway) {

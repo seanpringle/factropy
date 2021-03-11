@@ -19,7 +19,7 @@ public:
 
 	class slabpage {
 
-		#define vsize (sizeof(V) + alignof(V))
+		#define vsize (((sizeof(V) + alignof(V) - 1) / alignof(V)) * alignof(V))
 
 		bool flags[slabSize];
 

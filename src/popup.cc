@@ -7,6 +7,7 @@
 #include "energy.h"
 #include "string.h"
 #include "ledger.h"
+#include "view.h"
 
 #include "raylib-ex.h"
 #include "../imgui/imgui.h"
@@ -93,53 +94,200 @@ StatsPopup2::~StatsPopup2() {
 }
 
 void StatsPopup2::draw() {
+	using namespace ImGui;
+
+	std::hash<std::string> hash;
+
 	center(1500,1500);
-	ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+	Begin("Stats", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
-	double tickMax = 1.0;
-	std::list<Spec*> specs;
-	for (auto& pair: Spec::all) {
-		auto& spec = pair.second;
-		if (!(spec->energyConsume || spec->energyDrain) || spec->statsGroup != spec) continue;
-		tickMax = std::max(tickMax, spec->energyConsumption.tickMax);
-		specs.push_back(spec);
-	}
+	if (BeginTabBar("stats-tabs", ImGuiTabBarFlags_None)) {
 
-	std::map<Spec*,ImVec4> colors;
+		if (BeginTabItem("Energy")) {
 
-	auto limit = Energy(tickMax).magnitude();
+			Sim::locked([&]() {
+				double tickMax = 1.0;
+				std::list<Spec*> specs;
+				for (auto& pair: Spec::all) {
+					auto& spec = pair.second;
+					if (!spec->consumeElectricity) continue;
+					if (!(spec->energyConsume || spec->energyDrain)) continue;
+					if (spec->statsGroup != spec) continue;
+					tickMax = std::max(tickMax, spec->energyConsumption.tickMax);
+					specs.push_back(spec);
+				}
 
-	const double yticks[] = {0, limit};
-	const char* ylabels[] = {"0", limit.formatRate().c_str()};
+				specs.sort([&](const Spec* a, const Spec* b) {
+					auto energyA = Energy(a->energyConsumption.ticks[a->energyConsumption.tick(Sim::tick-1)]);
+					auto energyB = Energy(b->energyConsumption.ticks[b->energyConsumption.tick(Sim::tick-1)]);
+					return energyA < energyB;
+				});
 
-	ImPlot::SetNextPlotLimits(0,60,0,limit, ImGuiCond_Always);
-	ImPlot::SetNextPlotTicksY(yticks, 2, ylabels);
-	ImPlot::SetNextPlotTicksX(nullptr, 0, 0);
-	if (ImPlot::BeginPlot("Energy Consumption", nullptr, nullptr, ImVec2(-1,400), ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMousePos)) {
-		for (auto& spec: specs) {
-			std::vector<float> y;
-			for (uint i = 59; i >= 1; i--) {
-				Energy e = i > Sim::tick ? 0: spec->energyConsumption.ticks[spec->energyConsumption.tick(Sim::tick-i)];
-				y.push_back(e);
-			}
-			ImPlot::PlotLine(fmtc("%s", spec->name), (const float*)y.data(), (int)y.size());
-			colors[spec] = ImPlot::GetLastItemColor();
+				specs.reverse();
+
+				auto limit = Energy(tickMax).magnitude();
+
+				const double yticks[] = {0, limit};
+				const char* ylabels[] = {"0", limit.formatRate().c_str()};
+
+				ImPlot::SetNextPlotLimits(0,60,0,limit, ImGuiCond_Always);
+				ImPlot::SetNextPlotTicksY(yticks, 2, ylabels);
+				ImPlot::SetNextPlotTicksX(nullptr, 0, 0);
+				if (ImPlot::BeginPlot("Electricity Consumption", nullptr, nullptr, ImVec2(-1,700), ImPlotFlags_NoMenus | ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMousePos)) {
+					for (auto& spec: specs) {
+						std::vector<float> y;
+						for (uint i = 59; i >= 1; i--) {
+							Energy e = i > Sim::tick ? 0: spec->energyConsumption.ticks[spec->energyConsumption.tick(Sim::tick-i)];
+							y.push_back(e);
+						}
+
+						float r = 1.0f - ((float)(hash(fmt("R%sR", spec->name)) % 61) / 100.0f * 1.25f);
+						float g = 1.0f - ((float)(hash(fmt("G%sG", spec->name)) % 61) / 100.0f * 1.25f);
+						float b = 1.0f - ((float)(hash(fmt("B%sB", spec->name)) % 61) / 100.0f * 1.25f);
+						ImPlot::SetNextLineStyle(ImVec4(r,g,b,1.0f));
+
+						auto energy = Energy(spec->energyConsumption.ticks[spec->energyConsumption.tick(Sim::tick-1)]);
+						ImPlot::PlotLine(fmtc("%s %s", spec->name, energy.formatRate()), (const float*)y.data(), (int)y.size());
+					}
+
+					ImPlot::EndPlot();
+				}
+			});
+
+			EndTabItem();
 		}
 
-		ImPlot::EndPlot();
-	}
+		if (BeginTabItem("Debug")) {
 
-	specs.sort([&](const Spec* a, const Spec* b) {
-		auto energyA = Energy(a->energyConsumption.ticks[a->energyConsumption.tick(Sim::tick-1)]);
-		auto energyB = Energy(b->energyConsumption.ticks[b->energyConsumption.tick(Sim::tick-1)]);
-		return energyA < energyB;
-	});
+			Sim::locked([&]() {
+				{
+					double tickMax = 0.0f;
+					tickMax = std::max(tickMax, Sim::statsEntity.tickMax);
+					tickMax = std::max(tickMax, Sim::statsGhost.tickMax);
+					tickMax = std::max(tickMax, Sim::statsStore.tickMax);
+					tickMax = std::max(tickMax, Sim::statsArm.tickMax);
+					tickMax = std::max(tickMax, Sim::statsCrafter.tickMax);
+					tickMax = std::max(tickMax, Sim::statsConveyor.tickMax);
+					tickMax = std::max(tickMax, Sim::statsUnveyor.tickMax);
+					tickMax = std::max(tickMax, Sim::statsLoader.tickMax);
+					tickMax = std::max(tickMax, Sim::statsRopeway.tickMax);
+					tickMax = std::max(tickMax, Sim::statsRopewayBucket.tickMax);
+					tickMax = std::max(tickMax, Sim::statsProjector.tickMax);
+					tickMax = std::max(tickMax, Sim::statsPath.tickMax);
+					tickMax = std::max(tickMax, Sim::statsVehicle.tickMax);
+					tickMax = std::max(tickMax, Sim::statsPipe.tickMax);
+					tickMax = std::max(tickMax, Sim::statsShunt.tickMax);
+					tickMax = std::max(tickMax, Sim::statsDepot.tickMax);
+					tickMax = std::max(tickMax, Sim::statsDrone.tickMax);
+					tickMax = std::max(tickMax, Sim::statsMissile.tickMax);
+					tickMax = std::max(tickMax, Sim::statsExplosion.tickMax);
+					tickMax = std::max(tickMax, Sim::statsTurret.tickMax);
+					tickMax = std::max(tickMax, Sim::statsComputer.tickMax);
 
-	specs.reverse();
+					tickMax = std::max(1.0, std::ceil(tickMax));
 
-	for (auto& spec: specs) {
-		auto energy = Energy(spec->energyConsumption.ticks[spec->energyConsumption.tick(Sim::tick-1)]);
-		ImGui::Print(fmtc("%s %s", spec->name, energy.formatRate()));
+					auto ylabel = fmt("%dms", (int)tickMax);
+
+					const double yticks[] = {0, tickMax};
+					const char* ylabels[] = {"0", ylabel.c_str()};
+
+					ImPlot::SetNextPlotLimits(0,60,0,tickMax, ImGuiCond_Always);
+					ImPlot::SetNextPlotTicksY(yticks, 2, ylabels);
+					ImPlot::SetNextPlotTicksX(nullptr, 0, 0);
+
+					if (ImPlot::BeginPlot("Simulation", nullptr, nullptr, ImVec2(-1,700), ImPlotFlags_NoMenus | ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMousePos)) {
+
+						auto plot = [&](std::string name, TimeSeries* series) {
+
+							float r = 1.0f - ((float)(hash(fmt("R%sR", name)) % 61) / 100.0f * 1.25f);
+							float g = 1.0f - ((float)(hash(fmt("G%sG", name)) % 61) / 100.0f * 1.25f);
+							float b = 1.0f - ((float)(hash(fmt("B%sB", name)) % 61) / 100.0f * 1.25f);
+							ImPlot::SetNextLineStyle(ImVec4(r,g,b,1.0f));
+
+							std::vector<float> y;
+							for (uint i = 59; i >= 1; i--) {
+								float ms = i > Sim::tick ? 0: series->ticks[series->tick(Sim::tick-i)];
+								y.push_back(ms);
+							}
+
+							ImPlot::PlotLine(fmtc("%0.2f %s", series->tickMax, name), (const float*)y.data(), (int)y.size());
+						};
+
+						plot("Entity", &Sim::statsEntity);
+						plot("Ghost", &Sim::statsGhost);
+						plot("Store", &Sim::statsStore);
+						plot("Arm", &Sim::statsArm);
+						plot("Crafter", &Sim::statsCrafter);
+						plot("Conveyor", &Sim::statsConveyor);
+						plot("Unveyor", &Sim::statsUnveyor);
+						plot("Loader", &Sim::statsLoader);
+						plot("Ropeway", &Sim::statsRopeway);
+						plot("RopewayBucket", &Sim::statsRopewayBucket);
+						plot("Projector", &Sim::statsProjector);
+						plot("Path", &Sim::statsPath);
+						plot("Vehicle", &Sim::statsVehicle);
+						plot("Pipe", &Sim::statsPipe);
+						plot("Shunt", &Sim::statsShunt);
+						plot("Depot", &Sim::statsDepot);
+						plot("Drone", &Sim::statsDrone);
+						plot("Missile", &Sim::statsMissile);
+						plot("Explosion", &Sim::statsExplosion);
+						plot("Turret", &Sim::statsTurret);
+						plot("Computer", &Sim::statsComputer);
+
+						ImPlot::EndPlot();
+					}
+				}
+
+				{
+					double tickMax = 16.0f;
+					//tickMax = std::max(tickMax, camera->statsUpdate.tickMax);
+					//tickMax = std::max(tickMax, camera->statsDraw.tickMax);
+					//tickMax = std::max(tickMax, camera->statsFrame.tickMax);
+					//tickMax = std::max(1.0, std::ceil(tickMax));
+
+					auto ylabel = fmt("%dms", (int)tickMax);
+
+					const double yticks[] = {0, tickMax};
+					const char* ylabels[] = {"0", ylabel.c_str()};
+
+					ImPlot::SetNextPlotLimits(0,60,0,tickMax, ImGuiCond_Always);
+					ImPlot::SetNextPlotTicksY(yticks, 2, ylabels);
+					ImPlot::SetNextPlotTicksX(nullptr, 0, 0);
+
+					if (ImPlot::BeginPlot("Renderer", nullptr, nullptr, ImVec2(-1,700), ImPlotFlags_NoMenus | ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMousePos)) {
+
+						std::hash<std::string> hash;
+
+						auto plot = [&](std::string name, TimeSeries* series) {
+
+							float r = 1.0f - ((float)(hash(fmt("R%sR", name)) % 61) / 100.0f * 1.25f);
+							float g = 1.0f - ((float)(hash(fmt("G%sG", name)) % 61) / 100.0f * 1.25f);
+							float b = 1.0f - ((float)(hash(fmt("B%sB", name)) % 61) / 100.0f * 1.25f);
+							ImPlot::SetNextLineStyle(ImVec4(r,g,b,1.0f));
+
+							std::vector<float> y;
+							for (uint i = 59; i >= 1; i--) {
+								float ms = i > Sim::tick ? 0: series->ticks[series->tick(camera->frame-i)];
+								y.push_back(ms);
+							}
+
+							ImPlot::PlotLine(fmtc("%0.2f %s", series->tickMax, name), (const float*)y.data(), (int)y.size());
+						};
+
+						plot("Frame", &camera->statsFrame);
+						plot("Update", &camera->statsUpdate);
+						plot("Draw", &camera->statsDraw);
+
+						ImPlot::EndPlot();
+					}
+				}
+
+				EndTabItem();
+			});
+		}
+
+		EndTabBar();
 	}
 
 	mouseOver = ImGui::IsWindowHovered();

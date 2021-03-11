@@ -23,8 +23,7 @@ Turret& Turret::create(uint id) {
 }
 
 Turret& Turret::get(uint id) {
-	ensuref(all.has(id), "invalid turret access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Turret::destroy() {

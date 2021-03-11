@@ -14,15 +14,19 @@ namespace Sim {
 
 	extern TimeSeries statsElectricityDemand;
 	extern TimeSeries statsElectricitySupply;
-	extern TimeSeries statsStore;
 	extern TimeSeries statsEntity;
+	extern TimeSeries statsGhost;
+	extern TimeSeries statsStore;
 	extern TimeSeries statsArm;
 	extern TimeSeries statsCrafter;
 	extern TimeSeries statsConveyor;
+	extern TimeSeries statsUnveyor;
+	extern TimeSeries statsLoader;
+	extern TimeSeries statsRopeway;
+	extern TimeSeries statsRopewayBucket;
 	extern TimeSeries statsProjector;
 	extern TimeSeries statsPath;
 	extern TimeSeries statsVehicle;
-	extern TimeSeries statsLift;
 	extern TimeSeries statsPipe;
 	extern TimeSeries statsShunt;
 	extern TimeSeries statsDepot;

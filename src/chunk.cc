@@ -1,7 +1,12 @@
 #include "common.h"
 #include "chunk.h"
+#include "point.h"
 #include "part.h"
 #include "sim.h"
+
+Point Chunk::centroid() {
+	return Point(x*size, 0, y*size) + Point(size/2,0,size/2);
+}
 
 gridwalk Chunk::walkTiles(Box box) {
 	return gridwalk(1, box);
@@ -103,6 +108,16 @@ Chunk* Chunk::get(int x, int y) {
 		for (auto fn: generators) {
 			fn(chunk);
 		}
+
+		if (tryGet(x-1, y-1)) get(x-1,y-1)->regenerate = true;
+		if (tryGet(x-1, y+0)) get(x-1,y+0)->regenerate = true;
+		if (tryGet(x-1, y+1)) get(x-1,y+1)->regenerate = true;
+		if (tryGet(x+0, y-1)) get(x+0,y-1)->regenerate = true;
+
+		if (tryGet(x+0, y+1)) get(x+0,y+1)->regenerate = true;
+		if (tryGet(x+1, y-1)) get(x+1,y-1)->regenerate = true;
+		if (tryGet(x+1, y+0)) get(x+1,y+0)->regenerate = true;
+		if (tryGet(x+1, y+1)) get(x+1,y+1)->regenerate = true;
 	}
 	return chunk;
 }
@@ -253,6 +268,8 @@ Chunk::Chunk(int cx, int cy) {
 	regenerate = true;
 	ZERO(heightmap);
 	ZERO(tiles);
+	meshLoaded = false;
+	meshGenerated = false;
 }
 
 Image Chunk::heightImage() {
@@ -287,6 +304,8 @@ Image Chunk::heightImage() {
 }
 
 void Chunk::genHeightMap() {
+	dropHeightMap();
+
 	Image heightImg = heightImage();
 	heightmap = GenMeshHeightmap(heightImg, (Vector3){ size+1, 100, size+1 });
 	Part::terrainNormals(&heightmap);
@@ -302,10 +321,37 @@ void Chunk::genHeightMap() {
 			it++;
 		}
 	}
+
+  rlUnloadMesh(heightmap);
+	heightmap.vaoId = 0;
+	heightmap.vboId = nullptr;
+  meshLoaded = false;
+  meshGenerated = true;
 }
 
 void Chunk::dropHeightMap() {
-	UnloadMesh(heightmap);
+	if (meshGenerated) {
+		loadMesh();
+		UnloadMesh(heightmap);
+		meshLoaded = false;
+		meshGenerated = false;
+	}
+}
+
+void Chunk::loadMesh() {
+	if (!meshLoaded) {
+		rlLoadMesh(&heightmap, false);
+		meshLoaded = true;
+	}
+}
+
+void Chunk::unloadMesh() {
+	if (meshLoaded) {
+		rlUnloadMesh(heightmap);
+		heightmap.vaoId = 0;
+		heightmap.vboId = nullptr;
+		meshLoaded = false;
+	}
 }
 
 std::set<Chunk::Tile*> Chunk::hillTiles(Point p) {

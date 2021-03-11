@@ -1840,9 +1840,9 @@ int main(int argc, char const *argv[]) {
 	}
 
 	SetTraceLogLevel(LOG_WARNING);
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT);
+	SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_WINDOW_ALWAYS_RUN|FLAG_MSAA_4X_HINT|FLAG_VSYNC_HINT);
 	InitWindow(1920,1080,"factropy");
-	SetTargetFPS(60);
+	//SetTargetFPS(60);
 	SetExitKey(0);
 
 	SiteCamera *camSec = new SiteCamera(
@@ -2685,7 +2685,7 @@ int main(int argc, char const *argv[]) {
 
 		EndDrawing();
 
-		camera->statsFrame.set(camera->frame, GetFrameTime());
+		camera->statsFrame.set(camera->frame, GetFrameTime()*1000.0f);
 		camera->statsFrame.update(camera->frame);
 		camera->frame++;
 	}

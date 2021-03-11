@@ -7,8 +7,7 @@ void Explosion::reset() {
 }
 
 void Explosion::tick() {
-	for (auto& pair: all) {
-		Explosion& explosion = pair.second;
+	for (auto& explosion: all) {
 		explosion.update();
 	}
 }
@@ -24,8 +23,7 @@ Explosion& Explosion::create(uint id) {
 }
 
 Explosion& Explosion::get(uint id) {
-	ensuref(all.count(id), "invalid explosion access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Explosion::destroy() {

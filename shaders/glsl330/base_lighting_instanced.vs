@@ -21,15 +21,18 @@ out vec3 fragNormal;
 
 void main()
 {
+		// instances are supplied transposed
+		mat4 instanceT = transpose(instance);
+
     // Send vertex attributes to fragment shader
-    fragPosition = vec3(instance * vec4(vertexPosition, 1.0));
+    fragPosition = vec3(instanceT * vec4(vertexPosition, 1.0));
     fragTexCoord = vertexTexCoord;
     fragColor = vertexColor;
 
-    mat3 normalMatrix = transpose(inverse(mat3(instance)));
+    mat3 normalMatrix = transpose(inverse(mat3(instanceT)));
     fragNormal = normalize(normalMatrix * vertexNormal);
 
-    mat4 mvpi = mvp * instance;
+    mat4 mvpi = mvp * instanceT;
 
     // Calculate final vertex position
     gl_Position = mvpi * vec4(vertexPosition, 1.0);

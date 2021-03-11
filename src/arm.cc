@@ -25,8 +25,7 @@ Arm& Arm::create(uint id) {
 }
 
 Arm& Arm::get(uint id) {
-	ensuref(all.has(id) > 0, "invalid arm access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Arm::destroy() {

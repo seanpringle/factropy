@@ -90,10 +90,12 @@ void rlDrawMeshInstanced2(Mesh mesh, Material material, int count, Matrix *trans
         MatrixMultiply(MatrixMultiply(RLGL.State.transform, RLGL.State.modelview), RLGL.State.projection)
     ));
 
-    float16* instances = RL_MALLOC(count * sizeof(float16));
+//    float16* instances = RL_MALLOC(count * sizeof(float16));
+//
+//    for (int i = 0; i < count; i++)
+//        instances[i] = MatrixToFloatV(transforms[i]);
 
-    for (int i = 0; i < count; i++)
-        instances[i] = MatrixToFloatV(transforms[i]);
+    assert(sizeof(float16) == sizeof(Matrix));
 
     // This could alternatively use a static VBO and either glMapBuffer or glBufferSubData.
     // It isn't clear which would be reliably faster in all cases and on all platforms, and
@@ -102,7 +104,7 @@ void rlDrawMeshInstanced2(Mesh mesh, Material material, int count, Matrix *trans
     unsigned int instancesB;
     glGenBuffers(1, &instancesB);
     glBindBuffer(GL_ARRAY_BUFFER, instancesB);
-    glBufferData(GL_ARRAY_BUFFER, count * sizeof(float16), instances, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, count * sizeof(Matrix), transforms, GL_DYNAMIC_DRAW);
 
     // Instances are put in LOC_MATRIX_MODEL attribute location with space for 4x Vector4, eg:
     // layout (location = 12) in mat4 instance;
@@ -126,7 +128,7 @@ void rlDrawMeshInstanced2(Mesh mesh, Material material, int count, Matrix *trans
     }
 
     glDeleteBuffers(1, &instancesB);
-    RL_FREE(instances);
+    //RL_FREE(instances);
 
     // Unbind all bound texture maps
     for (int i = 0; i < MAX_MATERIAL_MAPS; i++)

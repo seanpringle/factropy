@@ -8,8 +8,7 @@ void Missile::reset() {
 }
 
 void Missile::tick() {
-	for (auto& pair: all) {
-		Missile& missile = pair.second;
+	for (auto& missile: all) {
 		missile.update();
 	}
 }
@@ -24,8 +23,7 @@ Missile& Missile::create(uint id) {
 }
 
 Missile& Missile::get(uint id) {
-	ensuref(all.count(id), "invalid missile access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Missile::destroy() {

@@ -7,6 +7,7 @@
 #include "recipe.h"
 #include "item.h"
 #include "fluid.h"
+#include "time-series.h"
 
 struct Popup {
 	MainCamera* camera = nullptr;

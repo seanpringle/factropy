@@ -21,7 +21,7 @@ Projector& Projector::create(uint id) {
 
 Projector& Projector::get(uint id) {
 	ensuref(all.has(id) > 0, "invalid projector access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Projector::destroy() {

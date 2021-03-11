@@ -17,14 +17,21 @@ public:
 	typedef uint size_type;
 	typedef V value_type;
 
-	V* items;
+	#define vsize (((sizeof(V) + alignof(V) - 1) / alignof(V)) * alignof(V))
+
+	char* buffer;
+
+	V* cell(uint i) const {
+		return (V*)(buffer + (vsize * i));
+	}
+
 	size_type top;
 	size_type cap;
 
 	minivec<value_type>() {
 		top = 0;
 		cap = 0;
-		items = nullptr;
+		buffer = nullptr;
 	}
 
 	~minivec<value_type>() {
@@ -33,19 +40,25 @@ public:
 
 	void clear() {
 		for (size_type i = 0; i < top; i++) {
-			std::destroy_at(items + i);
+			std::destroy_at(cell(i));
 		}
-		std::free(items);
-		items = nullptr;
+		std::free(buffer);
+		buffer = nullptr;
 		top = 0;
 		cap = 0;
 	}
 
 	void reserve(size_type n) {
 		if (n > cap) {
+			size_type oldCap = cap;
 			cap = std::max(4U, cap);
 			while (n > cap) cap *= 2;
-			items = (V*)std::realloc((void*)items, cap*sizeof(V));
+			char* buffer2 = (char*)std::aligned_alloc(alignof(max_align_t), cap * vsize);
+			if (buffer) {
+				std::memmove(buffer2, buffer, oldCap * vsize);
+				std::free(buffer);
+			}
+			buffer = buffer2;
 		}
 	}
 
@@ -54,24 +67,20 @@ public:
 	}
 
 	void shrink_to_fit() {
-		if (!top && items) {
+		if (!top && buffer) {
 			clear();
-		}
-		if (items) {
-			cap = top;
-			items = (V*)std::realloc((void*)items, top*sizeof(V));
 		}
 	}
 
 	void resize(size_type n) {
 		reserve(n);
 		while (top < n) {
-			items[top++] = value_type();
+			*cell(top++) = value_type();
 		}
 	}
 
 	value_type& at(size_type i) const {
-		return items[i];
+		return *cell(i);
 	}
 
 	value_type& operator[](size_type i) const {
@@ -87,7 +96,7 @@ public:
 	}
 
 	value_type* data() const {
-		return items;
+		return cell(0);
 	}
 
 	bool empty() const {
@@ -106,12 +115,12 @@ public:
 
 	void push_back(value_type s = value_type()) {
 		reserve(top+1);
-		items[top++] = s;
+		*cell(top++) = s;
 	}
 
 	void pop_back() {
 		if (top > 0) {
-			std::destroy_at(items + --top);
+			std::destroy_at(cell(--top));
 		}
 	}
 
@@ -132,11 +141,11 @@ public:
 		}
 
 		V& operator*() const {
-			return mv->items[ii];
+			return *mv->cell(ii);
 		}
 
 		V* operator->() const {
-			return &mv->items[ii];
+			return mv->cell(ii);
 		}
 
 		bool operator==(const iterator& other) const {
@@ -230,11 +239,11 @@ public:
 		if (high > low && low < top && high <= top) {
 
 			for (size_type i = low; i < high; i++) {
-				std::destroy_at(items + i);
+				std::destroy_at(cell(i));
 			}
 
-			size_type moveDown = (top - low - 1) * sizeof(V);
-			std::memmove((void*)&items[low], (void*)&items[high], moveDown);
+			size_type moveDown = (top - low - 1) * vsize;
+			std::memmove((void*)cell(low), (void*)cell(high), moveDown);
 
 			top -= (high-low);
 		}

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "entity.h"
 #include "networker.h"
 
 void Networker::reset() {
@@ -6,8 +7,8 @@ void Networker::reset() {
 }
 
 void Networker::tick() {
-	for (auto& pair: all) {
-		pair.second.update();
+	for (auto& networker: all) {
+		networker.update();
 	}
 }
 
@@ -19,8 +20,7 @@ Networker& Networker::create(uint id) {
 }
 
 Networker& Networker::get(uint id) {
-	ensuref(all.count(id) > 0, "invalid networker access %d", id);
-	return all[id];
+	return all.refer(id);
 }
 
 void Networker::destroy() {

@@ -14,14 +14,6 @@
 // - stores objects that contain their own key as a hashable field
 // - allocates object memory in pages (iteration locality)
 // - vectors for hash buckets (lookup locality, higher load factors)
-// - allows element removal during forward iteration
-
-// Anecdata comparison with to unordered_map:
-// - artificial benchmarks on a particular linux/libc/g++ combination
-//   for an arbitrarily chosen small value type...
-// - lookup speed slightly increased :-|
-// - iteration time halved :-)
-// - memory footprint also roughly halved :-D
 
 template <class V, auto ID, uint slabSize = 1024>
 class slabmap {
@@ -109,7 +101,7 @@ private:
 	// determines how keys are indexed
 	typedef typename std::conditional<sizeof(K) <= sizeof(void*),kslot,pslot>::type slot;
 
-	std::vector<minivec<slot>> index;
+	std::vector<std::vector<slot>> index;
 
 	bool match(const slot& s, const K& k) const {
 		return s.match(pool, k);
