@@ -5,6 +5,8 @@
 #define GRAPHICS_API_OPENGL_33
 #define GLSL_VERSION 330
 #define PLATFORM_DESKTOP
+#define RL_MALLOC malloc
+#define RL_FREE free
 
 #include "../raylib/src/config.h"
 
@@ -28,6 +30,33 @@
 
 #define RLIGHTS_IMPLEMENTATION
 #include "../raylib/examples/shaders/rlights.h"
+
+float clamp(float f, float lo, float hi) {
+	if (f < lo) f = lo;
+	if (f > hi) f = hi;
+	return f;
+}
+
+Color GetColorSRGB(unsigned int hexValue)
+{
+    Color color;
+
+    unsigned char ru = ((unsigned int)hexValue >> 24) & 0xFF;
+    unsigned char gu = ((unsigned int)hexValue >> 16) & 0xFF;
+    unsigned char bu = ((unsigned int)hexValue >>  8) & 0xFF;
+    unsigned char au = ((unsigned int)hexValue >>  0) & 0xFF;
+
+    float rf = (float)ru / 255.0f;
+    float gf = (float)gu / 255.0f;
+    float bf = (float)bu / 255.0f;
+
+    color.r = clamp(pow(rf, 2.2) * 255.0f, 0, 255);
+    color.g = clamp(pow(gf, 2.2) * 255.0f, 0, 255);
+    color.b = clamp(pow(bf, 2.2) * 255.0f, 0, 255);
+    color.a = au;
+
+    return color;
+}
 
 void* rlWindowHandle() {
 	return CORE.Window.handle;
@@ -331,4 +360,145 @@ void rlDrawParticles(Mesh mesh, Material material, int count, Vector4 *particles
 	glUseProgram(0);
 
 #endif
+}
+
+// Generate a mesh from heightmap
+Mesh GenMeshHeightmap2(int edge, float *heightmap)
+{
+    Mesh mesh = { 0 };
+    memset(&mesh, 0, sizeof(Mesh));
+
+    int mapX = edge;
+    int mapZ = edge;
+
+    // NOTE: One vertex per pixel
+    mesh.triangleCount = (mapX-1)*(mapZ-1)*2;    // One quad every four pixels
+
+    mesh.vertexCount = mesh.triangleCount*3;
+
+    mesh.vertices = (float *)calloc(mesh.vertexCount*3, sizeof(float));
+    mesh.normals = (float *)calloc(mesh.vertexCount*3, sizeof(float));
+    mesh.texcoords = (float *)calloc(mesh.vertexCount*2, sizeof(float));
+    mesh.colors = NULL;
+
+    int vCounter = 0;       // Used to count vertices float by float
+    int tcCounter = 0;      // Used to count texcoords float by float
+    int nCounter = 0;       // Used to count normals float by float
+
+    int trisCounter = 0;
+
+    Vector3 vA;
+    Vector3 vB;
+    Vector3 vC;
+    Vector3 vN;
+
+    for (int z = 0, zo = 0; z < mapZ-1; z++, zo = z*mapX)
+    {
+        for (int x = 0; x < mapX-1; x++)
+        {
+            // Fill vertices array with data
+            //----------------------------------------------------------
+
+            // one triangle - 3 vertex
+            mesh.vertices[vCounter] = (float)x;
+            mesh.vertices[vCounter + 1] = (float)heightmap[x + zo];
+            mesh.vertices[vCounter + 2] = (float)z;
+
+            mesh.vertices[vCounter + 3] = (float)x;
+            mesh.vertices[vCounter + 4] = (float)heightmap[x + zo + mapX];
+            mesh.vertices[vCounter + 5] = (float)(z + 1);
+
+            mesh.vertices[vCounter + 6] = (float)(x + 1);
+            mesh.vertices[vCounter + 7] = (float)heightmap[(x + 1) + zo];
+            mesh.vertices[vCounter + 8] = (float)z;
+
+            // another triangle - 3 vertex
+            mesh.vertices[vCounter + 9] = mesh.vertices[vCounter + 6];
+            mesh.vertices[vCounter + 10] = mesh.vertices[vCounter + 7];
+            mesh.vertices[vCounter + 11] = mesh.vertices[vCounter + 8];
+
+            mesh.vertices[vCounter + 12] = mesh.vertices[vCounter + 3];
+            mesh.vertices[vCounter + 13] = mesh.vertices[vCounter + 4];
+            mesh.vertices[vCounter + 14] = mesh.vertices[vCounter + 5];
+
+            mesh.vertices[vCounter + 15] = (float)(x + 1);
+            mesh.vertices[vCounter + 16] = (float)heightmap[(x + 1) + zo + mapX];
+            mesh.vertices[vCounter + 17] = (float)(z + 1);
+            vCounter += 18;     // 6 vertex, 18 floats
+
+            // Fill texcoords array with data
+            //--------------------------------------------------------------
+            mesh.texcoords[tcCounter] = (float)x/(mapX - 1);
+            mesh.texcoords[tcCounter + 1] = (float)z/(mapZ - 1);
+
+            mesh.texcoords[tcCounter + 2] = (float)x/(mapX - 1);
+            mesh.texcoords[tcCounter + 3] = (float)(z + 1)/(mapZ - 1);
+
+            mesh.texcoords[tcCounter + 4] = (float)(x + 1)/(mapX - 1);
+            mesh.texcoords[tcCounter + 5] = (float)z/(mapZ - 1);
+
+            mesh.texcoords[tcCounter + 6] = mesh.texcoords[tcCounter + 4];
+            mesh.texcoords[tcCounter + 7] = mesh.texcoords[tcCounter + 5];
+
+            mesh.texcoords[tcCounter + 8] = mesh.texcoords[tcCounter + 2];
+            mesh.texcoords[tcCounter + 9] = mesh.texcoords[tcCounter + 3];
+
+            mesh.texcoords[tcCounter + 10] = (float)(x + 1)/(mapX - 1);
+            mesh.texcoords[tcCounter + 11] = (float)(z + 1)/(mapZ - 1);
+            tcCounter += 12;    // 6 texcoords, 12 floats
+
+            // Fill normals array with data
+            //--------------------------------------------------------------
+            for (int i = 0; i < 18; i += 9)
+            {
+                vA.x = mesh.vertices[nCounter + i];
+                vA.y = mesh.vertices[nCounter + i + 1];
+                vA.z = mesh.vertices[nCounter + i + 2];
+
+                vB.x = mesh.vertices[nCounter + i + 3];
+                vB.y = mesh.vertices[nCounter + i + 4];
+                vB.z = mesh.vertices[nCounter + i + 5];
+
+                vC.x = mesh.vertices[nCounter + i + 6];
+                vC.y = mesh.vertices[nCounter + i + 7];
+                vC.z = mesh.vertices[nCounter + i + 8];
+
+                vN = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(vB, vA), Vector3Subtract(vC, vA)));
+
+                mesh.normals[nCounter + i] = vN.x;
+                mesh.normals[nCounter + i + 1] = vN.y;
+                mesh.normals[nCounter + i + 2] = vN.z;
+
+                mesh.normals[nCounter + i + 3] = vN.x;
+                mesh.normals[nCounter + i + 4] = vN.y;
+                mesh.normals[nCounter + i + 5] = vN.z;
+
+                mesh.normals[nCounter + i + 6] = vN.x;
+                mesh.normals[nCounter + i + 7] = vN.y;
+                mesh.normals[nCounter + i + 8] = vN.z;
+            }
+
+            nCounter += 18;     // 6 vertex, 18 floats
+            trisCounter += 2;
+        }
+    }
+
+    return mesh;
+}
+
+// Unload mesh from memory
+void UnloadMesh2(Mesh mesh)
+{
+    RL_FREE(mesh.vertices);
+    RL_FREE(mesh.texcoords);
+    RL_FREE(mesh.normals);
+    RL_FREE(mesh.colors);
+    RL_FREE(mesh.tangents);
+    RL_FREE(mesh.texcoords2);
+    RL_FREE(mesh.indices);
+
+    RL_FREE(mesh.animVertices);
+    RL_FREE(mesh.animNormals);
+    RL_FREE(mesh.boneWeights);
+    RL_FREE(mesh.boneIds);
 }

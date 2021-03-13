@@ -26,6 +26,8 @@
 #include "popup.h"
 #include <ctime>
 #include <filesystem>
+#include <thread>
+#include <atomic>
 
 const char* quotes[] = {
 	"Yeah, but she's our witch. So cut her the hell down!",
@@ -42,100 +44,18 @@ const char* quotes[] = {
 void scenario() {
 	Sim::reset();
 	Sim::reseed(879600773);
+	Sim::reseedThread();
 	//Sim::seed(4);
 
 	auto droplet = Thing("models/fluid.stl");
 
 	Mesh oreLD = GenMeshSphere(0.6,6,6);
+	Thing::meshes.push_back(oreLD);
 
-	Item* item = new Item(Item::next(), "log");
-	item->fuel = Fuel("chemical", Energy::MJ(10));
-	item->parts = {
-		(new Part(Thing("models/wood.stl")))->scale(0.5f, 0.5f, 0.5f)->paint(0xCD853Fff),
-	};
-
-	item = new Item(Item::next(), "iron-ore");
-	item->parts = {
-		(new Part(Thing("models/iron-ore.stl", oreLD)))->scale(0.6f, 0.6f, 0.6f)->paint(0xB7410Eff),
-	};
-	item->armV = 0.2f;
-	Item::mining.insert(item->id);
-
-	item = new Item(Item::next(), "copper-ore");
-	item->parts = {
-		(new Part(Thing("models/copper-ore.stl", oreLD)))->scale(0.6f, 0.6f, 0.6f)->paint(0x529f88ff),
-	};
-	item->armV = 0.2f;
-	Item::mining.insert(item->id);
-
-	item = new Item(Item::next(), "coal");
-	item->parts = {
-		(new Part(Thing("models/coal.stl", oreLD)))->scale(0.6f, 0.6f, 0.6f)->translate(0.05f,0,0)->paint(0x222222ff),
-	};
-	item->armV = 0.2f;
-	item->fuel = Fuel("chemical", Energy::MJ(20));
-	Item::mining.insert(item->id);
-
-	item = new Item(Item::next(), "stone");
-	item->parts = {
-		(new Part(Thing("models/stone.stl", oreLD)))->scale(0.6f, 0.6f, 0.6f)->paint(0x999999ff),
-	};
-	item->armV = 0.2f;
-	Item::mining.insert(item->id);
+	Item* item;
 
 	auto thingSheet = Thing("models/sheet-hd.stl", "models/sheet-ld.stl");
 	auto thingIngot = Thing("models/ingot.stl");
-
-	item = new Item(Item::next(), "copper-ingot");
-	item->parts = {
-		(new Part(thingIngot))->paint(0xDC7F64ff),
-	};
-
-	item = new Item(Item::next(), "copper-sheet");
-	item->parts = {
-		(new Part(thingSheet))->paint(0xDC7F64ff),
-	};
-	item->armV = -0.1f;
-
-	item = new Item(Item::next(), "steel-ingot");
-	item->parts = {
-		(new Part(thingIngot))->paint(0x888989ff),
-	};
-
-	item = new Item(Item::next(), "steel-sheet");
-	item->parts = {
-		(new Part(thingSheet))->paint(0x888989ff),
-	};
-	item->armV = -0.1f;
-
-	item = new Item(Item::next(), "brick");
-	item->parts = {
-		(new Part(Thing("models/brick-hd.stl", "models/brick-ld.stl")))->paint(0x666666ff),
-	};
-	item->armV = 0.1f;
-
-	auto copperWireEnd = Thing("models/copper-wire-end-hd.stl", "models/copper-wire-end-ld.stl");
-
-	item = new Item(Item::next(), "copper-wire");
-	item->parts = {
-		(new Part(Thing("models/copper-wire-roll-hd.stl", "models/copper-wire-roll-ld.stl")))
-			->paint(0xDC7F64ff)->translate(0,0.25,0),
-		(new Part(copperWireEnd))->paint(0x444444ff)->translate(0,0.5,0),
-		(new Part(copperWireEnd))->paint(0x444444ff)->translate(0,0.0,0),
-	};
-
-	item = new Item(Item::next(), "circuit-board");
-	item->parts = {
-		(new Part(Thing("models/circuit-board.stl")))->paint(0x228800ff),
-	};
-	item->armV = 0.45f;
-
-	item = new Item(Item::next(), "pipe");
-	item->parts = {
-		(new Part(Thing("models/pipe-item-hd.stl", "models/pipe-item-ld.stl")))
-			->paint(0xff6600ff)->scale(0.7, 0.7, 0.7)->translate(0,0.32,0),
-	};
-	item->armV = -0.18f;
 
 	auto thingContainer = Thing("models/container-hd.stl", "models/container-ld.stl");
 	auto thingFan = Thing("models/fan-hd.stl", "models/fan-ld.stl");
@@ -147,7 +67,7 @@ void scenario() {
 
 	item = new Item(Item::next(), "gear-wheel");
 	item->parts = {
-		(new Part(thingGear))->paint(0x666666ff)->scale(0.8,0.8,0.8),
+		(new Part(thingGear))->paint(0x888888ff)->gloss(16)->scale(0.8,0.8,0.8),
 	};
 	item->armV = 0.38f;
 
@@ -156,16 +76,16 @@ void scenario() {
 	item = new Item(Item::next(), "battery");
 	item->parts = {
 		(new Part(Thing("models/battery-body-hd.stl", "models/battery-body-ld.stl")))->paint(0xcc6600ff),
-		(new Part(Thing("models/battery-cap-hd.stl", "models/battery-cap-ld.stl")))->paint(0x666666ff),
+		(new Part(Thing("models/battery-cap-hd.stl", "models/battery-cap-ld.stl")))->paint(0x888888ff),
 		(new Part(thingBatteryTerminal))->paint(0x660000ff)->translate(0,0,-0.1),
 		(new Part(thingBatteryTerminal))->paint(0x004400ff)->translate(0,0,0.1),
 	};
 
 	item = new Item(Item::next(), "electric-motor");
 	item->parts = {
-		(new Part(Thing("models/electric-motor-body-hd.stl", "models/electric-motor-body-ld.stl")))->paint(0x992222ff),
-		(new Part(Thing("models/electric-motor-foot-hd.stl", "models/electric-motor-foot-ld.stl")))->paint(0x661111ff),
-		(new Part(Thing("models/electric-motor-shaft-hd.stl", "models/electric-motor-shaft-ld.stl")))->paint(0x444444ff),
+		(new Part(Thing("models/electric-motor-body-hd.stl", "models/electric-motor-body-ld.stl")))->paint(0xB22222ff),
+		(new Part(Thing("models/electric-motor-foot-hd.stl", "models/electric-motor-foot-ld.stl")))->paint(0xB0C4DEff),
+		(new Part(Thing("models/electric-motor-shaft-hd.stl", "models/electric-motor-shaft-ld.stl")))->paint(0x888888ff),
 	};
 
 	Fluid* fluid = new Fluid(Fluid::next(), "water");
@@ -185,7 +105,7 @@ void scenario() {
 		recipe->tags = {"mining"};
 		recipe->mine = iid;
 		recipe->parts = {
-			(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
+			(new Part(thingMiner))->paint(0xb25607ff)->scale(0.1f,0.1f,0.1f),
 		};
 		for (auto part: item->parts) {
 			recipe->parts.push_back(part);
@@ -199,7 +119,7 @@ void scenario() {
 		tech->cost = Currency::k(i);
 		tech->miningRate = 1.0f + ((float)i * 0.1);
 		//tech->parts = {
-		//	(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
+		//	(new Part(thingMiner))->paint(0xb25607ff)->scale(0.1f,0.1f,0.1f),
 		//};
 	}
 
@@ -213,7 +133,7 @@ void scenario() {
 		{ Item::byName("copper-ingot")->id, 1 },
 	};
 	recipe->parts = {
-		(new Part(thingIngot))->paint(0xDC7F64ff),
+		(new Part(thingIngot))->paint(0xda8a67ff),
 	};
 	recipe->licensed = true;
 
@@ -227,7 +147,7 @@ void scenario() {
 		{ Item::byName("steel-ingot")->id, 1 },
 	};
 	recipe->parts = {
-		(new Part(thingIngot))->paint(0x888989ff),
+		(new Part(thingIngot))->paint(0xB0C4DEff),
 	};
 	recipe->licensed = true;
 
@@ -253,7 +173,7 @@ void scenario() {
 		{ Item::byName("copper-sheet")->id, 2 },
 	};
 	recipe->parts = {
-		(new Part(thingSheet))->paint(0xDC7F64ff),
+		(new Part(thingSheet))->paint(0xda8a67ff),
 	};
 	recipe->licensed = true;
 
@@ -267,7 +187,7 @@ void scenario() {
 		{ Item::byName("steel-sheet")->id, 2 },
 	};
 	recipe->parts = {
-		(new Part(thingSheet))->paint(0x888989ff),
+		(new Part(thingSheet))->paint(0xB0C4DEff),
 	};
 	recipe->licensed = true;
 
@@ -360,7 +280,7 @@ void scenario() {
 	spec->collision = {0, 0, 0, 2, 2, 5};
 	spec->selection = spec->collision;
 	spec->parts = {
-		(new Part(thingContainer))->paint(0x990000ff)->gloss(16),
+		(new Part(thingContainer))->paint(0xB22222ff)->gloss(16),
 	};
 	spec->store = true;
 	spec->capacity = Mass::kg(1000);
@@ -426,18 +346,18 @@ void scenario() {
 	};
 	spec->parts = {
 		(new Part(Thing("models/assembler-chassis-hd.stl", "models/assembler-chassis-ld.stl")))->paint(0x009900ff)->gloss(16),
-		(new PartSpinner(thingFan, 1))->paint(0x222222ff)->rotate(Point::East, 70)->translate(0,0.5,2.5)->gloss(16),
-		(new PartSpinner(thingFan, 1))->paint(0x222222ff)->rotate(Point::West, 70)->translate(0,0.5,-2.5)->gloss(16),
-		(new PartSpinner(thingFan, 1))->paint(0x222222ff)->rotate(Point::North, 70)->translate(2.5,0.5,0)->gloss(16),
-		(new PartSpinner(thingFan, 1))->paint(0x222222ff)->rotate(Point::South, 70)->translate(-2.5,0.5,0)->gloss(16),
-		(new Part(thingAssemblerPiston))->paint(0x222222ff)->gloss(16),
-		(new Part(thingAssemblerPiston))->paint(0x222222ff)->translate(0,0,1.2)->gloss(16),
-		(new Part(thingAssemblerPiston))->paint(0x222222ff)->translate(0,0,-1.2)->gloss(16),
-		(new Part(thingGear))->paint(0xcaccceff)->scale(1.5,1.8,1.5)->rotate(Point::East, 90)->translate(1,1,-1.2)->gloss(32),
-		(new Part(thingGear))->paint(0xcaccceff)->scale(1.1,1.8,1.1)->rotate(Point::East, 90)->translate(1,1,-0.6)->gloss(32),
-		(new Part(thingGear))->paint(0xcaccceff)->scale(1.3,1.8,1.3)->rotate(Point::East, 90)->translate(1,1, 0.0)->gloss(32),
-		(new Part(thingGear))->paint(0xcaccceff)->scale(1.2,1.8,1.2)->rotate(Point::East, 90)->translate(1,1, 0.6)->gloss(32),
-		(new Part(thingGear))->paint(0xcaccceff)->scale(1.4,1.8,1.4)->rotate(Point::East, 90)->translate(1,1, 1.2)->gloss(32),
+		(new PartSpinner(thingFan, 1))->paint(0x666666ff)->rotate(Point::East, 70)->translate(0,0.5,2.5)->gloss(16),
+		(new PartSpinner(thingFan, 1))->paint(0x666666ff)->rotate(Point::West, 70)->translate(0,0.5,-2.5)->gloss(16),
+		(new PartSpinner(thingFan, 1))->paint(0x666666ff)->rotate(Point::North, 70)->translate(2.5,0.5,0)->gloss(16),
+		(new PartSpinner(thingFan, 1))->paint(0x666666ff)->rotate(Point::South, 70)->translate(-2.5,0.5,0)->gloss(16),
+		(new Part(thingAssemblerPiston))->paint(0x666666ff)->gloss(16),
+		(new Part(thingAssemblerPiston))->paint(0x666666ff)->translate(0,0,1.2)->gloss(16),
+		(new Part(thingAssemblerPiston))->paint(0x666666ff)->translate(0,0,-1.2)->gloss(16),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.5,1.8,1.5)->rotate(Point::East, 90)->translate(1,1,-1.2)->gloss(16),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.1,1.8,1.1)->rotate(Point::East, 90)->translate(1,1,-0.6)->gloss(16),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.3,1.8,1.3)->rotate(Point::East, 90)->translate(1,1, 0.0)->gloss(16),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.2,1.8,1.2)->rotate(Point::East, 90)->translate(1,1, 0.6)->gloss(16),
+		(new Part(thingGear))->paint(0xcaccceff)->scale(1.4,1.8,1.4)->rotate(Point::East, 90)->translate(1,1, 1.2)->gloss(16),
 	};
 	spec->materials = {
 		{ Item::byName("steel-sheet")->id, 5 },
@@ -488,7 +408,7 @@ void scenario() {
 	spec->collision = {0, 0, 0, 4, 4, 4};
 	spec->selection = spec->collision;
 	spec->parts = {
-		(new Part(Thing("models/furnace-hd.stl", "models/furnace-ld.stl")))->paint(0xcc6600ff),
+		(new Part(Thing("models/furnace-hd.stl", "models/furnace-ld.stl")))->paint(0xDAA520ff),
 		(new Part(Thing("models/furnace-fire-hd.stl", "models/furnace-fire-ld.stl")))->paint(0x000000ff),
 		(new Part(Thing("models/furnace-smoke-hd.stl", "models/furnace-smoke-ld.stl")))->paint(0x000000ff),
 		(new PartSmoke(2400, 20, 0.01, 0.5f, 0.01f, 0.005f, 0.1f, 0.99f, 60, 180))->translate(0,2,0),
@@ -560,8 +480,8 @@ void scenario() {
 	spec->selection = spec->collision;
 	spec->health = 10;
 	spec->parts = {
-		(new Part(thingMiner))->paint(0xB7410Eff),
-		(new Part(thingGear))->paint(0xccccccff)->scale(3,3,3)->rotate(Point::East, 90)->translate(0,0,3.75)->gloss(32),
+		(new Part(thingMiner))->paint(0xCD853Fff),
+		(new Part(thingGear))->paint(0xccccccff)->scale(3,3,3)->rotate(Point::East, 90)->translate(0,0,3.75)->gloss(16),
 	};
 	spec->materials = {
 		{ Item::byName("steel-sheet")->id, 3 },
@@ -644,9 +564,9 @@ void scenario() {
 	{
 		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
 		spec->parts = {
-			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,0),
-			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,0),
-			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xffff00ff)->translate(0,-1.5,0),
+			(new Part(beltSurface))->paint(0x111111ff)->translate(0,-1.5,0),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xffff00ff)->translate(0,-1.5,0)->ld(false),
 		};
 	}
 
@@ -685,9 +605,9 @@ void scenario() {
 		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
 		spec->parts = {
 			(new Part(Thing("models/belt-right-base-hd.stl", "models/belt-right-base-ld.stl")))
-				->paint(0xcccc00ff)->scale(0.001, 0.001, 0.001)->translate(0,-1.5,0),
-			(new Part(Thing("models/belt-right-surface-hd.stl")))->paint(0x000000ff)->translate(0,-1.5,0),
-			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+				->paint(0xffff00ff)->scale(0.001, 0.001, 0.001)->translate(0,-1.5,0),
+			(new Part(Thing("models/belt-right-surface-hd.stl")))->paint(0x111111ff)->translate(0,-1.5,0),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xffff00ff)->translate(0,-1.5,0)->ld(false),
 		};
 	}
 
@@ -725,9 +645,9 @@ void scenario() {
 	{
 		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
 		spec->parts = {
-			(new Part(Thing("models/belt-left-base-hd.stl")))->paint(0xcccc00ff)->translate(0,-1.5,0),
-			(new Part(Thing("models/belt-left-surface-hd.stl")))->paint(0x000000ff)->translate(0,-1.5,0),
-			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+			(new Part(Thing("models/belt-left-base-hd.stl")))->paint(0xffff00ff)->translate(0,-1.5,0),
+			(new Part(Thing("models/belt-left-surface-hd.stl")))->paint(0x111111ff)->translate(0,-1.5,0),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xffff00ff)->translate(0,-1.5,0)->ld(false),
 		};
 	}
 
@@ -776,10 +696,10 @@ void scenario() {
 		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
 		spec->parts = {
 			(new Part(Thing("models/unveyor-base-hd.stl", "models/unveyor-base-ld.stl")))
-				->scale(0.001, 0.001, 0.001)->paint(0xcccc00ff)->translate(0,-1.25,0),
-			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,-0.5),
-			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,-0.5),
-			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+				->scale(0.001, 0.001, 0.001)->paint(0xffff00ff)->translate(0,-1.25,0),
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xffff00ff)->translate(0,-1.5,-0.5),
+			(new Part(beltSurface))->paint(0x111111ff)->translate(0,-1.5,-0.5),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xffff00ff)->translate(0,-1.5,0)->ld(false),
 		};
 	}
 
@@ -815,11 +735,11 @@ void scenario() {
 	{
 		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
 		spec->parts = {
-			(new Part(Thing("models/unveyor-base-hd.stl", "models/unveyor-base-ld.stl")))->paint(0xcccc00ff)
+			(new Part(Thing("models/unveyor-base-hd.stl", "models/unveyor-base-ld.stl")))->paint(0xffff00ff)
 				->scale(0.001, 0.001, 0.001)->rotate(Point::Up, 180)->translate(0,-1.25,0),
-			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,0.5),
-			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,0.5),
-			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xffff00ff)->translate(0,-1.5,0.5),
+			(new Part(beltSurface))->paint(0x111111ff)->translate(0,-1.5,0.5),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xffff00ff)->translate(0,-1.5,0)->ld(false),
 		};
 	}
 
@@ -862,10 +782,10 @@ void scenario() {
 		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
 		spec->parts = {
 			(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))
-				->scale(0.001, 0.001, 0.001)->paint(0xcccc00ff)->translate(0,-1,0),
-			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,-0.5),
-			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,-0.5),
-			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+				->scale(0.001, 0.001, 0.001)->paint(0xffff00ff)->translate(0,-1,0),
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xffff00ff)->translate(0,-1.5,-0.5),
+			(new Part(beltSurface))->paint(0x111111ff)->translate(0,-1.5,-0.5),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xffff00ff)->translate(0,-1.5,0)->ld(false),
 		};
 	}
 
@@ -900,11 +820,11 @@ void scenario() {
 	{
 		std::vector<Mat4> ridgeTransforms(spec->conveyorTransforms.rbegin(), spec->conveyorTransforms.rend());
 		spec->parts = {
-			(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xcccc00ff)
+			(new Part(Thing("models/loader-base-hd.stl", "models/loader-base-ld.stl")))->paint(0xffff00ff)
 				->scale(0.001, 0.001, 0.001)->rotate(Point::Up, 180)->translate(0,-1,0),
-			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xcccc00ff)->translate(0,-1.5,0.5),
-			(new Part(beltSurface))->paint(0x000000ff)->translate(0,-1.5,0.5),
-			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xcccc00ff)->translate(0,-1.5,0)->ld(false),
+			(new Part(Thing("models/belt-base-hd.stl", "models/belt-base-ld.stl")))->paint(0xffff00ff)->translate(0,-1.5,0.5),
+			(new Part(beltSurface))->paint(0x111111ff)->translate(0,-1.5,0.5),
+			(new PartCycle2(beltRidge, ridgeTransforms))->paint(0xffff00ff)->translate(0,-1.5,0)->ld(false),
 		};
 	}
 
@@ -926,7 +846,7 @@ void scenario() {
 	tech->licenseSpecs.insert(Spec::byName("loader"));
 	tech->licenseSpecs.insert(Spec::byName("unloader"));
 	//tech->parts = {
-	//	(new Part(thingMiner))->paint(0xB7410Eff)->scale(0.1f,0.1f,0.1f),
+	//	(new Part(thingMiner))->paint(0xb25607ff)->scale(0.1f,0.1f,0.1f),
 	//};
 
 	spec = new Spec("ropeway-terminus");
@@ -946,8 +866,8 @@ void scenario() {
 	spec->health = 10;
 
 	spec->parts = {
-		(new Part(Thing("models/cablecar-terminus-hd.stl", "models/cablecar-terminus-ld.stl")))->paint(0xcccc00ff)->translate(0,-5,0),
-		(new Part(Thing("models/cablecar-mast-hd.stl", "models/cablecar-mast-ld.stl")))->paint(0xcccc00ff)->translate(0,-5,0)->pivots(),
+		(new Part(Thing("models/cablecar-terminus-hd.stl", "models/cablecar-terminus-ld.stl")))->paint(0xffff00ff)->translate(0,-5,0),
+		(new Part(Thing("models/cablecar-mast-hd.stl", "models/cablecar-mast-ld.stl")))->paint(0xffff00ff)->translate(0,-5,0)->pivots(),
 	};
 
 	spec = new Spec("ropeway-tower");
@@ -965,8 +885,8 @@ void scenario() {
 	spec->health = 10;
 
 	spec->parts = {
-		(new Part(Thing("models/cablecar-tower-hd.stl", "models/cablecar-tower-ld.stl")))->paint(0xcccc00ff)->translate(0,-5,0),
-		(new Part(Thing("models/cablecar-mast-hd.stl", "models/cablecar-mast-ld.stl")))->paint(0xcccc00ff)->translate(0,-5,0)->pivots(),
+		(new Part(Thing("models/cablecar-tower-hd.stl", "models/cablecar-tower-ld.stl")))->paint(0xffff00ff)->translate(0,-5,0),
+		(new Part(Thing("models/cablecar-mast-hd.stl", "models/cablecar-mast-ld.stl")))->paint(0xffff00ff)->translate(0,-5,0)->pivots(),
 	};
 
 	spec = new Spec("ropeway-bucket");
@@ -981,7 +901,7 @@ void scenario() {
 	spec->health = 10;
 
 	spec->parts = {
-		(new Part(Thing("models/cablecar-bucket-hd.stl", "models/cablecar-bucket-ld.stl")))->paint(0xcccc00ff)->translate(0,-2,0),
+		(new Part(Thing("models/cablecar-bucket-hd.stl", "models/cablecar-bucket-ld.stl")))->paint(0xffff00ff)->translate(0,-2,0),
 	};
 
 	Spec::byName("ropeway-terminus")->cycle = Spec::byName("ropeway-tower");
@@ -1005,7 +925,7 @@ void scenario() {
 	spec->health = 10;
 
 	spec->parts = {
-		(new Part(Thing("models/fluid-tank-base-hd.stl", "models/fluid-tank-base-ld.stl")))->paint(0xff6600ff)->translate(0,-1.5,0),
+		(new Part(Thing("models/fluid-tank-base-hd.stl", "models/fluid-tank-base-ld.stl")))->paint(0xffa500ff)->translate(0,-1.5,0),
 	};
 
 	spec->materials = {
@@ -1023,7 +943,7 @@ void scenario() {
 	spec->health = 10;
 
 	spec->parts = {
-		(new Part(Thing("models/pipe-straight-hd.stl", "models/pipe-straight-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+		(new Part(Thing("models/pipe-straight-hd.stl", "models/pipe-straight-ld.stl")))->paint(0xffa500ff)->rotate(Point::Up, -90),
 	};
 
 	spec->materials = {
@@ -1042,7 +962,7 @@ void scenario() {
 	spec->health = 10;
 
 	spec->parts = {
-		(new Part(Thing("models/pipe-cross-hd.stl", "models/pipe-cross-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+		(new Part(Thing("models/pipe-cross-hd.stl", "models/pipe-cross-ld.stl")))->paint(0xffa500ff)->rotate(Point::Up, -90),
 	};
 
 	spec->materials = {
@@ -1061,7 +981,7 @@ void scenario() {
 	spec->health = 10;
 
 	spec->parts = {
-		(new Part(Thing("models/pipe-tee-hd.stl", "models/pipe-tee-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+		(new Part(Thing("models/pipe-tee-hd.stl", "models/pipe-tee-ld.stl")))->paint(0xffa500ff)->rotate(Point::Up, -90),
 	};
 
 	spec->materials = {
@@ -1080,7 +1000,7 @@ void scenario() {
 	spec->health = 10;
 
 	spec->parts = {
-		(new Part(Thing("models/pipe-elbow-hd.stl", "models/pipe-elbow-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+		(new Part(Thing("models/pipe-elbow-hd.stl", "models/pipe-elbow-ld.stl")))->paint(0xffa500ff)->rotate(Point::Up, -90),
 	};
 
 	spec->materials = {
@@ -1100,7 +1020,7 @@ void scenario() {
 	spec->health = 10;
 
 	spec->parts = {
-		(new Part(Thing("models/pipe-ground-hd.stl", "models/pipe-ground-ld.stl")))->paint(0xff6600ff)->rotate(Point::Up, -90),
+		(new Part(Thing("models/pipe-ground-hd.stl", "models/pipe-ground-ld.stl")))->paint(0xffa500ff)->rotate(Point::Up, -90),
 	};
 
 	spec->materials = {
@@ -1127,7 +1047,7 @@ void scenario() {
 		spec->pivot = true;
 		spec->junk = true;
 		spec->parts = {
-			(new Part(Thing(part)))->paint(0x666666ff),
+			(new Part(Thing(part)))->paint(0x888888ff),
 		};
 		spec->materials = {
 			{Item::byName("stone")->id, 1},
@@ -1169,7 +1089,7 @@ void scenario() {
 	spec->junk = true;
 	spec->health = 10;
 	spec->parts = {
-		(new Part(Thing("models/tree1.stl").smooth()))->paint(0x224400ff)->translate(0,-2.5,0),
+		(new Part(Thing("models/tree1.stl").smooth()))->paint(0x556B2Fff)->translate(0,-2.5,0),
 	};
 	spec->materials = {
 		{Item::byName("log")->id, 1},
@@ -1185,7 +1105,7 @@ void scenario() {
 	spec->junk = true;
 	spec->health = 10;
 	spec->parts = {
-		(new Part(Thing("models/tree2.stl").smooth()))->paint(0x006600ff)->translate(-5,-3,0),
+		(new Part(Thing("models/tree2.stl").smooth()))->paint(0x228B22ff)->translate(-5,-3,0),
 	};
 	spec->materials = {
 		{Item::byName("log")->id, 1},
@@ -1220,7 +1140,7 @@ void scenario() {
 	spec->collision = {0, 0, 0, 2, 2, 3};
 	spec->selection = spec->collision;
 	spec->parts = {
-		(new Part(thingTruckChassisEngineer))->paint(0xff6600ff)->translate(0,0.3,0),
+		(new Part(thingTruckChassisEngineer))->paint(0xffa500ff)->translate(0,0.3,0),
 		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,-1),
 		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,0),
 		(new Part(thingTruckWheel))->paint(0x444444ff)->translate(-0.8,-0.75,1),
@@ -1325,7 +1245,7 @@ void scenario() {
 	spec->collision = {0, 0, 0, 1, 1, 1};
 	spec->selection = spec->collision;
 	spec->parts = {
-		(new Part(thingDroneChassis))->paint(0x660000ff),
+		(new Part(thingDroneChassis))->paint(0x990000ff),
 		(new Part(thingDroneSpars))->paint(0x444444ff)->rotate(Point::Up, 45),
 		(new PartSpinner(thingDroneRotor, 45))->paint(0x999999ff)->translate(0.3,0.02,0.3),
 		(new PartSpinner(thingDroneRotor, 45))->paint(0x999999ff)->translate(0.3,0.02,-0.3),
@@ -1348,12 +1268,12 @@ void scenario() {
 	spec->armSpeed = 1.0f/60.0f;
 	spec->rotate = true;
 	spec->parts = {
-		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0x0044ffff),
-		(new Part(Thing("models/arm-pillar-hd.stl", "models/arm-pillar-ld.stl")))->translate(0,-1.0,0)->paint(0x0044ffff),
-		(new Part(Thing("models/arm-telescope1-hd.stl", "models/arm-telescope1-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/arm-telescope2-hd.stl", "models/arm-telescope2-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/arm-telescope3-hd.stl", "models/arm-telescope3-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/arm-grip-hd.stl", "models/arm-grip-ld.stl")))->translate(0,-1.0,0)->paint(0x0044ffff),
+		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0x4169E1ff),
+		(new Part(Thing("models/arm-pillar-hd.stl", "models/arm-pillar-ld.stl")))->translate(0,-1.0,0)->paint(0x4169E1ff),
+		(new Part(Thing("models/arm-telescope1-hd.stl", "models/arm-telescope1-ld.stl")))->translate(0,-1.0,0)->paint(0xC0C0C0ff)->gloss(8),
+		(new Part(Thing("models/arm-telescope2-hd.stl", "models/arm-telescope2-ld.stl")))->translate(0,-1.0,0)->paint(0xC0C0C0ff)->gloss(8),
+		(new Part(Thing("models/arm-telescope3-hd.stl", "models/arm-telescope3-ld.stl")))->translate(0,-1.0,0)->paint(0xC0C0C0ff)->gloss(8),
+		(new Part(Thing("models/arm-grip-hd.stl", "models/arm-grip-ld.stl")))->translate(0,-1.0,0)->paint(0x4169E1ff),
 	};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(10);
@@ -1444,14 +1364,14 @@ void scenario() {
 	spec->rotate = true;
 	spec->health = 10;
 	spec->parts = {
-		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0xff0000ff),
-		(new Part(Thing("models/arm-pillar-hd.stl", "models/arm-pillar-ld.stl")))->translate(0,-1.0,0)->paint(0xff0000ff),
-		(new Part(Thing("models/arm-telescope1-hd.stl", "models/arm-telescope1-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/arm-telescope2-hd.stl", "models/arm-telescope2-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/arm-telescope3-hd.stl", "models/arm-telescope3-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/arm-telescope4-hd.stl", "models/arm-telescope4-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/arm-telescope5-hd.stl", "models/arm-telescope5-ld.stl")))->translate(0,-1.0,0)->paint(0x666666ff)->gloss(32),
-		(new Part(Thing("models/arm-grip-hd.stl", "models/arm-grip-ld.stl")))->translate(0,-1.0,0)->paint(0xff0000ff),
+		(new Part(Thing("models/arm-base-hd.stl", "models/arm-base-ld.stl")))->translate(0,-1.0,0)->paint(0xFF4500ff),
+		(new Part(Thing("models/arm-pillar-hd.stl", "models/arm-pillar-ld.stl")))->translate(0,-1.0,0)->paint(0xFF4500ff),
+		(new Part(Thing("models/arm-telescope1-hd.stl", "models/arm-telescope1-ld.stl")))->translate(0,-1.0,0)->paint(0xC0C0C0ff)->gloss(8),
+		(new Part(Thing("models/arm-telescope2-hd.stl", "models/arm-telescope2-ld.stl")))->translate(0,-1.0,0)->paint(0xC0C0C0ff)->gloss(8),
+		(new Part(Thing("models/arm-telescope3-hd.stl", "models/arm-telescope3-ld.stl")))->translate(0,-1.0,0)->paint(0xC0C0C0ff)->gloss(8),
+		(new Part(Thing("models/arm-telescope4-hd.stl", "models/arm-telescope4-ld.stl")))->translate(0,-1.0,0)->paint(0xC0C0C0ff)->gloss(8),
+		(new Part(Thing("models/arm-telescope5-hd.stl", "models/arm-telescope5-ld.stl")))->translate(0,-1.0,0)->paint(0xC0C0C0ff)->gloss(8),
+		(new Part(Thing("models/arm-grip-hd.stl", "models/arm-grip-ld.stl")))->translate(0,-1.0,0)->paint(0xFF4500ff),
 	};
 	spec->consumeElectricity = true;
 	spec->energyConsume = Energy::kW(10);
@@ -1550,7 +1470,7 @@ void scenario() {
 	spec->collision = {0, 0, 0, 3, 2, 2};
 	spec->selection = spec->collision;
 	spec->pipe = true;
-	spec->pipeCapacity = Liquid::l(100);
+	spec->pipeCapacity = Liquid::l(1000);
 	spec->pipeConnections = {
 		{1.0f, -0.5f, 1.0f},
 		{1.0f, -0.5f, -1.0f},
@@ -1559,9 +1479,103 @@ void scenario() {
 		{-1.5f, -0.5f, 0.5f},
 		{-1.5f, -0.5f, -0.5f},
 	};
+
 	spec->parts = {
-		(new Part(Thing("models/boiler-chassis-hd.stl")))->gloss(16)->paint(0x51412dff),
+		(new Part(Thing("models/boiler-chassis-hd.stl", "models/boiler-chassis-ld.stl")))->paint(0xB0C4DEff),
+		(new Part(Thing("models/boiler-firebox-hd.stl", "models/boiler-firebox-ld.stl")))->gloss(16)->paint(0x666666ff),
+		(new Part(Thing("models/boiler-stack-hd.stl", "models/boiler-stack-ld.stl")))->gloss(16)->paint(0xda8a67ff),
+		(new Part(Thing("models/boiler-stack-cover-hd.stl", "models/boiler-stack-cover-ld.stl")))->paint(0x000000ff),
+		(new PartSmoke(1200, 10, 0.005, 0.25f, 0.01f, 0.005f, 0.05f, 0.99f, 60, 180))->translate(0.6,1,0),
 	};
+
+	{
+		auto thingRivet = Thing("models/boiler-rivet-hd.stl");
+
+		for (int i = -2; i <= 2; i++) {
+			Mat4 trx = Mat4::rotate(Point::South, -90.0f*DEG2RAD);
+			trx = trx * Mat4::translate(Point::Up*0.5f);
+			trx = trx * Mat4::rotate(Point::East, (float)i*30.0f*DEG2RAD);
+			trx = trx * Mat4::translate(Point::East*1.31f);
+			auto part = (new Part(thingRivet))->ld(false)->paint(0xB0C4DEff);
+			part->transform = part->transform * trx;
+			part->tsrt = part->transform * part->srt;
+			spec->parts.push_back(part);
+		}
+
+		for (int i = -2; i <= 2; i++) {
+			Mat4 trx = Mat4::rotate(Point::South, 90.0f*DEG2RAD);
+			trx = trx * Mat4::translate(Point::Up*0.5f);
+			trx = trx * Mat4::rotate(Point::East, (float)i*30.0f*DEG2RAD);
+			trx = trx * Mat4::translate(Point::East*-1.31f);
+			auto part = (new Part(thingRivet))->ld(false)->paint(0xB0C4DEff);
+			part->transform = part->transform * trx;
+			part->tsrt = part->transform * part->srt;
+			spec->parts.push_back(part);
+		}
+	}
+
+	for (uint i = 0; i < 10; i++) {
+		float fi = (float)i;
+		spec->states.push_back({
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::scale(0.1f*fi, 0.1f*fi, 0.1f*fi),
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+		});
+	}
+
+	for (uint i = 0; i < 80; i++) {
+		spec->states.push_back({
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+		});
+	}
+
+	for (uint i = 0; i < 10; i++) {
+		float fi = (float)(9-i);
+		spec->states.push_back({
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::scale(0.1f*fi, 0.1f*fi, 0.1f*fi),
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+			Mat4::identity,
+		});
+	}
+
 	spec->health = 10;
 	spec->align = true;
 	spec->rotate = true;
@@ -1569,6 +1583,7 @@ void scenario() {
 	spec->energyConsume = Energy::MW(2);
 	spec->energyDrain = Energy::kW(60);
 	spec->crafter = true;
+	spec->crafterProgress = true;
 	spec->recipeTags = {"boiling"};
 	spec->materials = {
 		{ Item::byName("brick")->id, 3 },
@@ -1576,13 +1591,13 @@ void scenario() {
 	};
 
 	recipe = new Recipe(Recipe::next(), "boiling");
-	recipe->energyUsage = Energy::MJ(2);
+	recipe->energyUsage = Energy::MJ(20);
 	recipe->tags = {"boiling"};
 	recipe->inputFluids = {
-		{ Fluid::byName("water")->id, 100 },
+		{ Fluid::byName("water")->id, 1000 },
 	};
 	recipe->outputFluids = {
-		{ Fluid::byName("steam")->id, 100 },
+		{ Fluid::byName("steam")->id, 1000 },
 	};
 	recipe->licensed = true;
 
@@ -1600,12 +1615,12 @@ void scenario() {
 	spec->pipeCapacity = Liquid::l(100);
 	spec->pipeConnections = {{-0.5f, -1.5f, 2.5f}, {0.5f, -1.5f, 2.5f}};
 	spec->parts = {
-		(new Part(Thing("models/steam-engine-boiler-hd.stl", "models/steam-engine-boiler-ld.stl")))->gloss(16)->paint(0x51412dff)->translate(0,-2,0),
+		(new Part(Thing("models/steam-engine-boiler-hd.stl", "models/steam-engine-boiler-ld.stl")))->gloss(16)->paint(0x708090ff)->translate(0,-2,0),
 		(new Part(Thing("models/steam-engine-saddle-hd.stl", "models/steam-engine-saddle-ld.stl")))->gloss(16)->paint(0x004225ff)->translate(0,-2,0),
 		(new Part(Thing("models/steam-engine-foot-hd.stl", "models/steam-engine-foot-ld.stl")))->gloss(16)->paint(0x004225ff)->translate(0,-2,0),
-		(new Part(Thing("models/steam-engine-axel-hd.stl", "models/steam-engine-axel-ld.stl")))->gloss(16)->paint(0x444444ff)->translate(0,1,1),
-		(new Part(steamEnginewheel))->gloss(32)->paint(0x444444ff)->translate(-1.75,1,1)->rotate(Point::South, 90),
-		(new Part(steamEnginewheel))->gloss(32)->paint(0x444444ff)->translate( 1.75,1,1)->rotate(Point::South, 90),
+		(new Part(Thing("models/steam-engine-axel-hd.stl", "models/steam-engine-axel-ld.stl")))->gloss(16)->paint(0x666666ff)->translate(0,1,1),
+		(new Part(steamEnginewheel))->gloss(8)->paint(0x666666ff)->translate(-1.75,1,1)->rotate(Point::South, 90),
+		(new Part(steamEnginewheel))->gloss(8)->paint(0x666666ff)->translate( 1.75,1,1)->rotate(Point::South, 90),
 	};
 	spec->health = 10;
 	spec->align = true;
@@ -1641,7 +1656,7 @@ void scenario() {
 	spec->collision = {0, 0, 0, 1, 1, 1};
 	spec->selection = spec->collision;
 	spec->parts = {
-		(new Part(Thing("models/turret-chassis.stl")))->paint(0x51412dff)->translate(0,-0.5,0),
+		(new Part(Thing("models/turret-chassis.stl")))->paint(0x444444ff)->translate(0,-0.5,0),
 		(new Part(Thing("models/turret-dome.stl")))->paint(0x0044ccff)->translate(0,-0.5,0)->pivots(),
 		(new Part(Thing("models/turret-barrel.stl")))->paint(0x444444ff)->translate(0,-0.5,0)->pivots(),
 	};
@@ -1723,10 +1738,10 @@ void scenario() {
 	spec->collision = {0, 0, 0, 8, 8, 8};
 	spec->selection = spec->collision;
 	spec->parts = {
-		(new Part(Thing("models/teleporter-base-hd.stl")))->paint(0x0044ccff)->translate(0,-2.5,0),
-		(new Part(Thing("models/teleporter-ring1-hd.stl")))->paint(0xd4af37ff)->gloss(64),
-		(new Part(Thing("models/teleporter-ring2-hd.stl")))->paint(0xd4af37ff)->gloss(64),
-		(new Part(Thing("models/teleporter-ring3-hd.stl")))->paint(0xd4af37ff)->gloss(64),
+		(new Part(Thing("models/teleporter-base-hd.stl")))->paint(0x4682B4ff)->translate(0,-2.5,0),
+		(new Part(Thing("models/teleporter-ring1-hd.stl")))->paint(0xFFD700ff)->gloss(8),
+		(new Part(Thing("models/teleporter-ring2-hd.stl")))->paint(0xFFD700ff)->gloss(8),
+		(new Part(Thing("models/teleporter-ring3-hd.stl")))->paint(0xFFD700ff)->gloss(8),
 	};
 	spec->materials = {
 		{ Item::byName("steel-sheet")->id, 5 },
@@ -1758,7 +1773,7 @@ void scenario() {
 	spec->collision = {0, 0, 0, 1, 2, 1};
 	spec->selection = spec->collision;
 	spec->parts = {
-		(new Part(Thing("models/computer-rack-hd.stl", "models/computer-rack-ld.stl")))->paint(0x666666ff)->translate(0,-1,0),
+		(new Part(Thing("models/computer-rack-hd.stl", "models/computer-rack-ld.stl")))->paint(0x888888ff)->translate(0,-1,0),
 	};
 	spec->materials = {
 		{ Item::byName("steel-sheet")->id, 1 },
@@ -1777,7 +1792,7 @@ void scenario() {
 	spec->collision = {0, 0, 0, 1, 0.1, 1};
 	spec->selection = spec->collision;
 	spec->parts = {
-		(new Part(Thing("models/projector.stl")))->paint(0x666666ff),
+		(new Part(Thing("models/projector.stl")))->paint(0x888888ff),
 		(new PartSmoke(1000, 100, 0.0025, 0.25f, 0.05f, 0.005f, 0.1f, 0.99f, 5, 10))->paint(0xeeeeeeff),
 	};
 
@@ -1855,9 +1870,10 @@ int main(int argc, char const *argv[]) {
 		{1,-1,1}
 	);
 
-  float fogDensity = 0.004f;
+  //float fogDensity = 0.004f;
+  float fogDensity = 0.003f;
 	Vector4 fogColor = ColorNormalize(SKYBLUE);
-	Vector4 ambient = { 0.2f, 0.2f, 0.1f, 1.0f };
+	Vector4 ambient = { 0.6f, 0.6f, 0.3f, 1.0f };
 
 	Shader shader = LoadShader(
 		FormatText("shaders/glsl%i/base_lighting.vs", GLSL_VERSION),
@@ -1917,6 +1933,9 @@ int main(int argc, char const *argv[]) {
 
 	Part::particleShader = particleShader;
 
+	Part::shaderSpecShine = GetShaderLocation(Part::shader, "specShine");
+	Part::particleShaderSpecShine = GetShaderLocation(Part::particleShader, "specShine");
+
 	/*Light lightA =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, shader);
 	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, pshader);
 	/*Light lightB =*/ CreateLight(LIGHT_DIRECTIONAL, Point(-1, 1, 0), Point::Zero, WHITE, particleShader);
@@ -1926,26 +1945,26 @@ int main(int argc, char const *argv[]) {
 
 	View::waterCube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
 	View::waterCube.materials[0].shader = pshader;
-	View::waterCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x010190FF);
+	View::waterCube.materials[0].maps[MAP_DIFFUSE].color = GetColorSRGB(0x010190FF);
 
 	View::redCube = LoadModelFromMesh(GenMeshCube(0.5f,0.5f,0.5f));
 	View::redCube.materials[0].shader = pshader;
-	View::redCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0xff0000FF);
+	View::redCube.materials[0].maps[MAP_DIFFUSE].color = GetColorSRGB(0xff0000FF);
 
 	View::greenCube = LoadModelFromMesh(GenMeshCube(0.5f,0.5f,0.5f));
 	View::greenCube.materials[0].shader = pshader;
-	View::greenCube.materials[0].maps[MAP_DIFFUSE].color = GetColor(0x00ff00FF);
+	View::greenCube.materials[0].maps[MAP_DIFFUSE].color = GetColorSRGB(0x00ff00FF);
 
-	View::gridSquareLand = (new Part(Thing("models/grid-square.stl")))->scale(0.001, 0.001, 0.001)->paint(0x888888FF);
+	View::gridSquareLand = (new Part(Thing("models/grid-square.stl")))->scale(0.001, 0.001, 0.001)->paint(0xccccccFF);
 
 	Chunk::material = LoadMaterialDefault();
 	Chunk::material.shader = shader;
 	Chunk::material.maps[MAP_DIFFUSE].color = WHITE;
 
-	scenario();
-
-	Mod* mod = new Mod("base");
+	Mod* mod = new ModDuktape("base");
 	mod->load();
+
+	scenario();
 
 	Popup* popup = nullptr;
 	StatsPopup2* statsPopup = new StatsPopup2(camera);
@@ -2021,14 +2040,6 @@ int main(int argc, char const *argv[]) {
 				if (!spec->texture.id) break;
 				DrawTextureEx(spec->texture.texture, (Vector2){(float)x, (float)y}, 0.0f, 0.5, WHITE);
 				advance();
-			}
-
-			for (auto pair: Chunk::all) {
-				Chunk* chunk = pair.second;
-				if (!chunk->regenerate) {
-					DrawRectangle(x+2, y+2, 124, 124, GREEN);
-					advance();
-				}
 			}
 
 			status->draw();
@@ -2169,12 +2180,6 @@ int main(int argc, char const *argv[]) {
 	if (loadSave && std::filesystem::exists("autosave")) {
 
 		Sim::load("autosave");
-		for (auto pair: Chunk::all) {
-			loadingScreen();
-			Chunk* chunk = pair.second;
-			chunk->findHills();
-			chunk->genHeightMap();
-		}
 
 	}	else {
 
@@ -2182,15 +2187,7 @@ int main(int argc, char const *argv[]) {
 		for (int cy = -horizon; cy < horizon; cy++) {
 			for (int cx = -horizon; cx < horizon; cx++) {
 				loadingScreen();
-				Chunk::get(cx,cy);
-			}
-		}
-		for (int cy = -horizon; cy < horizon; cy++) {
-			for (int cx = -horizon; cx < horizon; cx++) {
-				loadingScreen();
-				Chunk* chunk = Chunk::get(cx,cy);
-				chunk->findHills();
-				chunk->genHeightMap();
+				Chunk::request(cx,cy);
 			}
 		}
 
@@ -2213,9 +2210,59 @@ int main(int argc, char const *argv[]) {
 
 	RenderTexture secondary = LoadRenderTexture(400-imGuiStyle.WindowPadding.x*2, 270-imGuiStyle.WindowPadding.y*2);
 
+	std::atomic<bool> running = true;
+
+	auto chunkGenerator = std::thread([&]() {
+		Sim::reseedThread();
+
+		while (running) {
+
+			std::vector<Chunk*> generate;
+
+			Chunk::mutex.lock();
+			for (auto& xy: Chunk::requested) {
+				ensure(!Chunk::all.count(xy));
+				generate.push_back(new Chunk(xy.x, xy.y));
+			}
+			Chunk::requested.clear();
+			Chunk::mutex.unlock();
+
+			for (auto& chunk: generate) {
+				chunk->generate();
+			}
+
+			std::vector<Chunk*> check;
+
+			Sim::locked([&]() {
+				for (auto& chunk: generate) {
+					chunk->findHills();
+					chunk->generated = true;
+					chunk->regenerate();
+					for (auto& fn: Chunk::generators) {
+						fn(chunk);
+					}
+				}
+				for (auto& [_,chunk]: Chunk::all) {
+					check.push_back(chunk);
+				}
+			});
+
+			for (auto& chunk: check) {
+				chunk->backgroundgenerate();
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+	});
+
 	while (!WindowShouldClose()) {
-		Sim::locked(Sim::update);
-		mod->update();
+		Sim::locked([&]() {
+			Sim::update();
+			mod->update();
+
+			for (auto& [_,chunk]: Chunk::all)
+				chunk->autoload();
+		});
 
 		if (popup && !popup->visible) {
 			popup = nullptr;
@@ -2454,6 +2501,14 @@ int main(int argc, char const *argv[]) {
 							en.conveyor().insert(Item::byName("pipe")->id);
 						}
 					}
+				});
+			}
+
+			if (IsKeyReleased(KEY_F10)) {
+				Sim::locked([&]() {
+					Point groundZero = camera->groundTarget(0.0f);
+					Chunk* chunk = Chunk::tryGet(groundZero);
+					if (chunk) chunk->regenerate();
 				});
 			}
 		}
@@ -2695,6 +2750,9 @@ int main(int argc, char const *argv[]) {
 	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
 
+	running = false;
+	chunkGenerator.join();
+
 	UnloadRenderTexture(secondary);
 
 	UnloadShader(shader);
@@ -2703,11 +2761,6 @@ int main(int argc, char const *argv[]) {
 
 	UnloadModel(cube);
 	UnloadModel(View::waterCube);
-
-	for (auto pair: Chunk::all) {
-		Chunk *chunk = pair.second;
-		chunk->dropHeightMap();
-	}
 
 	delete status;
 	delete statsPopup;
@@ -2720,6 +2773,7 @@ int main(int argc, char const *argv[]) {
 	Entity::reset();
 	Chunk::reset();
 	Spec::reset();
+	Tech::reset();
 	Part::reset();
 	Recipe::reset();
 	Item::reset();

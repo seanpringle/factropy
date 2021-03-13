@@ -44,6 +44,7 @@ struct Pipe {
 };
 
 struct PipeNetwork {
+	static void reset();
 	static void tick();
 	static inline bool rebuild = true;
 	static inline std::set<PipeNetwork*> all;

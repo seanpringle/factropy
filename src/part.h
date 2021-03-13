@@ -21,6 +21,7 @@ struct Thing;
 
 struct Thing {
 	static inline std::vector<Mesh> meshes;
+	static inline std::map<std::string,Mesh> STLs;
 
 	Mesh meshHD;
 	Mesh meshLD;
@@ -44,12 +45,14 @@ struct Part: Thing {
 	static inline std::set<Part*> all;
 
 	static void reset();
-	static void terrainNormals(Mesh *mesh);
 
 	static inline Shader shader;
 	static inline Shader ghostShader;
 	static inline Shader particleShader;
 	static inline Material material;
+
+	static inline uint shaderSpecShine = 0;
+	static inline uint particleShaderSpecShine = 0;
 
 	Part();
 	Part(Thing thing);

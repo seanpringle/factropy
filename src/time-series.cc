@@ -2,15 +2,21 @@
 #include "time-series.h"
 #include "raylib-ex.h"
 
+TimeSeries::TimeSeries() {
+	clear();
+}
+
 void TimeSeries::clear() {
 	tickMax = 0.0f;
 	secondMax = 0.0f;
 	minuteMax = 0.0f;
 	hourMax = 0.0f;
-	ZERO(ticks);
-	ZERO(seconds);
-	ZERO(minutes);
-	ZERO(hours);
+	for (uint i = 0; i < 60; i++) {
+		ticks[i] = 0;
+		seconds[i] = 0;
+		minutes[i] = 0;
+		hours[i] = 0;
+	}
 }
 
 uint TimeSeries::tick(uint64_t t) {

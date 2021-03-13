@@ -13,6 +13,9 @@ struct Chunk;
 #include <set>
 #include <vector>
 #include <functional>
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 struct Chunk {
 	static const int size = 128;
@@ -48,14 +51,18 @@ struct Chunk {
 
 	static gridwalk walkTiles(Box);
 
+	static inline std::mutex mutex;
 	static inline std::map<XY,Chunk*> all;
+	static inline std::set<XY> requested;
 
 	typedef std::function<void(Chunk*)> Generator;
 	static inline std::vector<Generator> generators;
 	static void generator(Generator fn);
 
 	static Chunk* tryGet(int x, int y);
-	static Chunk* get(int x, int y);
+	static Chunk* tryGet(Point p);
+	void generate();
+	static Chunk* request(int x, int y);
 	static Chunk::Tile* tileTryGet(int x, int y);
 	static Chunk::Tile* tileTryGet(Point p);
 	static bool isLand(Box b);
@@ -77,21 +84,29 @@ struct Chunk {
 
 	int x, y;
 	Tile tiles[size][size];
-	bool regenerate = false;
+
+	std::mutex meshMutex;
 	Mesh heightmap;
-	bool meshGenerated;
+	Mesh newHeightmap;
+	bool generated;
+	bool meshReady;
 	bool meshLoaded;
+	bool meshRegenerate;
+	bool meshSwitch;
+	std::vector<XY> meshMinerals;
+	uint64_t meshTickLastViewed;
+
 	Matrix transform;
-	std::vector<XY> minerals;
 
 	Chunk(int cx, int cy);
+	~Chunk();
 
-	Image heightImage();
-	Image colorImage();
-	void genHeightMap();
-	void dropHeightMap();
-	void loadMesh();
-	void unloadMesh();
+	bool ready();
+	void regenerate();
+	void backgroundgenerate();
+	void terrainNormals();
+	void autoload();
 	void findHills();
 	Point centroid();
+	Box box();
 };

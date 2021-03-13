@@ -28,6 +28,8 @@ MainCamera::MainCamera(Point pos, Point dir) {
 
 	buildLevel = 0.0f;
 
+	frame = 0;
+
 	statsUpdate.clear();
 	statsDraw.clear();
 	statsFrame.clear();
@@ -378,9 +380,10 @@ void MainCamera::draw() {
 
 		objects = 0;
 		float hdDistanceSquared = 100.0f*100.0f;
+		Point groundZero = groundTarget(buildLevel);
+		Box view = groundZero.box().grow(Chunk::size*5);
 
 		BeginMode3D(camera);
-			Point groundZero = groundTarget(buildLevel);
 
 			minivec<Mat4> water;
 			minivec<Mesh> chunk_meshes;
@@ -391,43 +394,38 @@ void MainCamera::draw() {
 			float size = (float)Chunk::size;
 			Mat4 scale = Mat4::scale(size,size,size);
 
-			Chunk::get(groundZero.x/Chunk::size, groundZero.z/Chunk::size);
+			for (auto [cx,cy]: gridwalk(Chunk::size, view)) {
+				Chunk* chunk = Chunk::request(cx, cy);
+				if (!chunk || !chunk->ready()) continue;
 
-			for (auto pair: Chunk::all) {
-				Chunk *chunk = pair.second;
+				chunk->meshMutex.lock();
+				chunk->meshTickLastViewed = Sim::tick;
 
-				if (chunk->centroid().distance(groundZero) > 250+Chunk::size) {
-					chunk->unloadMesh();
-					continue;
+				if (chunk->meshLoaded) {
+					float x = chunk->x;
+					float y = chunk->y;
+
+					chunk_meshes.push_back(chunk->heightmap);
+					chunk_transforms.push_back(chunk->transform);
+					water.push_back(Mat4::translate(x+0.5f, -0.52f, y+0.5f) * scale);
+
+					int ctx = chunk->x*Chunk::size;
+					int ctz = chunk->y*Chunk::size;
+
+					for (auto [tx,ty]: chunk->meshMinerals) {
+						Chunk::Tile* tile = &chunk->tiles[ty][tx];
+						if (!tile->hill) continue;
+						if (!tile->hill->minerals.count(tile->mineral.iid)) continue;
+						if (!tile->hill->minerals[tile->mineral.iid]) continue;
+
+						float h = tile->elevation*100.0f-0.25f;
+						Mat4 r = Mat4::rotate(Point(ctx+tx, h, ctz+ty), tx);
+						Mat4 m = Mat4::translate(ctx+tx, h, ctz+ty);
+						resource_transforms[tile->mineral.iid].push_back(r * m);
+					}
 				}
 
-				float x = chunk->x;
-				float y = chunk->y;
-
-				if (chunk->regenerate) {
-					chunk->genHeightMap();
-				}
-
-				chunk->loadMesh();
-
-				chunk_meshes.push_back(chunk->heightmap);
-				chunk_transforms.push_back(chunk->transform);
-				water.push_back(Mat4::translate(x+0.5f, -0.52f, y+0.5f) * scale);
-
-				int cx = chunk->x*Chunk::size;
-				int cz = chunk->y*Chunk::size;
-
-				for (auto [tx,ty]: chunk->minerals) {
-					Chunk::Tile* tile = &chunk->tiles[ty][tx];
-					if (!tile->hill) continue;
-					if (!tile->hill->minerals.count(tile->mineral.iid)) continue;
-					if (!tile->hill->minerals[tile->mineral.iid]) continue;
-
-					float h = tile->elevation*(49.82*2)-0.25;
-					Mat4 r = Mat4::rotate(Point(cx+tx, h, cz+ty), tx);
-					Mat4 m = Mat4::translate(cx+tx, h, cz+ty);
-					resource_transforms[tile->mineral.iid].push_back(r * m);
-				}
+				chunk->meshMutex.unlock();
 			}
 
 			rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());
@@ -765,6 +763,11 @@ void MainCamera::draw() {
 				DrawCube(box.centroid(), box.w, box.h, box.d, GetColor(0x0000ff99));
 				drawBox(box, Point::South, ORANGE);
 			}
+
+			//DrawSphere(groundZero, 0.5f, RED);
+			//Sim::locked([&]() {
+			//	DrawCubeWiresV(Chunk::tryGet(groundZero)->centroid(), {Chunk::size, 1, Chunk::size}, RED);
+			//});
 
 		EndMode3D();
 	});

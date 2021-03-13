@@ -15,8 +15,11 @@
 #include "../raylib/examples/shaders/rlights.h"
 
 extern "C" {
+	Color GetColorSRGB(unsigned int hexValue);
 	void* rlWindowHandle();
 	void rlDrawMeshInstanced2(Mesh mesh, Material material, int count, Matrix *transforms);
 	void rlDrawMaterialMeshes(Material material, int count, Mesh *meshes, Matrix *transforms);
 	void rlDrawParticles(Mesh mesh, Material material, int count, Vector4 *particles);
+	Mesh GenMeshHeightmap2(int edge, float *heightmap);
+	void UnloadMesh2(Mesh mesh);
 }

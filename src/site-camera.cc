@@ -50,6 +50,8 @@ void SiteCamera::draw(RenderTexture canvas) {
 		.type     = CAMERA_PERSPECTIVE,
 	};
 
+	Box view = groundTarget(0.0f).box().grow(Chunk::size*3);
+
 	BeginTextureMode(canvas);
 
 		ClearBackground(SKYBLUE);
@@ -61,15 +63,25 @@ void SiteCamera::draw(RenderTexture canvas) {
 			std::vector<Mat4> chunk_transforms;
 
 			float size = (float)Chunk::size;
-			for (auto pair: Chunk::all) {
-				Chunk *chunk = pair.second;
-				float x = chunk->x;
-				float y = chunk->y;
-				chunk_meshes.push_back(chunk->heightmap);
-				chunk_transforms.push_back(chunk->transform);
-				water.push_back(
-					Mat4::translate(x+0.5f, -0.52f, y+0.5f) * Mat4::scale(size,size,size)
-				);
+			for (auto [cx,cy]: gridwalk(Chunk::size, view)) {
+				Chunk* chunk = Chunk::request(cx, cy);
+				if (!chunk || !chunk->ready()) continue;
+				chunk->meshTickLastViewed = Sim::tick;
+				chunk->autoload();
+
+				chunk->meshMutex.lock();
+
+				if (chunk->meshLoaded) {
+					float x = chunk->x;
+					float y = chunk->y;
+					chunk_meshes.push_back(chunk->heightmap);
+					chunk_transforms.push_back(chunk->transform);
+					water.push_back(
+						Mat4::translate(x+0.5f, -0.52f, y+0.5f) * Mat4::scale(size,size,size)
+					);
+				}
+
+				chunk->meshMutex.unlock();
 			}
 
 			rlDrawMaterialMeshes(Chunk::material, chunk_meshes.size(), chunk_meshes.data(), chunk_transforms.data());

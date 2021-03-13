@@ -43,6 +43,7 @@ Thing::Thing() {
 Thing::Thing(std::string hd) {
 	meshHD = loadSTL(hd);
 	meshLD = meshHD;
+	// rotation for raylib Y-up
 	transform = Mat4::rotateX(90.0f*DEG2RAD);
 	notef("%s is missing a low-detail mesh!", hd);
 }
@@ -50,12 +51,14 @@ Thing::Thing(std::string hd) {
 Thing::Thing(std::string hd, std::string ld) {
 	meshHD = loadSTL(hd);
 	meshLD = loadSTL(ld);
+	// rotation for raylib Y-up
 	transform = Mat4::rotateX(90.0f*DEG2RAD);
 }
 
 Thing::Thing(std::string hd, Mesh ld) {
 	meshHD = loadSTL(hd);
 	meshLD = ld;
+	// rotation for raylib Y-up
 	transform = Mat4::rotateX(90.0f*DEG2RAD);
 }
 
@@ -72,6 +75,10 @@ Thing::Thing(Mesh hd, Mesh ld) {
 }
 
 Mesh Thing::loadSTL(std::string stl) {
+
+	if (STLs.count(stl)) {
+		return STLs[stl];
+	}
 
 	struct Triangle {
 		size_t count;
@@ -164,9 +171,6 @@ Mesh Thing::loadSTL(std::string stl) {
 	mesh.texcoords = (float *)RL_CALLOC(mesh.vertexCount*2, sizeof(float));
 	mesh.normals = (float *)RL_CALLOC(mesh.vertexCount*3, sizeof(float));
 
-	// raylib models.c DEFAULT_MESH_VERTEX_BUFFERS=7
-	mesh.vboId = (unsigned int *)RL_CALLOC(7, sizeof(unsigned int));
-
 	int vCount = 0;
 	int nCount = 0;
 
@@ -191,37 +195,96 @@ Mesh Thing::loadSTL(std::string stl) {
   rlLoadMesh(&mesh, false);
 	meshes.push_back(mesh);
 
+	STLs[stl] = mesh;
 	return mesh;
 }
 
 Thing& Thing::smooth() {
-	Part::terrainNormals(&meshHD);
-	Part::terrainNormals(&meshLD);
+
+	auto normals = [&](Mesh* mesh) {
+
+		struct Vertex {
+			Vector3 v;
+			const float epsilon = 0.000001;
+
+			bool operator==(const Vertex &o) const {
+				bool match = true;
+				match = match && std::abs(v.x - o.v.x) < epsilon;
+				match = match && std::abs(v.y - o.v.y) < epsilon;
+				match = match && std::abs(v.z - o.v.z) < epsilon;
+				return match;
+			}
+
+			bool operator<(const Vertex &o) const {
+				return Vector3Length(v) < Vector3Length(o.v);
+			}
+		};
+
+		// Slightly randomize normals so surface appears slightly uneven or rough, even when untextured
+		for (int i = 0; i < mesh->vertexCount; i++) {
+			Vector3 n = { mesh->normals[(i + 0)*3 + 0], mesh->normals[(i + 0)*3 + 1], mesh->normals[(i + 0)*3 + 2] };
+			Vector3 d = { Sim::random()*0.25f, Sim::random()*0.25f, Sim::random()*0.25f };
+			n = Vector3Normalize(Vector3Add(n, d));
+			mesh->normals[(i + 0)*3 + 0] = n.x;
+			mesh->normals[(i + 0)*3 + 1] = n.y;
+			mesh->normals[(i + 0)*3 + 2] = n.z;
+		}
+
+		// Now sum and average vertex normals so mesh has an overall smooth terrain look
+		std::map<Vertex,Vector3> normals;
+
+		for (int i = 0; i < mesh->vertexCount; i++) {
+			Vector3 v = { mesh->vertices[(i + 0)*3 + 0], mesh->vertices[(i + 0)*3 + 1], mesh->vertices[(i + 0)*3 + 2] };
+			Vector3 n = { mesh->normals[(i + 0)*3 + 0], mesh->normals[(i + 0)*3 + 1], mesh->normals[(i + 0)*3 + 2] };
+
+			Vertex vt = {v};
+
+			if (normals.count(vt) == 1) {
+				normals[vt] = Vector3Add(normals[vt], n);
+			} else {
+				normals[vt] = n;
+			}
+		}
+
+		for (int i = 0; i < mesh->vertexCount; i++) {
+			Vector3 v = { mesh->vertices[(i + 0)*3 + 0], mesh->vertices[(i + 0)*3 + 1], mesh->vertices[(i + 0)*3 + 2] };
+			Vertex vt = {v};
+			Vector3 n = normals[vt];
+			mesh->normals[(i + 0)*3 + 0] = n.x;
+			mesh->normals[(i + 0)*3 + 1] = n.y;
+			mesh->normals[(i + 0)*3 + 2] = n.z;
+		}
+
+		// 2=normals, see rlUpdateMeshAt()
+		rlUpdateMesh(*mesh, 2, mesh->vertexCount);
+	};
+
+	normals(&meshHD);
+	normals(&meshLD);
+
 	return *this;
 }
 
 void Thing::drawBatch(Color color, float specular, bool hd, int count, Mat4 *trx) {
 	Part::material.shader = Part::shader;
 	Part::material.maps[MAP_DIFFUSE].color = color;
-	uint specShine  = GetShaderLocation(Part::shader, "specShine");
 
-	SetShaderValue(Part::shader, specShine, &specular, UNIFORM_FLOAT);
+	SetShaderValue(Part::shader, Part::shaderSpecShine, &specular, UNIFORM_FLOAT);
 	rlDrawMeshInstanced2(hd ? meshHD: meshLD, Part::material, count, trx);
 
 	specular = 0.0f;
-	SetShaderValue(Part::shader, specShine, &specular, UNIFORM_FLOAT);
+	SetShaderValue(Part::shader, Part::shaderSpecShine, &specular, UNIFORM_FLOAT);
 }
 
 void Thing::drawParticleBatch(Color color, float specular, bool hd, int count, Vector4 *set) {
 	Part::material.shader = Part::particleShader;
 	Part::material.maps[MAP_DIFFUSE].color = color;
-	uint specShine  = GetShaderLocation(Part::particleShader, "specShine");
 
-	SetShaderValue(Part::particleShader, specShine, &specular, UNIFORM_FLOAT);
+	SetShaderValue(Part::particleShader, Part::particleShaderSpecShine, &specular, UNIFORM_FLOAT);
 	rlDrawParticles(hd ? meshHD: meshLD, Part::material, count, (Vector4*)set);
 
 	specular = 0.0f;
-	SetShaderValue(Part::particleShader, specShine, &specular, UNIFORM_FLOAT);
+	SetShaderValue(Part::particleShader, Part::particleShaderSpecShine, &specular, UNIFORM_FLOAT);
 }
 
 void Thing::drawGhostBatch(Color color, bool hd, int count, Mat4 *trx) {
@@ -231,71 +294,14 @@ void Thing::drawGhostBatch(Color color, bool hd, int count, Mat4 *trx) {
 }
 
 void Part::reset() {
-	for (auto part: all) {
+	for (auto& part: all) {
 		delete part;
 	}
-	for (auto mesh: Thing::meshes) {
+	all.clear();
+	for (auto& mesh: meshes) {
 		UnloadMesh(mesh);
 	}
-	all.clear();
-}
-
-struct Vertex {
-	Vector3 v;
-	static constexpr float epsilon = 0.000001;
-
-	bool operator==(const Vertex &o) const {
-		bool match = true;
-		match = match && std::abs(v.x - o.v.x) < epsilon;
-		match = match && std::abs(v.y - o.v.y) < epsilon;
-		match = match && std::abs(v.z - o.v.z) < epsilon;
-		return match;
-	}
-
-	bool operator<(const Vertex &o) const {
-		return Vector3Length(v) < Vector3Length(o.v);
-	}
-};
-
-void Part::terrainNormals(Mesh *mesh) {
-
-	// Slightly randomize normals so ground appears slightly uneven or rough, even when untextured
-	for (int i = 0; i < mesh->vertexCount; i++) {
-		Vector3 n = { mesh->normals[(i + 0)*3 + 0], mesh->normals[(i + 0)*3 + 1], mesh->normals[(i + 0)*3 + 2] };
-		Vector3 d = { Sim::random()*0.25f, Sim::random()*0.25f, Sim::random()*0.25f };
-		n = Vector3Normalize(Vector3Add(n, d));
-		mesh->normals[(i + 0)*3 + 0] = n.x;
-		mesh->normals[(i + 0)*3 + 1] = n.y;
-		mesh->normals[(i + 0)*3 + 2] = n.z;
-	}
-
-	// Now sum and average vertex normals so mesh has an overall smooth terrain look
-	std::map<Vertex,Vector3> normals;
-
-	for (int i = 0; i < mesh->vertexCount; i++) {
-		Vector3 v = { mesh->vertices[(i + 0)*3 + 0], mesh->vertices[(i + 0)*3 + 1], mesh->vertices[(i + 0)*3 + 2] };
-		Vector3 n = { mesh->normals[(i + 0)*3 + 0], mesh->normals[(i + 0)*3 + 1], mesh->normals[(i + 0)*3 + 2] };
-
-		Vertex vt = {v};
-
-		if (normals.count(vt) == 1) {
-			normals[vt] = Vector3Add(normals[vt], n);
-		} else {
-			normals[vt] = n;
-		}
-	}
-
-	for (int i = 0; i < mesh->vertexCount; i++) {
-		Vector3 v = { mesh->vertices[(i + 0)*3 + 0], mesh->vertices[(i + 0)*3 + 1], mesh->vertices[(i + 0)*3 + 2] };
-		Vertex vt = {v};
-		Vector3 n = normals[vt];
-		mesh->normals[(i + 0)*3 + 0] = n.x;
-		mesh->normals[(i + 0)*3 + 1] = n.y;
-		mesh->normals[(i + 0)*3 + 2] = n.z;
-	}
-
-	// 2=normals, see rlUpdateMeshAt()
-	rlUpdateMesh(*mesh, 2, mesh->vertexCount);
+	meshes.clear();
 }
 
 Part::Part() {
@@ -341,7 +347,7 @@ Part* Part::ld(bool b) {
 }
 
 Part* Part::paint(int hexcolor) {
-	color = GetColor(hexcolor);
+	color = GetColorSRGB(hexcolor);
 	return this;
 }
 

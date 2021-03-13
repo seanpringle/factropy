@@ -49,6 +49,7 @@ struct Recipe {
 
 	Energy energyUsage;
 
+	Recipe();
 	Recipe(uint id, std::string name);
 	~Recipe();
 

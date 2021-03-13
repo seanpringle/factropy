@@ -23,5 +23,7 @@ struct TimeSeries {
 	void add(uint64_t t, double v);
 	void update(uint64_t t);
 	void track(uint64_t t, std::function<void(void)> fn);
+
+	TimeSeries();
 };
 

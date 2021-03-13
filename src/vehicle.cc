@@ -33,6 +33,15 @@ void Vehicle::destroy() {
 		delete pathRequest;
 		pathRequest = NULL;
 	}
+	for (auto wp: waypoints) {
+		if (waypoint == wp) {
+			waypoint = nullptr;
+		}
+		delete wp;
+	}
+	if (waypoint) {
+		delete waypoint;
+	}
 	all.erase(id);
 }
 

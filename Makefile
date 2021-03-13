@@ -6,13 +6,13 @@ WRENOBJECTS=$(shell ls -1 wren/src/vm/*.c wren/src/optional/*.c | sed 's/c$$/o/g
 
 rel: CFLAGS=-O3 -flto -std=c++17 -g -Wall -DNDEBUG
 rel: LFLAGS=-lm -lGL -lpthread -ldl -lrt -lX11
-rel: imgui/imgui.o src/raylib-ex.o src/raylib-glfw.o $(OBJECTS) $(WRENOBJECTS)
-	$(CPP) $(CFLAGS) -o factropy src/*.o imgui/imgui.o $(WRENOBJECTS) $(LFLAGS)
+rel: imgui/imgui.o src/raylib-ex.o src/raylib-glfw.o $(OBJECTS) $(WRENOBJECTS) duktape/duktape.o
+	$(CPP) $(CFLAGS) -o factropy src/*.o imgui/imgui.o $(WRENOBJECTS) duktape/duktape.o $(LFLAGS)
 
 dev: CFLAGS=-O1 -std=c++17 -g -Wall -Werror
 dev: LFLAGS=-lm -lGL -lpthread -ldl -lrt -lX11
-dev: imgui/imgui.o src/raylib-ex.o src/raylib-glfw.o $(OBJECTS) $(WRENOBJECTS)
-	$(CPP) $(CFLAGS) -o factropy src/*.o imgui/imgui.o $(WRENOBJECTS) $(LFLAGS)
+dev: imgui/imgui.o src/raylib-ex.o src/raylib-glfw.o $(OBJECTS) $(WRENOBJECTS) duktape/duktape.o
+	$(CPP) $(CFLAGS) -o factropy src/*.o imgui/imgui.o $(WRENOBJECTS) duktape/duktape.o $(LFLAGS)
 
 src/main.o: src/main.cc
 	$(CPP) $(CFLAGS) -c $< -o $@
@@ -48,4 +48,8 @@ wren/src/vm/%.o: wren/src/vm/%.c wren/src/vm/%.h
 
 wren/src/optional/%.o: CFLAGS=-O3 -std=c99 -g -Wall -DNDEBUG -Iwren/src/include -Iwren/src/optional -Iwren/src/vm
 wren/src/optional/%.o: wren/src/optional/%.c wren/src/optional/%.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+duktape/duktape.o: CFLAGS=-O3 -std=c99 -g -Wall -DNDEBUG -Iduktape
+duktape/duktape.o: duktape/duktape.c duktape/duktape.h duktape/duk_config.h
 	$(CC) $(CFLAGS) -c $< -o $@

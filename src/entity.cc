@@ -14,6 +14,7 @@ void Entity::reset() {
 	all.clear();
 	grid.clear();
 	Store::reset();
+	Pipe::reset();
 }
 
 void Entity::preTick() {

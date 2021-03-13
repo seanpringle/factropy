@@ -7,10 +7,6 @@
 #include <cstdlib>
 
 namespace Sim {
-	OpenSimplex* opensimplex;
-	std::mutex mutex;
-	uint64_t tick;
-	int64_t seed;
 
 	TimeSeries statsElectricityDemand;
 	TimeSeries statsElectricitySupply;
@@ -36,7 +32,39 @@ namespace Sim {
 	TimeSeries statsTurret;
 	TimeSeries statsComputer;
 
+	OpenSimplex* opensimplex;
+	std::mutex mutex;
+	uint64_t tick;
+	int64_t seed;
+
+	void reseed(int64_t s) {
+		seed = s;
+		//std::srand((unsigned)s);
+		opensimplex = OpenSimplexNew(s);
+	}
+
+	thread_local struct drand48_data threadRand;
+
+	void reseedThread() {
+		srand48_r(seed, &threadRand);
+	}
+
+	float random() {
+		long int result = 0;
+		lrand48_r(&threadRand, &result);
+		return (float)(result%1000) / 1000.0f;
+	}
+
+	int choose(uint range) {
+		long int result = 0;
+		lrand48_r(&threadRand, &result);
+		return result%(int)range;
+	}
+
 	void reset() {
+		tick = 0;
+		seed = 0;
+		reseedThread();
 		statsElectricityDemand.clear();
 		statsElectricitySupply.clear();
 		statsEntity.clear();
@@ -68,20 +96,6 @@ namespace Sim {
 		mutex.unlock();
 	}
 
-	void reseed(int64_t s) {
-		seed = s;
-		std::srand((unsigned)s);
-		opensimplex = OpenSimplexNew(s);
-	}
-
-	float random() {
-		return (float)(std::rand()%1000) / 1000.0f;
-	}
-
-	int choose(uint range) {
-		return std::rand()%(int)range;
-	}
-
 	double noise2D(double x, double y, int layers, double persistence, double frequency) {
 		double amp = 1.0;
 		double ampSum = 0.0;
@@ -98,7 +112,7 @@ namespace Sim {
 		noise -= 0.5;
 		noise *= 1.5;
 		noise += 0.5;
-		return noise;
+		return std::clamp(noise, 0.0, 1.0);
 	}
 
 	bool rayCast(Point a, Point b, float clearance, std::function<bool(uint)> collide) {

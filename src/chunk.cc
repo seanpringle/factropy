@@ -4,8 +4,48 @@
 #include "part.h"
 #include "sim.h"
 
+Chunk::Chunk(int cx, int cy) {
+	meshMutex.lock();
+	x = cx;
+	y = cy;
+	XY xy = {x,y};
+	all[xy] = this;
+	ZERO(heightmap);
+	ZERO(newHeightmap);
+	ZERO(tiles);
+	generated = false;
+	meshReady = false;
+	meshLoaded = false;
+	meshRegenerate = false;
+	meshSwitch = false;
+	meshTickLastViewed = 0;
+	meshMutex.unlock();
+}
+
+Chunk::~Chunk() {
+	meshMutex.lock();
+	if (meshLoaded) {
+		rlUnloadMesh(heightmap);
+	}
+	if (meshReady) {
+		UnloadMesh2(heightmap);
+	}
+	if (meshSwitch) {
+		UnloadMesh2(newHeightmap);
+	}
+	meshMutex.unlock();
+}
+
+bool Chunk::ready() {
+	return generated;
+}
+
 Point Chunk::centroid() {
 	return Point(x*size, 0, y*size) + Point(size/2,0,size/2);
+}
+
+Box Chunk::box() {
+	return centroid().box().grow(size/2);
 }
 
 gridwalk Chunk::walkTiles(Box box) {
@@ -35,104 +75,134 @@ void Chunk::generator(Chunk::Generator fn) {
 }
 
 Chunk* Chunk::tryGet(int x, int y) {
+	mutex.lock();
 	// happens a lot when iterating individual tiles
 	if (lastChunk && lastChunk->x == x && lastChunk->y == y) {
+		mutex.unlock();
 		return lastChunk;
 	}
 
 	XY xy = {x,y};
 
 	if (all.count(xy)) {
-		lastChunk = all[xy];
+		auto chunk = all[xy];
+		if (chunk->ready()) {
+			lastChunk = chunk;
+			mutex.unlock();
+			return chunk;
+		}
+	}
+
+	mutex.unlock();
+	return nullptr;
+}
+
+Chunk* Chunk::tryGet(Point p) {
+	Tile* tile = tileTryGet(p);
+	return tile ? tile->chunk(): nullptr;
+}
+
+Chunk* Chunk::request(int x, int y) {
+	mutex.lock();
+	// happens a lot when iterating individual tiles
+	if (lastChunk && lastChunk->x == x && lastChunk->y == y) {
+		mutex.unlock();
 		return lastChunk;
 	}
 
-	return NULL;
-}
+	XY xy = {x,y};
 
-Chunk* Chunk::get(int x, int y) {
-	Chunk *chunk = tryGet(x, y);
-	if (chunk == NULL) {
-		chunk = new Chunk(x, y);
-
-		for (int ty = 0; ty < Chunk::size; ty++) {
-			for (int tx = 0; tx < Chunk::size; tx++) {
-
-				//float elevation = (float)Sim::noise2D(x*Chunk::size+tx, y*Chunk::size+ty, 8, 0.5, 0.007) - 0.5f; // -0.5->0.5
-				float elevation = (float)Sim::noise2D(x*Chunk::size+tx, y*Chunk::size+ty, 8, 0.5, 0.008) - 0.5f; // -0.5->0.5
-
-				elevation += 0.1;
-
-				// floodplain
-				if (elevation > 0.0f) {
-					if (elevation < 0.3f) {
-						elevation = 0.0f;
-					} else {
-						elevation -= 0.3f;
-					}
-				}
-
-				double offset = 1000000;
-
-				uint mineral = 0;
-				float resource = 0.0f;
-
-				float hint = Sim::random(); //(float)Sim::noise2D(x*Chunk::size+tx+offset, y*Chunk::size+ty+offset, 8, 0.6, 0.3);
-				offset += 1000000;
-
-				for (auto iid: Item::mining) {
-					//float density = (float)Sim::noise2D(x*Chunk::size+tx+offset, y*Chunk::size+ty+offset, 8, 0.5, 0.007);
-					float density = (float)Sim::noise2D(x*Chunk::size+tx+offset, y*Chunk::size+ty+offset, 8, 0.4, 0.005);
-					if (density > resource) {
-						mineral = iid;
-						resource = density;
-					}
-					offset += 1000000;
-				}
-
-				chunk->tiles[ty][tx] = (Tile){
-					.x = x*Chunk::size+tx,
-					.y = y*Chunk::size+ty,
-					.hill = NULL,
-					.elevation = elevation,
-					.mineral = {mineral, (uint)(resource*100.0f)},
-				};
-
-				// minables visible on hills
-				if (elevation > 0.01f && mineral != 0 && hint > 0.99) {
-					chunk->minerals.push_back({tx,ty});
-				}
-			}
+	if (all.count(xy)) {
+		auto chunk = all[xy];
+		if (chunk->ready()) {
+			lastChunk = chunk;
+			mutex.unlock();
+			return chunk;
 		}
-
-		for (auto fn: generators) {
-			fn(chunk);
-		}
-
-		if (tryGet(x-1, y-1)) get(x-1,y-1)->regenerate = true;
-		if (tryGet(x-1, y+0)) get(x-1,y+0)->regenerate = true;
-		if (tryGet(x-1, y+1)) get(x-1,y+1)->regenerate = true;
-		if (tryGet(x+0, y-1)) get(x+0,y-1)->regenerate = true;
-
-		if (tryGet(x+0, y+1)) get(x+0,y+1)->regenerate = true;
-		if (tryGet(x+1, y-1)) get(x+1,y-1)->regenerate = true;
-		if (tryGet(x+1, y+0)) get(x+1,y+0)->regenerate = true;
-		if (tryGet(x+1, y+1)) get(x+1,y+1)->regenerate = true;
 	}
-	return chunk;
+	else {
+		requested.insert(xy);
+	}
+
+	mutex.unlock();
+	return nullptr;
 }
 
 Chunk::Tile* Chunk::tileTryGet(int x, int y) {
 	auto [cx,cy] = tileXYtoChunkXY(x, y);
 	auto [ox,oy] = tileXYtoOffsetXY(x, y);
 	Chunk *chunk = tryGet(cx, cy);
-	return (chunk != NULL) ? &chunk->tiles[oy][ox]: NULL;
+	return (chunk != nullptr && chunk->ready()) ? &chunk->tiles[oy][ox]: nullptr;
 }
 
 Chunk::Tile* Chunk::tileTryGet(Point p) {
 	int x = (int)std::floor(p.x);
 	int y = (int)std::floor(p.z); // 3d is Y-up
 	return tileTryGet(x, y);
+}
+
+void Chunk::generate() {
+	notef("generate %d %d (%lu)", x, y, all.size());
+
+	for (int ty = 0; ty < size; ty++) {
+		for (int tx = 0; tx < size; tx++) {
+
+			//float elevation = (float)Sim::noise2D(x*size+tx, y*size+ty, 8, 0.5, 0.007) - 0.5f; // -0.5->0.5
+			float elevation = (float)Sim::noise2D(x*size+tx, y*size+ty, 8, 0.5, 0.008) - 0.5f; // -0.5->0.5
+
+			elevation += 0.1;
+
+			// floodplain
+			if (elevation > 0.0f) {
+				if (elevation < 0.3f) {
+					elevation = 0.0f;
+				} else {
+					elevation -= 0.3f;
+				}
+			}
+
+			double offset = 1000000;
+
+			uint mineral = 0;
+			float resource = 0.0f;
+
+			float hint = Sim::random(); //(float)Sim::noise2D(x*size+tx+offset, y*size+ty+offset, 8, 0.6, 0.3);
+			offset += 1000000;
+
+			for (auto iid: Item::mining) {
+				//float density = (float)Sim::noise2D(x*size+tx+offset, y*size+ty+offset, 8, 0.5, 0.007);
+				float density = (float)Sim::noise2D(x*size+tx+offset, y*size+ty+offset, 8, 0.4, 0.005);
+				if (density > resource) {
+					mineral = iid;
+					resource = density;
+				}
+				offset += 1000000;
+			}
+
+			tiles[ty][tx] = (Tile){
+				.x = x*size+tx,
+				.y = y*size+ty,
+				.hill = nullptr,
+				.elevation = elevation,
+				.mineral = {mineral, (uint)(resource*100.0f)},
+			};
+
+			// minables visible on hills
+			if (elevation > 0.01f && mineral != 0 && hint > 0.99) {
+				meshMinerals.push_back({tx,ty});
+			}
+		}
+	}
+
+	if (tryGet(x-1, y-1)) tryGet(x-1,y-1)->regenerate();
+	if (tryGet(x-1, y+0)) tryGet(x-1,y+0)->regenerate();
+	if (tryGet(x-1, y+1)) tryGet(x-1,y+1)->regenerate();
+	if (tryGet(x+0, y-1)) tryGet(x+0,y-1)->regenerate();
+
+	if (tryGet(x+0, y+1)) tryGet(x+0,y+1)->regenerate();
+	if (tryGet(x+1, y-1)) tryGet(x+1,y-1)->regenerate();
+	if (tryGet(x+1, y+0)) tryGet(x+1,y+0)->regenerate();
+	if (tryGet(x+1, y+1)) tryGet(x+1,y+1)->regenerate();
 }
 
 bool Chunk::Tile::isLand() {
@@ -235,7 +305,7 @@ void Chunk::flatten(Box b) {
 		Tile *tile = tileTryGet(x, y);
 		if (tile && tile->elevation > 0.0f) {
 			tile->elevation = 0.0f;
-			tile->chunk()->regenerate = true;
+			tile->chunk()->regenerate();
 		}
 	}
 }
@@ -255,103 +325,166 @@ std::vector<Stack> Chunk::minables(Box b) {
 }
 
 void Chunk::reset() {
-	for (auto& pair: all) {
-		delete pair.second;
+	for (auto& [_,chunk]: all) {
+		delete chunk;
+	}
+	for (auto hill: hills) {
+		delete hill;
+	}
+	all.clear();
+	hills.clear();
+}
+
+void Chunk::terrainNormals() {
+
+	struct Vertex {
+		Vector3 v;
+		const float epsilon = 0.01;
+
+		bool operator==(const Vertex &o) const {
+			bool match = true;
+			match = match && std::abs(v.x - o.v.x) < epsilon;
+			match = match && std::abs(v.y - o.v.y) < epsilon;
+			match = match && std::abs(v.z - o.v.z) < epsilon;
+			return match;
+		}
+
+		bool operator<(const Vertex &o) const {
+			return Vector3Length(v) < Vector3Length(o.v);
+		}
+	};
+
+	Mesh* mesh = &newHeightmap;
+
+	// Slightly randomize normals so ground appears slightly uneven or rough, even when untextured
+	for (int i = 0; i < mesh->vertexCount; i++) {
+		Vector3 n = { mesh->normals[i*3 + 0], mesh->normals[i*3 + 1], mesh->normals[i*3 + 2] };
+		Vector3 d = { Sim::random()*0.25f, Sim::random()*0.25f, Sim::random()*0.25f };
+		n = Vector3Normalize(Vector3Add(n, d));
+		mesh->normals[i*3 + 0] = n.x;
+		mesh->normals[i*3 + 1] = n.y;
+		mesh->normals[i*3 + 2] = n.z;
+	}
+
+	// Now sum and average vertex normals so mesh has an overall smooth terrain look
+	std::map<Vertex,Vector3> normals;
+
+	for (int i = 0; i < mesh->vertexCount; i++) {
+		Vector3 v = { mesh->vertices[i*3 + 0], mesh->vertices[i*3 + 1], mesh->vertices[i*3 + 2] };
+		Vector3 n = { mesh->normals[i*3 + 0], mesh->normals[i*3 + 1], mesh->normals[i*3 + 2] };
+
+		Vertex vt = {v};
+
+		if (normals.count(vt)) {
+			normals[vt] = Vector3Add(normals[vt], n);
+		} else {
+			normals[vt] = n;
+		}
+	}
+
+	for (int i = 0; i < mesh->vertexCount; i++) {
+		Vector3 v = { mesh->vertices[i*3 + 0], mesh->vertices[i*3 + 1], mesh->vertices[i*3 + 2] };
+		Vertex vt = {v};
+		Vector3 n = Vector3Normalize(normals[vt]);
+		mesh->normals[i*3 + 0] = n.x;
+		mesh->normals[i*3 + 1] = n.y;
+		mesh->normals[i*3 + 2] = n.z;
 	}
 }
 
-Chunk::Chunk(int cx, int cy) {
-	x = cx;
-	y = cy;
-	XY xy = {x,y};
-	all[xy] = this;
-	regenerate = true;
-	ZERO(heightmap);
-	ZERO(tiles);
-	meshLoaded = false;
-	meshGenerated = false;
+void Chunk::regenerate() {
+	meshMutex.lock();
+	meshRegenerate = true;
+	meshMutex.unlock();
 }
 
-Image Chunk::heightImage() {
+void Chunk::backgroundgenerate() {
+	meshMutex.lock();
+
+	if (!ready() || !meshRegenerate) {
+		meshMutex.unlock();
+		return;
+	}
+
+	notef("backgroundgenerate %d %d", x, y);
+
+	if (meshSwitch) {
+		UnloadMesh2(newHeightmap);
+		meshSwitch = false;
+	}
+
+	meshMutex.unlock();
+
 	// When generating a Mesh from a heightmap each pixel becomes a vertex on a tile centroid.
 	// Without the +1 there would be gaps on the +X and +Y edges.
-	int width = size+1;
-	int height = size+1;
+	int edge = size+1;
 
-	Color *pixels = (Color *)RL_MALLOC(width*height*sizeof(Color));
+	float heightmap[edge*edge];
 
-	for (int y = 0; y < height; y++) {
-		for (int x = 0; x < width; x++) {
-			Color *pixel = &pixels[y*width+x];
-			*pixel = BLANK;
-			Tile *tile = tileTryGet(this->x*size+x, this->y*size+y);
-			if (tile != NULL) {
-				uint8_t intensity = std::clamp(tile->elevation+(0.5f), 0.0f, 1.0f)*255.0f;
-				*pixel = (Color){intensity, intensity, intensity, 255};
+	for (int y = 0; y < edge; y++) {
+		for (int x = 0; x < edge; x++) {
+			heightmap[y*edge+x] = 0.0f;
+			Tile* tile = (x < size && y < size) ? &tiles[y][x]: tileTryGet(this->x*size+x, this->y*size+y);
+			if (tile != nullptr) {
+				heightmap[y*edge+x] = (tile->elevation+0.5f)*100.0f;
 			}
 		}
 	}
 
-	Image image = {
-		.data = pixels,
-		.width = width,
-		.height = height,
-		.mipmaps = 1,
-		.format = UNCOMPRESSED_R8G8B8A8,
-	};
+	newHeightmap = GenMeshHeightmap2(size+1, heightmap);
 
-	return image;
-}
+	terrainNormals();
 
-void Chunk::genHeightMap() {
-	dropHeightMap();
+	meshMutex.lock();
 
-	Image heightImg = heightImage();
-	heightmap = GenMeshHeightmap(heightImg, (Vector3){ size+1, 100, size+1 });
-	Part::terrainNormals(&heightmap);
-	transform = MatrixTranslate((float)(x*size)+0.5f, -49.82, (float)(y*size)+0.5f);
-	UnloadImage(heightImg);
-	regenerate = false;
+	transform = MatrixTranslate((float)(x*size)+0.5f, -50.0, (float)(y*size)+0.5f);
 
-	for (auto it = minerals.begin(); it != minerals.end(); ) {
+	for (auto it = meshMinerals.begin(); it != meshMinerals.end(); ) {
 		Tile* tile = &tiles[it->y][it->x];
 		if (tile->elevation < 0.01f) {
-			it = minerals.erase(it);
+			it = meshMinerals.erase(it);
 		} else {
 			it++;
 		}
 	}
 
-  rlUnloadMesh(heightmap);
-	heightmap.vaoId = 0;
-	heightmap.vboId = nullptr;
-  meshLoaded = false;
-  meshGenerated = true;
+	meshRegenerate = false;
+	meshSwitch = true;
+
+	meshMutex.unlock();
 }
 
-void Chunk::dropHeightMap() {
-	if (meshGenerated) {
-		loadMesh();
-		UnloadMesh(heightmap);
-		meshLoaded = false;
-		meshGenerated = false;
-	}
-}
+void Chunk::autoload() {
+	meshMutex.lock();
 
-void Chunk::loadMesh() {
-	if (!meshLoaded) {
-		rlLoadMesh(&heightmap, false);
-		meshLoaded = true;
+	if (meshSwitch) {
+		if (meshLoaded) {
+			rlUnloadMesh(heightmap);
+			UnloadMesh2(heightmap);
+			meshLoaded = false;
+			meshReady = false;
+		}
+		heightmap = newHeightmap;
+		meshSwitch = false;
+		meshReady = true;
 	}
-}
 
-void Chunk::unloadMesh() {
-	if (meshLoaded) {
-		rlUnloadMesh(heightmap);
-		heightmap.vaoId = 0;
-		heightmap.vboId = nullptr;
-		meshLoaded = false;
+	if (meshTickLastViewed < Sim::tick-10) {
+		if (meshLoaded) {
+			rlUnloadMesh(heightmap);
+			heightmap.vaoId = 0;
+			heightmap.vboId = nullptr;
+			meshLoaded = false;
+		}
 	}
+	else {
+		if (!meshLoaded && meshReady) {
+			rlLoadMesh(&heightmap, false);
+			meshLoaded = true;
+		}
+	}
+
+	meshMutex.unlock();
 }
 
 std::set<Chunk::Tile*> Chunk::hillTiles(Point p) {
@@ -386,30 +519,29 @@ void Chunk::findHills() {
 		for (int tx = 0; tx < size; tx++) {
 			Tile* tile = &tiles[ty][tx];
 
-			if (tile->elevation > 0.001f && tile->hill == NULL) {
+			if (tile->elevation > 0.001f && tile->hill == nullptr) {
 				auto hgroup = hillTiles({(float)tile->x, 0.0f, (float)tile->y});
 
+				std::set<Hill*> oldHills;
+
 				for (auto htile: hgroup) {
-					if (htile && htile->hill) {
-						tile->hill = htile->hill;
-						tile->hill->tiles.insert(tile);
-						break;
+					if (htile->hill) {
+						oldHills.insert(htile->hill);
 					}
 				}
 
-				Hill* hill = tile->hill;
-				if (!hill) {
-					hill = new Hill;
-					hills.insert(hill);
+				for (auto hill: oldHills) {
+					hills.erase(hill);
+					delete hill;
 				}
 
+				Hill* hill = new Hill;
+				hills.insert(hill);
+
 				for (auto htile: hgroup) {
-					ensure(htile->hill == hill || htile->hill == NULL);
-					if (!htile->hill) {
-						htile->hill = hill;
-						hill->tiles.insert(htile);
-						hill->minerals[htile->mineral.iid] += htile->mineral.size;
-					}
+					htile->hill = hill;
+					hill->tiles.insert(htile);
+					hill->minerals[htile->mineral.iid] += htile->mineral.size;
 				}
 			}
 		}

@@ -1,5 +1,4 @@
-#ifndef _H_sim
-#define _H_sim
+#pragma once
 
 #include "opensimplex.h"
 #include "time-series.h"
@@ -8,9 +7,6 @@
 #include <functional>
 
 namespace Sim {
-	extern OpenSimplex* opensimplex;
-	extern uint64_t tick;
-	extern int64_t seed;
 
 	extern TimeSeries statsElectricityDemand;
 	extern TimeSeries statsElectricitySupply;
@@ -36,16 +32,24 @@ namespace Sim {
 	extern TimeSeries statsTurret;
 	extern TimeSeries statsComputer;
 
+	extern OpenSimplex* opensimplex;
+	extern uint64_t tick;
+	extern int64_t seed;
+
+	extern thread_local struct drand48_data threadRand;
+
 	void reset();
 	void save();
 	void load();
 
+	void reseed(int64_t seed);
+	void reseedThread();
+	float random();
+	int choose(uint range);
+
 	typedef std::function<void(void)> lockCallback;
 	void locked(lockCallback cb);
 
-	void reseed(int64_t seed);
-	float random();
-	int choose(uint range);
 
 	// decrease persistence to make coastline smoother
 	// increase frequency to make lakes smaller
@@ -59,5 +63,3 @@ namespace Sim {
 	void update();
 
 }
-
-#endif

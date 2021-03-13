@@ -239,7 +239,7 @@ void Chunk::saveAll(const char* name) {
 		state["x"] = chunk->x;
 		state["y"] = chunk->y;
 		json minerals;
-		for (auto [tx,ty]: chunk->minerals) {
+		for (auto [tx,ty]: chunk->meshMinerals) {
 			minerals.push_back({tx,ty});
 		}
 		state["minerals"] = minerals;
@@ -263,7 +263,7 @@ void Chunk::loadAll(const char* name) {
 		auto state = json::parse(line);
 		Chunk *chunk = new Chunk(state["x"], state["y"]);
 		for (auto xy: state["minerals"]) {
-			chunk->minerals.push_back({xy[0], xy[1]});
+			chunk->meshMinerals.push_back({xy[0], xy[1]});
 		}
 		for (int ty = 0; ty < size; ty++) {
 			for (int tx = 0; tx < size; tx++) {
@@ -274,6 +274,9 @@ void Chunk::loadAll(const char* name) {
 				tile->mineral = {(uint)(state["tiles"][ty][tx][3]), (uint)(state["tiles"][ty][tx][4])};
 			}
 		}
+		chunk->generated = true;
+		chunk->regenerate();
+		chunk->findHills();
 	}
 
 	in.close();

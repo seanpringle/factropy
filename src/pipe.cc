@@ -3,6 +3,7 @@
 
 void Pipe::reset() {
 	all.clear();
+	PipeNetwork::reset();
 }
 
 void Pipe::tick() {
@@ -63,6 +64,12 @@ std::vector<uint> Pipe::servicing(Box box) {
 	}
 	deduplicate(hits);
 	return hits;
+}
+
+void PipeNetwork::reset() {
+	while (all.size()) {
+		delete *(all.begin());
+	}
 }
 
 void PipeNetwork::tick() {

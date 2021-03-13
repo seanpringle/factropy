@@ -18,7 +18,9 @@ Arm& Arm::create(uint id) {
 	arm.id = id;
 	arm.iid = 0;
 	arm.inputId = 0;
+	arm.inputStoreId= 0;
 	arm.outputId = 0;
+	arm.outputStoreId = 0;
 	arm.stage = Input;
 	arm.orientation = 0.0f;
 	return arm;
